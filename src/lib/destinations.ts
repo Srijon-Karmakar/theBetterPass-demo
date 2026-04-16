@@ -26,6 +26,34 @@ export interface Profile {
     is_verified?: boolean;
 }
 
+export interface EventRecord {
+    id: string;
+    title: string;
+    location?: string;
+    description?: string;
+    category?: string;
+    image_url?: string;
+    starts_at?: string;
+    created_at?: string;
+}
+
+export interface PostRecord {
+    id: string;
+    title?: string;
+    name?: string;
+    description?: string;
+    location?: string;
+    image_url?: string;
+    cover_image_url?: string;
+    thumbnail_url?: string;
+    type?: string | null;
+    sub_category?: string | null;
+    price?: number | null;
+    created_at?: string;
+    starts_at?: string;
+    [key: string]: unknown;
+}
+
 // Supabase API Methods
 export const getActivities = async () => {
     const { data, error } = await supabase
@@ -51,6 +79,34 @@ export const getTours = async () => {
         return [];
     }
     return data as Destination[];
+};
+
+export const getEvents = async () => {
+    const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching events:', error);
+        return [];
+    }
+
+    return data as EventRecord[];
+};
+
+export const getPosts = async () => {
+    const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching posts:', error);
+        return [];
+    }
+
+    return data as PostRecord[];
 };
 
 export const getDestinationById = async (id: string) => {
@@ -122,6 +178,13 @@ export interface BookingWithDetails {
     activity_image: string;
 }
 
+type BookingRow = Omit<BookingWithDetails, 'activity_title' | 'activity_image'> & {
+    activities: {
+        title?: string;
+        image_url?: string;
+    } | null;
+};
+
 export const getBookings = async (userId: string): Promise<BookingWithDetails[]> => {
     const { data, error } = await supabase
         .from('bookings_acts')
@@ -147,7 +210,7 @@ export const getBookings = async (userId: string): Promise<BookingWithDetails[]>
     }
 
     // Flatten the activity details into the booking object
-    return (data as any[]).map(booking => ({
+    return (data as BookingRow[]).map(booking => ({
         ...booking,
         activity_title: booking.activities?.title || 'Unknown Experience',
         activity_image: booking.activities?.image_url || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800'

@@ -6,6 +6,8 @@ import { getProfile } from '../lib/destinations';
 import type { Profile } from '../lib/destinations';
 import { useTheme } from '../hooks/useTheme';
 
+type DashboardTab = 'home' | 'tours' | 'activities' | 'events';
+
 export const Navbar: React.FC = () => {
     const { user, signOut } = useAuth();
     const { theme, toggleTheme } = useTheme();
@@ -19,10 +21,21 @@ export const Navbar: React.FC = () => {
         }
     }, [user]);
 
-    const isActive = (path: string) => location.pathname === path;
     const isDark = theme === 'dark';
-    const homePath = user ? '/activities' : '/';
+    const homePath = user ? '/dashboard' : '/';
     const logoSrc = isDark ? '/logo/logo-white.png' : '/logo/logo.png';
+    const activeDashboardTab: DashboardTab = (() => {
+        if (location.pathname !== '/dashboard') return 'home';
+        const tab = new URLSearchParams(location.search).get('tab');
+        if (tab === 'tours' || tab === 'activities' || tab === 'events') return tab;
+        return 'home';
+    })();
+    const dashboardLinks: Array<{ key: DashboardTab; label: string; to: string }> = [
+        { key: 'home', label: 'Home', to: '/dashboard' },
+        { key: 'tours', label: 'Tours', to: '/dashboard?tab=tours' },
+        { key: 'activities', label: 'Activities', to: '/dashboard?tab=activities' },
+        { key: 'events', label: 'Events', to: '/dashboard?tab=events' },
+    ];
 
     return (
         <nav className="glass glass-nav animate-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 24px' }}>
@@ -46,27 +59,22 @@ export const Navbar: React.FC = () => {
                 <div className="flex items-center gap-2" style={{ marginLeft: 'auto' }}>
                     {user && (
                         <>
-                            <Link to="/tours" style={{
-                                padding: '8px 16px',
-                                borderRadius: 'var(--radius-full)',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                color: isActive('/tours') ? 'var(--text-inverse)' : 'var(--text-main)',
-                                backgroundColor: isActive('/tours') ? 'var(--primary)' : 'transparent',
-                                textDecoration: 'none',
-                                transition: 'all 0.2s'
-                            }}>Tours</Link>
+                            {dashboardLinks.map((item) => {
+                                const isActive = location.pathname === '/dashboard' && activeDashboardTab === item.key;
 
-                            <Link to="/activities" style={{
-                                padding: '8px 16px',
-                                borderRadius: 'var(--radius-full)',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                color: isActive('/activities') ? 'var(--text-inverse)' : 'var(--text-main)',
-                                backgroundColor: isActive('/activities') ? 'var(--primary)' : 'transparent',
-                                textDecoration: 'none',
-                                transition: 'all 0.2s'
-                            }}>Activities</Link>
+                                return (
+                                    <Link key={item.key} to={item.to} style={{
+                                        padding: '8px 16px',
+                                        borderRadius: 'var(--radius-full)',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        color: isActive ? 'var(--text-inverse)' : 'var(--text-main)',
+                                        backgroundColor: isActive ? 'var(--primary)' : 'transparent',
+                                        textDecoration: 'none',
+                                        transition: 'all 0.2s'
+                                    }}>{item.label}</Link>
+                                );
+                            })}
                         </>
                     )}
 
@@ -151,7 +159,7 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Mobile Dropdown */}
-            {showMenu && (
+                    {showMenu && (
                 <div className="glass" style={{
                     position: 'absolute',
                     top: 'calc(100% + 12px)',
@@ -167,12 +175,16 @@ export const Navbar: React.FC = () => {
                 }}>
                     {user && (
                         <>
-                            <Link to="/tours" onClick={() => setShowMenu(false)} style={{
-                                padding: '12px 16px', borderRadius: 'var(--radius-md)', textDecoration: 'none', color: 'var(--text-main)', fontWeight: 600, fontSize: '0.9rem'
-                            }}>Explore Tours</Link>
-                            <Link to="/activities" onClick={() => setShowMenu(false)} style={{
-                                padding: '12px 16px', borderRadius: 'var(--radius-md)', textDecoration: 'none', color: 'var(--text-main)', fontWeight: 600, fontSize: '0.9rem'
-                            }}>Explore Activities</Link>
+                            {dashboardLinks.map((item) => (
+                                <Link key={item.key} to={item.to} onClick={() => setShowMenu(false)} style={{
+                                    padding: '12px 16px',
+                                    borderRadius: 'var(--radius-md)',
+                                    textDecoration: 'none',
+                                    color: 'var(--text-main)',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem'
+                                }}>{item.label}</Link>
+                            ))}
                         </>
                     )}
                     {!user && (

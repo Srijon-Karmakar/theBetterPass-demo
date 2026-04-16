@@ -1,15 +1,17 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Home3 } from './pages/Home3';
+import { DashboardHome } from './pages/DashboardHome';
 import { Auth } from './pages/Auth';
-import { Activities } from './pages/Activities';
-import { Tours } from './pages/Tours';
 import { DestinationDetail } from './pages/DestinationDetail';
 import { Profile } from './pages/Profile';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './hooks/useTheme';
 
-const APP_HOME_PATH = '/activities';
+const APP_HOME_PATH = '/dashboard';
+const DASHBOARD_TOURS_PATH = '/dashboard?tab=tours';
+const DASHBOARD_ACTIVITIES_PATH = '/dashboard?tab=activities';
+const DASHBOARD_EVENTS_PATH = '/dashboard?tab=events';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -54,8 +56,10 @@ function App() {
           <Route path="/home2" element={<Navigate to="/" replace />} />
           <Route path="/home3" element={<Navigate to="/" replace />} />
           <Route path="/auth" element={<GuestOnlyRoute><Auth /></GuestOnlyRoute>} />
-          <Route path="/activities" element={<ProtectedRoute><Activities /></ProtectedRoute>} />
-          <Route path="/tours" element={<ProtectedRoute><Tours /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardHome /></ProtectedRoute>} />
+          <Route path="/activities" element={<ProtectedRoute><Navigate to={DASHBOARD_ACTIVITIES_PATH} replace /></ProtectedRoute>} />
+          <Route path="/tours" element={<ProtectedRoute><Navigate to={DASHBOARD_TOURS_PATH} replace /></ProtectedRoute>} />
+          <Route path="/events" element={<ProtectedRoute><Navigate to={DASHBOARD_EVENTS_PATH} replace /></ProtectedRoute>} />
           <Route path="/destination/:id" element={<ProtectedRoute><DestinationDetail /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -94,17 +98,30 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <h4 style={{ fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-main)' }}>Explore</h4>
                 <Link to={homePath} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Home</Link>
-                <Link to={user ? '/activities' : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Activities</Link>
-                <Link to={user ? '/tours' : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Tours</Link>
+                <Link to={user ? DASHBOARD_TOURS_PATH : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Tours</Link>
+                <Link to={user ? DASHBOARD_ACTIVITIES_PATH : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Activities</Link>
+                <Link to={user ? DASHBOARD_EVENTS_PATH : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Events</Link>
                 <Link to={user ? '/profile' : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Membership</Link>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <h4 style={{ fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-main)' }}>Company</h4>
-                <a href="#discover" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>About Us</a>
-                <a href="#services" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Services</a>
-                <a href="#testimonials" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Traveler Stories</a>
-                <a href="#cta" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Start Planning</a>
+                {user ? (
+                  <>
+                    <Link to="/dashboard" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Dashboard</Link>
+                    <Link to={DASHBOARD_TOURS_PATH} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Tour Collections</Link>
+                    <Link to={DASHBOARD_ACTIVITIES_PATH} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Activity Catalog</Link>
+                    <Link to={DASHBOARD_EVENTS_PATH} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Event Calendar</Link>
+                    <Link to="/profile" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Profile Center</Link>
+                  </>
+                ) : (
+                  <>
+                    <a href="#discover" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>About Us</a>
+                    <a href="#services" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Services</a>
+                    <a href="#testimonials" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Traveler Stories</a>
+                    <a href="#cta" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Start Planning</a>
+                  </>
+                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
