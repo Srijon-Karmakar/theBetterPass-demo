@@ -152,7 +152,12 @@ export const Navbar: React.FC = () => {
                             />
                         </Link>
                     )}
-                    <button onClick={() => setShowMenu(!showMenu)} style={{ background: 'none', border: 'none', color: 'var(--primary)', padding: '4px' }}>
+                    <button
+                        type="button"
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="nav-mobile-hamburger"
+                        aria-label={showMenu ? 'Close menu' : 'Open menu'}
+                    >
                         {showMenu ? <X size={20} /> : <Menu size={20} />}
                     </button>
                 </div>
@@ -160,7 +165,7 @@ export const Navbar: React.FC = () => {
 
             {/* Mobile Dropdown */}
                     {showMenu && (
-                <div className="glass" style={{
+                <div className="glass nav-mobile-dropdown" style={{
                     position: 'absolute',
                     top: 'calc(100% + 12px)',
                     right: 0,
@@ -176,7 +181,7 @@ export const Navbar: React.FC = () => {
                     {user && (
                         <>
                             {dashboardLinks.map((item) => (
-                                <Link key={item.key} to={item.to} onClick={() => setShowMenu(false)} style={{
+                                <Link key={item.key} to={item.to} className="nav-mobile-menu-link" onClick={() => setShowMenu(false)} style={{
                                     padding: '12px 16px',
                                     borderRadius: 'var(--radius-md)',
                                     textDecoration: 'none',
@@ -188,12 +193,12 @@ export const Navbar: React.FC = () => {
                         </>
                     )}
                     {!user && (
-                        <Link to="/auth" onClick={() => setShowMenu(false)} style={{
+                        <Link to="/auth" className="nav-mobile-menu-link nav-mobile-menu-link-accent" onClick={() => setShowMenu(false)} style={{
                             padding: '12px 16px', borderRadius: 'var(--radius-md)', textDecoration: 'none', color: 'var(--accent)', fontWeight: 800, fontSize: '0.9rem'
                         }}>Join Membership</Link>
                     )}
                     {user && (
-                        <button onClick={() => { signOut(); setShowMenu(false); }} style={{
+                        <button className="nav-mobile-menu-button" onClick={() => { signOut(); setShowMenu(false); }} style={{
                             padding: '12px 16px', borderRadius: 'var(--radius-md)', textAlign: 'left', border: 'none', background: 'none', color: 'var(--danger-text)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer'
                         }}>Sign Out</button>
                     )}
@@ -214,6 +219,72 @@ export const Navbar: React.FC = () => {
                     max-width: 156px;
                 }
 
+                .nav-mobile-hamburger {
+                    align-items: center;
+                    background:
+                        linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08));
+                    border: 1px solid rgba(255, 255, 255, 0.22);
+                    border-radius: 999px;
+                    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+                    color: var(--primary);
+                    cursor: pointer;
+                    display: inline-flex;
+                    height: 38px;
+                    justify-content: center;
+                    padding: 0;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+                    width: 38px;
+                    backdrop-filter: blur(18px) saturate(170%);
+                    -webkit-backdrop-filter: blur(18px) saturate(170%);
+                }
+
+                .nav-mobile-hamburger:hover {
+                    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+                    transform: translateY(-1px);
+                }
+
+                .nav-mobile-dropdown {
+                    background:
+                        linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12)),
+                        var(--glass-bg) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+                    box-shadow:
+                        0 18px 46px rgba(15, 23, 42, 0.18),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+                    backdrop-filter: blur(22px) saturate(190%) !important;
+                    -webkit-backdrop-filter: blur(22px) saturate(190%) !important;
+                    overflow: hidden;
+                }
+
+                .nav-mobile-dropdown::before {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 42%, rgba(255, 255, 255, 0.08));
+                    pointer-events: none;
+                }
+
+                .nav-mobile-menu-link,
+                .nav-mobile-menu-button {
+                    position: relative;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid transparent;
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
+                    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+                }
+
+                .nav-mobile-menu-link:hover,
+                .nav-mobile-menu-button:hover {
+                    background: rgba(255, 255, 255, 0.16);
+                    border-color: rgba(255, 255, 255, 0.22);
+                    transform: translateY(-1px);
+                }
+
+                .nav-mobile-menu-link-accent {
+                    color: var(--accent) !important;
+                }
+
                 @media (max-width: 768px) {
                     .nav-desktop { display: none !important; }
                     .nav-mobile { display: flex !important; }
@@ -225,6 +296,11 @@ export const Navbar: React.FC = () => {
                     .nav-logo-link {
                         flex-shrink: 1;
                         min-width: 0;
+                    }
+
+                    .nav-mobile-dropdown {
+                        left: 8px !important;
+                        right: 8px !important;
                     }
                 }
             `}</style>
