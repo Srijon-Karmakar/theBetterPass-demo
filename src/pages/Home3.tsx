@@ -196,6 +196,7 @@ export const Home3: React.FC = () => {
     const horizontalVisualProgressRef = useRef(0);
     const horizontalLockedRef = useRef(false);
     const horizontalTouchYRef = useRef<number | null>(null);
+    const horizontalWarmupRef = useRef(0);
     const horizontalVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
     const horizontalPanelRefs = useRef<(HTMLElement | null)[]>([]);
 
@@ -267,16 +268,17 @@ export const Home3: React.FC = () => {
             if (horizontalScene && horizontalViewport) {
                 const target = horizontalTargetProgressRef.current;
                 let visual = horizontalVisualProgressRef.current;
-                visual += (target - visual) * 0.085;
+                // slightly stronger lerp for snappier, yet smooth visual follow
+                visual += (target - visual) * 0.16;
                 if (Math.abs(target - visual) < 0.0004) visual = target;
                 horizontalVisualProgressRef.current = visual;
 
                 const horizontalShift = visual * (horizontalCategories.length - 1) * -100;
                 const horizontalRect = horizontalScene.getBoundingClientRect();
                 const entryFade = Math.min(Math.max((window.innerHeight - horizontalRect.top) / (window.innerHeight * 0.24), 0), 1);
-                const exitFade = Math.min(Math.max(horizontalRect.bottom / (window.innerHeight * 0.24), 0), 1);
+                const exitFade = Math.min(Math.max(horizontalRect.bottom / (window.innerHeight * 0.34), 0), 1);
                 const sectionPresence = Math.min(entryFade, exitFade);
-                const sectionLift = (1 - sectionPresence) * 28;
+                const sectionLift = (1 - sectionPresence) * 36;
 
                 horizontalViewport.style.setProperty('--h3-horizontal-progress', visual.toFixed(4));
                 horizontalViewport.style.setProperty('--h3-horizontal-shift', `${horizontalShift.toFixed(4)}vw`);
@@ -345,6 +347,7 @@ export const Home3: React.FC = () => {
         const keyStep = 0.12;
         const targetBoundaryTolerance = 0.002;
         const visualBoundaryTolerance = 0.02;
+        const horizontalWarmupThreshold = window.innerWidth < 768 ? 0.11 : 0.08;
         const previousHtmlOverscroll = document.documentElement.style.overscrollBehavior;
         const previousBodyOverscroll = document.body.style.overscrollBehavior;
 
@@ -381,7 +384,7 @@ export const Home3: React.FC = () => {
         const releaseScene = (direction: number) => {
             const absoluteTop = getSceneTop();
             const releaseTarget = direction > 0
-                ? absoluteTop + horizontalScene.offsetHeight + window.innerHeight * 0.08
+                ? absoluteTop + horizontalScene.offsetHeight + window.innerHeight * 0.03
                 : Math.max(absoluteTop - window.innerHeight * 0.32, 0);
             window.scrollTo({ top: releaseTarget, behavior: 'auto' });
         };
@@ -397,9 +400,10 @@ export const Home3: React.FC = () => {
 
         const shouldRelease = (direction: number) => {
             const target = horizontalTargetProgressRef.current;
-            const visual = horizontalVisualProgressRef.current;
-            const atStart = target <= targetBoundaryTolerance && visual <= visualBoundaryTolerance;
-            const atEnd = target >= 1 - targetBoundaryTolerance && visual >= 1 - visualBoundaryTolerance;
+            // Use the target progress as the authoritative release condition.
+            // Visual is smoothed and can lag — relying on it can prevent timely release.
+            const atStart = target <= targetBoundaryTolerance;
+            const atEnd = target >= 1 - targetBoundaryTolerance;
             return (direction < 0 && atStart) || (direction > 0 && atEnd);
         };
 
@@ -408,19 +412,48 @@ export const Home3: React.FC = () => {
             if (direction === 0) return false;
 
             if (!isCaptureZone(direction)) {
+                horizontalWarmupRef.current = 0;
                 setLockedState(false);
                 return false;
             }
 
-            alignSceneToViewport();
+            // Only snap the scene into view on first capture, not on every event
+            if (!horizontalLockedRef.current) {
+                alignSceneToViewport();
+            }
 
             if (shouldRelease(direction)) {
+                horizontalWarmupRef.current = 0;
                 setLockedState(false);
                 releaseScene(direction);
                 return true;
             }
 
             setLockedState(true);
+
+            const atHorizontalStart =
+                horizontalTargetProgressRef.current <= targetBoundaryTolerance &&
+                horizontalVisualProgressRef.current <= visualBoundaryTolerance;
+
+            if (direction > 0 && atHorizontalStart) {
+                const nextWarmup = horizontalWarmupRef.current + Math.abs(deltaProgress);
+                if (nextWarmup < horizontalWarmupThreshold) {
+                    horizontalWarmupRef.current = nextWarmup;
+                    return true;
+                }
+
+                const overflow = nextWarmup - horizontalWarmupThreshold;
+                horizontalWarmupRef.current = horizontalWarmupThreshold;
+                if (overflow > 0) {
+                    applyProgressDelta(overflow);
+                }
+                return true;
+            }
+
+            if (direction < 0) {
+                horizontalWarmupRef.current = 0;
+            }
+
             applyProgressDelta(deltaProgress);
             return true;
         };
@@ -467,6 +500,7 @@ export const Home3: React.FC = () => {
 
         horizontalTargetProgressRef.current = 0;
         horizontalVisualProgressRef.current = 0;
+        horizontalWarmupRef.current = 0;
         setLockedState(false);
         horizontalViewport.style.setProperty('--h3-horizontal-progress', '0');
         horizontalViewport.style.setProperty('--h3-horizontal-shift', '0vw');
@@ -727,6 +761,7 @@ export const Home3: React.FC = () => {
                             <div className="h3-horizontal-intro">
                                 <span className="h3-section-eyebrow h3-horizontal-eyebrow">Curated Moods</span>
                                 <p>Vertical scroll locks here. Keep scrolling to travel sideways through five cinematic worlds.</p>
+                                <span className="h3-horizontal-hint">A short hold eases the section into motion.</span>
                             </div>
                             <div className="h3-horizontal-count">
                                 <span>{String(activeHorizontalIndex + 1).padStart(2, '0')}</span>
