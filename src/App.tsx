@@ -5,6 +5,8 @@ import { DashboardHome } from './pages/DashboardHome';
 import { Auth } from './pages/Auth';
 import { DestinationDetail } from './pages/DestinationDetail';
 import { Profile } from './pages/Profile';
+import { AdminConsole } from './pages/AdminConsole';
+import { ProviderStudio } from './pages/ProviderStudio';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './hooks/useTheme';
 
@@ -41,6 +43,34 @@ const GuestOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!user || !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const ProviderRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading, isProvider } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!user || !isProvider) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 function App() {
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -62,6 +92,8 @@ function App() {
           <Route path="/events" element={<ProtectedRoute><Navigate to={DASHBOARD_EVENTS_PATH} replace /></ProtectedRoute>} />
           <Route path="/destination/:id" element={<ProtectedRoute><DestinationDetail /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminRoute><AdminConsole /></AdminRoute>} />
+          <Route path="/provider/studio" element={<ProviderRoute><ProviderStudio /></ProviderRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 

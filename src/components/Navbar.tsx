@@ -1,25 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LogOut, Menu, Moon, Sun, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getProfile } from '../lib/destinations';
-import type { Profile } from '../lib/destinations';
 import { useTheme } from '../hooks/useTheme';
 
 type DashboardTab = 'home' | 'tours' | 'activities' | 'events';
 
 export const Navbar: React.FC = () => {
-    const { user, signOut } = useAuth();
+    const { user, profile, signOut, isAdmin, isProvider } = useAuth();
     const { theme, toggleTheme } = useTheme();
-    const [profile, setProfile] = useState<Profile | null>(null);
     const [showMenu, setShowMenu] = useState(false);
     const location = useLocation();
-
-    useEffect(() => {
-        if (user) {
-            getProfile(user.id).then(setProfile);
-        }
-    }, [user]);
 
     const isDark = theme === 'dark';
     const homePath = user ? '/dashboard' : '/';
@@ -75,6 +66,30 @@ export const Navbar: React.FC = () => {
                                     }}>{item.label}</Link>
                                 );
                             })}
+                            {isAdmin && (
+                                <Link to="/admin" style={{
+                                    padding: '8px 16px',
+                                    borderRadius: 'var(--radius-full)',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: location.pathname === '/admin' ? 'var(--text-inverse)' : 'var(--text-main)',
+                                    backgroundColor: location.pathname === '/admin' ? 'var(--primary)' : 'transparent',
+                                    textDecoration: 'none',
+                                    transition: 'all 0.2s'
+                                }}>Admin</Link>
+                            )}
+                            {isProvider && (
+                                <Link to="/provider/studio" style={{
+                                    padding: '8px 16px',
+                                    borderRadius: 'var(--radius-full)',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: location.pathname === '/provider/studio' ? 'var(--text-inverse)' : 'var(--text-main)',
+                                    backgroundColor: location.pathname === '/provider/studio' ? 'var(--primary)' : 'transparent',
+                                    textDecoration: 'none',
+                                    transition: 'all 0.2s'
+                                }}>Studio</Link>
+                            )}
                         </>
                     )}
 
@@ -190,6 +205,26 @@ export const Navbar: React.FC = () => {
                                     fontSize: '0.9rem'
                                 }}>{item.label}</Link>
                             ))}
+                            {isAdmin && (
+                                <Link to="/admin" className="nav-mobile-menu-link" onClick={() => setShowMenu(false)} style={{
+                                    padding: '12px 16px',
+                                    borderRadius: 'var(--radius-md)',
+                                    textDecoration: 'none',
+                                    color: 'var(--text-main)',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem'
+                                }}>Admin</Link>
+                            )}
+                            {isProvider && (
+                                <Link to="/provider/studio" className="nav-mobile-menu-link" onClick={() => setShowMenu(false)} style={{
+                                    padding: '12px 16px',
+                                    borderRadius: 'var(--radius-md)',
+                                    textDecoration: 'none',
+                                    color: 'var(--text-main)',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem'
+                                }}>Studio</Link>
+                            )}
                         </>
                     )}
                     {!user && (

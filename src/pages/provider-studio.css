@@ -1,0 +1,293 @@
+.provider-studio-page {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top right, rgba(24, 124, 103, 0.08), transparent 32%),
+        linear-gradient(180deg, var(--bg-main) 0%, color-mix(in srgb, var(--bg-main) 88%, white 12%) 100%);
+    padding: 132px 0 80px;
+}
+
+.provider-studio-shell {
+    max-width: 1160px;
+    display: grid;
+    gap: 18px;
+}
+
+.provider-studio-hero,
+.provider-studio-status-card,
+.provider-studio-capability-card,
+.provider-studio-lock-card,
+.provider-studio-form-card,
+.provider-studio-inventory-card,
+.provider-studio-listing-card {
+    background: var(--surface-main);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+}
+
+.provider-studio-hero {
+    display: grid;
+    gap: 16px;
+}
+
+.provider-studio-hero-copy {
+    padding: 26px 22px 0;
+}
+
+.provider-studio-kicker,
+.provider-studio-card-eyebrow,
+.provider-studio-mini-label {
+    display: inline-flex;
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.provider-studio-kicker {
+    background: rgba(24, 124, 103, 0.1);
+    color: var(--accent);
+    margin-bottom: 14px;
+}
+
+.provider-studio-card-eyebrow,
+.provider-studio-mini-label {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.provider-studio-hero-copy h1 {
+    margin: 0;
+    font-size: clamp(2rem, 8vw, 3.2rem);
+    line-height: 1;
+}
+
+.provider-studio-hero-copy p,
+.provider-studio-card-head p,
+.provider-studio-capability-card p,
+.provider-studio-lock-card p,
+.provider-studio-empty p {
+    margin: 12px 0 0;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+.provider-studio-status-card {
+    margin: 0 22px 22px;
+    padding: 18px;
+}
+
+.provider-studio-status-card strong {
+    display: block;
+    font-size: 1.15rem;
+}
+
+.provider-studio-status-card > p {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+}
+
+.provider-studio-status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.provider-studio-status-grid div {
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 14px 15px;
+}
+
+.provider-studio-status-grid span,
+.provider-studio-field span {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.provider-studio-capabilities {
+    display: grid;
+    gap: 14px;
+}
+
+.provider-studio-capability-card,
+.provider-studio-form-card,
+.provider-studio-inventory-card {
+    padding: 22px 18px;
+}
+
+.provider-studio-capability-card h2,
+.provider-studio-card-head h2 {
+    margin: 0;
+    font-size: 1.28rem;
+}
+
+.provider-studio-lock-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.03));
+    border-color: rgba(214, 158, 46, 0.28);
+}
+
+.provider-studio-grid {
+    display: grid;
+    gap: 18px;
+}
+
+.provider-studio-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.provider-studio-inline-link {
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.provider-studio-form {
+    display: grid;
+    gap: 14px;
+}
+
+.provider-studio-two-up {
+    display: grid;
+    gap: 14px;
+}
+
+.provider-studio-submit {
+    width: 100%;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 14px 18px;
+}
+
+.provider-studio-chip-button {
+    border-radius: 999px;
+    padding: 10px 14px;
+}
+
+.provider-studio-loading,
+.provider-studio-empty {
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    text-align: center;
+    padding: 64px 20px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-xl);
+}
+
+.provider-studio-list {
+    display: grid;
+    gap: 12px;
+}
+
+.provider-studio-listing-card {
+    padding: 16px;
+    background: var(--bg-main);
+}
+
+.provider-studio-listing-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.provider-studio-listing-head strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.provider-studio-listing-head p {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+}
+
+.provider-studio-status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.provider-studio-listing-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.provider-studio-listing-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+@media (min-width: 720px) {
+    .provider-studio-two-up {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .provider-studio-capabilities {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 980px) {
+    .provider-studio-page {
+        padding-top: 156px;
+        padding-bottom: 96px;
+    }
+
+    .provider-studio-hero {
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+        align-items: stretch;
+    }
+
+    .provider-studio-status-card {
+        margin: 22px 22px 22px 0;
+    }
+
+    .provider-studio-hero-copy {
+        padding: 30px 28px;
+    }
+
+    .provider-studio-grid {
+        grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+    }
+
+    .provider-studio-capabilities {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
