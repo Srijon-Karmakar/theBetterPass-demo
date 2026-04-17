@@ -793,3 +793,215 @@
     transition: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   CURATED MOOD — scroll-driven horizontal tabs
+   ═══════════════════════════════════════════════════ */
+
+.home2-mood-section {
+  /* numTabs * 100vh so each tab gets ~100vh of scroll space */
+  height: calc(var(--mood-tabs, 5) * 100vh);
+  position: relative;
+}
+
+.home2-mood-sticky {
+  height: 100vh;
+  inset: 0;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+}
+
+/* ── Videos ── */
+.home2-mood-videos {
+  inset: 0;
+  position: absolute;
+}
+
+.home2-mood-video {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  opacity: 0;
+  position: absolute;
+  transition: opacity 0.75s cubic-bezier(0.25, 0.1, 0.25, 1);
+  width: 100%;
+  will-change: opacity;
+}
+
+.home2-mood-video.is-active {
+  opacity: 1;
+}
+
+/* ── Overlays ── */
+.home2-mood-vignette {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.06) 30%, rgba(0,0,0,0.72) 100%),
+    linear-gradient(90deg, rgba(0,0,0,0.4) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.3) 100%);
+  inset: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.home2-mood-noise {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 100px 100px;
+  inset: 0;
+  opacity: 0.6;
+  position: absolute;
+  z-index: 2;
+}
+
+/* ── Content block (re-mounts on tab change → triggers keyframe) ── */
+.home2-mood-content {
+  align-items: center;
+  animation: moodContentIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  bottom: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  text-align: center;
+  z-index: 3;
+}
+
+@keyframes moodContentIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.home2-mood-eyebrow {
+  color: rgba(255,255,255,0.65);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.home2-mood-title {
+  color: #ffffff;
+  font-size: clamp(3.5rem, 9vw, 7.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+  margin: 0;
+}
+
+.home2-mood-desc {
+  color: rgba(255,255,255,0.72);
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+/* ── Tab bar ── */
+.home2-mood-tabbar-outer {
+  bottom: 52px;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  right: 0;
+  z-index: 4;
+}
+
+.home2-mood-tab-track {
+  display: flex;
+  padding: 0;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  width: max-content;
+  will-change: transform;
+}
+
+.home2-mood-tab {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px;
+  transition: color 0.4s;
+  width: 140px;
+}
+
+.home2-mood-tab-label {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: color 0.4s, font-size 0.4s;
+  white-space: nowrap;
+}
+
+.home2-mood-tab.is-active .home2-mood-tab-label {
+  color: #ffffff;
+  font-size: 0.82rem;
+}
+
+.home2-mood-tab-bar {
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  height: 2px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.home2-mood-tab-bar::after {
+  background: #ffffff;
+  border-radius: 2px;
+  bottom: 0;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform-origin: left;
+  width: calc(var(--prog, 0) * 100%);
+  transition: width 0.04s linear;
+}
+
+/* ── Scroll hint ── */
+.home2-mood-scroll-hint {
+  align-items: center;
+  animation: moodHintFade 2s ease-in-out infinite;
+  bottom: 20px;
+  color: rgba(255,255,255,0.5);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.72rem;
+  gap: 8px;
+  left: 50%;
+  letter-spacing: 0.1em;
+  position: absolute;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.home2-mood-scroll-line {
+  animation: moodLineGrow 2s ease-in-out infinite;
+  background: rgba(255,255,255,0.5);
+  display: block;
+  height: 28px;
+  width: 1px;
+}
+
+@keyframes moodHintFade {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes moodLineGrow {
+  0% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+  51% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}

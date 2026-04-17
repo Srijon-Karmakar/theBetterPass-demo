@@ -87,6 +87,16 @@ const summarize = (text?: string, maxLength = 110) => {
     return `${text.slice(0, maxLength).trimEnd()}...`;
 };
 
+const MOOD_TABS = [
+    { label: 'Desert',     description: 'Golden dunes, silence, and endless horizons.',          video: '/video/horizontal-sect/desert.mp4' },
+    { label: 'Ocean',      description: 'Where the water meets your deepest need for calm.',      video: '/video/horizontal-sect/ocean.mp4' },
+    { label: 'Mountains',  description: 'Peaks that put everything in perspective.',              video: '/video/horizontal-sect/mountain.mp4' },
+    { label: 'Cityscapes', description: 'The electric pulse of worlds built by millions.',        video: '/video/horizontal-sect/cityscape.mp4' },
+    { label: 'Forest',     description: 'Ancient canopies and the sound of stillness.',           video: '/video/horizontal-sect/forrest.mp4' },
+];
+
+const MOOD_SLOT = 180; // px: label width (140) + gap (40)
+
 export const Home2: React.FC = () => {
     const [destinations, setDestinations] = useState<Destination[]>([]);
     const [loading, setLoading] = useState(true);
@@ -94,6 +104,12 @@ export const Home2: React.FC = () => {
     const heroSectionRef = useRef<HTMLElement | null>(null);
     const heroVideoRef = useRef<HTMLVideoElement | null>(null);
     const scrollFrameRef = useRef<number | null>(null);
+
+    const [activeMoodTab, setActiveMoodTab] = useState(0);
+    const [moodTabProgress, setMoodTabProgress] = useState(0);
+    const moodSectionRef = useRef<HTMLElement | null>(null);
+    const moodRafRef = useRef<number | null>(null);
+    const moodVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
     useEffect(() => {
         let mounted = true;
@@ -205,6 +221,54 @@ export const Home2: React.FC = () => {
             }
         };
     }, []);
+
+    // Mood section scroll → horizontal tab switching
+    useEffect(() => {
+        const section = moodSectionRef.current;
+        if (!section) return;
+
+        const numTabs = MOOD_TABS.length;
+
+        const syncMood = () => {
+            const rect = section.getBoundingClientRect();
+            const travel = Math.max(section.offsetHeight - window.innerHeight, 1);
+            const progress = Math.min(Math.max(-rect.top / travel, 0), 1);
+
+            const tabFloat = progress * numTabs;
+            const tabIndex = Math.min(Math.floor(tabFloat), numTabs - 1);
+            const tabProg = tabFloat - tabIndex;
+
+            setActiveMoodTab(tabIndex);
+            setMoodTabProgress(tabIndex === numTabs - 1 ? 1 : tabProg);
+            moodRafRef.current = null;
+        };
+
+        const onScroll = () => {
+            if (moodRafRef.current === null) {
+                moodRafRef.current = window.requestAnimationFrame(syncMood);
+            }
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        syncMood();
+
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            if (moodRafRef.current !== null) window.cancelAnimationFrame(moodRafRef.current);
+        };
+    }, []);
+
+    // Play only the active mood video
+    useEffect(() => {
+        moodVideoRefs.current.forEach((video, i) => {
+            if (!video) return;
+            if (i === activeMoodTab) {
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+            }
+        });
+    }, [activeMoodTab]);
 
     const featuredDestinations = destinations.slice(0, 6);
     const heroDestination = featuredDestinations[0];
@@ -346,6 +410,80 @@ export const Home2: React.FC = () => {
                             <span>Scroll to reveal the page</span>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* ── Curated Mood: scroll-driven horizontal tabs ── */}
+            <section
+                ref={moodSectionRef}
+                className="home2-mood-section"
+                style={{ '--mood-tabs': MOOD_TABS.length } as React.CSSProperties}
+            >
+                <div className="home2-mood-sticky">
+                    {/* Videos — all rendered, only active one plays / is visible */}
+                    <div className="home2-mood-videos">
+                        {MOOD_TABS.map((tab, i) => (
+                            <video
+                                key={tab.label}
+                                ref={(el) => { moodVideoRefs.current[i] = el; }}
+                                className={`home2-mood-video${i === activeMoodTab ? ' is-active' : ''}`}
+                                src={tab.video}
+                                muted
+                                playsInline
+                                loop
+                                disablePictureInPicture
+                                preload="auto"
+                            />
+                        ))}
+                    </div>
+
+                    {/* Overlays */}
+                    <div className="home2-mood-vignette" />
+                    <div className="home2-mood-noise" />
+
+                    {/* Content — changes per tab */}
+                    <div className="home2-mood-content" key={activeMoodTab}>
+                        <span className="home2-mini-label home2-mood-eyebrow">Curated Mood</span>
+                        <h2 className="home2-mood-title">{MOOD_TABS[activeMoodTab].label}</h2>
+                        <p className="home2-mood-desc">{MOOD_TABS[activeMoodTab].description}</p>
+                    </div>
+
+                    {/* Horizontal tab bar */}
+                    <div className="home2-mood-tabbar-outer">
+                        <div
+                            className="home2-mood-tab-track"
+                            style={{
+                                transform: `translateX(calc(50vw - ${activeMoodTab * MOOD_SLOT + MOOD_SLOT / 2}px))`,
+                            }}
+                        >
+                            {MOOD_TABS.map((tab, i) => (
+                                <div
+                                    key={tab.label}
+                                    className={`home2-mood-tab${i === activeMoodTab ? ' is-active' : ''}`}
+                                >
+                                    <span className="home2-mood-tab-label">{tab.label}</span>
+                                    <div
+                                        className="home2-mood-tab-bar"
+                                        style={
+                                            i === activeMoodTab
+                                                ? ({ '--prog': moodTabProgress } as React.CSSProperties)
+                                                : i < activeMoodTab
+                                                ? ({ '--prog': 1 } as React.CSSProperties)
+                                                : ({ '--prog': 0 } as React.CSSProperties)
+                                        }
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Scroll hint (first tab only) */}
+                    {activeMoodTab === 0 && moodTabProgress < 0.15 && (
+                        <div className="home2-mood-scroll-hint">
+                            <span className="home2-mood-scroll-line" />
+                            <span>Scroll to explore moods</span>
+                        </div>
+                    )}
                 </div>
             </section>
 

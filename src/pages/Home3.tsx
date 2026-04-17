@@ -73,31 +73,31 @@ const services = [
 
 const destinations = [
     {
-        name: 'Kashmir Valley',
+        name: 'Delhi Heritage',
         country: 'India',
         description: 'The paradise on earth — emerald lakes, saffron fields, and snow-tipped Himalayan peaks at every horizon.',
-        image: '/images/parallax-img.jpg',
+        image: '/images/delhi1.jpg',
         tag: 'Trending',
         price: 'From ₹24,999',
-        imgPos: 'center 35%',
+        imgPos: 'center 42%',
     },
     {
-        name: 'Coorg Highlands',
+        name: 'Kerala Backwaters',
         country: 'India',
         description: 'Coffee estates, mist-covered hills, and ancient temples — the Scotland of India, reimagined for explorers.',
-        image: '/images/nature 1.jpg',
+        image: '/images/kerala1.jpg',
         tag: 'Nature',
         price: 'From ₹12,499',
-        imgPos: 'center 50%',
+        imgPos: 'center 52%',
     },
     {
-        name: 'Spiti Valley',
+        name: 'Sikkim Peaks',
         country: 'India',
         description: 'A cold desert valley sitting in the arms of the mighty Himalayas — raw, remote, and utterly breathtaking.',
-        image: '/images/parallax-img.jpg',
+        image: '/images/sikkim2.jpg',
         tag: 'Adventure',
         price: 'From ₹18,999',
-        imgPos: 'center 60%',
+        imgPos: 'center 46%',
     },
 ];
 
@@ -132,9 +132,49 @@ const stats = [
     { value: '98%', label: 'Satisfaction Rate' },
 ];
 
+const horizontalCategories = [
+    {
+        title: 'Desert Aura',
+        label: 'Desert',
+        video: '/video/horizontal-sect/desert.mp4',
+        kicker: 'Golden silence',
+        description: 'Discover vast dunes, slow-burning sunsets, and long cinematic horizons where every trail feels mythic.',
+    },
+    {
+        title: 'Ocean Drift',
+        label: 'Ocean',
+        video: '/video/horizontal-sect/ocean.mp4',
+        kicker: 'Salt and motion',
+        description: 'Follow deep blue coastlines, shifting light, and open water experiences designed for calm and immersion.',
+    },
+    {
+        title: 'Mountain Pulse',
+        label: 'Mountains',
+        video: '/video/horizontal-sect/mountain.mp4',
+        kicker: 'Thin air, high drama',
+        description: 'Move through elevated landscapes, crisp ridgelines, and alpine routes that feel expansive at every step.',
+    },
+    {
+        title: 'Cityscapes',
+        label: 'Cityscapes',
+        video: '/video/horizontal-sect/cityscape.mp4',
+        kicker: 'Electric nights',
+        description: 'Step into layered skylines, fast streets, and urban energy curated for travelers who like rhythm and contrast.',
+    },
+    {
+        title: 'Forest Hush',
+        label: 'Forest',
+        video: '/video/horizontal-sect/forrest.mp4',
+        kicker: 'Canopy and stillness',
+        description: 'Drift through layered greens, filtered sunlight, and deep woodland trails designed for slower, quieter immersion.',
+    },
+];
+
 /* ─── Component ─────────────────────────────────────────────────────── */
 export const Home3: React.FC = () => {
     const heroSceneRef = useRef<HTMLElement>(null);
+    const horizontalSceneRef = useRef<HTMLElement>(null);
+    const horizontalViewportRef = useRef<HTMLDivElement>(null);
     const heroBgRef = useRef<HTMLDivElement>(null);
     const heroContentRef = useRef<HTMLDivElement>(null);
     const cloud1Ref = useRef<HTMLImageElement>(null);
@@ -151,6 +191,13 @@ export const Home3: React.FC = () => {
     const ctaBgRef = useRef<HTMLDivElement>(null);
     const rafRef = useRef<number | null>(null);
     const mouse = useRef({ x: 0, y: 0, lx: 0, ly: 0 });
+    const [activeHorizontalIndex, setActiveHorizontalIndex] = useState(0);
+    const horizontalTargetProgressRef = useRef(0);
+    const horizontalVisualProgressRef = useRef(0);
+    const horizontalLockedRef = useRef(false);
+    const horizontalTouchYRef = useRef<number | null>(null);
+    const horizontalVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+    const horizontalPanelRefs = useRef<(HTMLElement | null)[]>([]);
 
     useEffect(() => {
         const scene = heroSceneRef.current;
@@ -166,6 +213,8 @@ export const Home3: React.FC = () => {
         const c8 = cloud8Ref.current;
         const c9 = cloud9Ref.current;
         const c10 = cloud10Ref.current;
+        const horizontalScene = horizontalSceneRef.current;
+        const horizontalViewport = horizontalViewportRef.current;
         const stripBg = stripBgRef.current;
         const ctaBg = ctaBgRef.current;
 
@@ -215,6 +264,54 @@ export const Home3: React.FC = () => {
             if (c9) c9.style.transform = `translate3d(0, ${-ph * 0.22 * cloudScale}px, 0)`;
             if (c10) c10.style.transform = `translate3d(0, ${-ph * 0.18 * cloudScale}px, 0)`;
 
+            if (horizontalScene && horizontalViewport) {
+                const target = horizontalTargetProgressRef.current;
+                let visual = horizontalVisualProgressRef.current;
+                visual += (target - visual) * 0.085;
+                if (Math.abs(target - visual) < 0.0004) visual = target;
+                horizontalVisualProgressRef.current = visual;
+
+                const horizontalShift = visual * (horizontalCategories.length - 1) * -100;
+                const horizontalRect = horizontalScene.getBoundingClientRect();
+                const entryFade = Math.min(Math.max((window.innerHeight - horizontalRect.top) / (window.innerHeight * 0.24), 0), 1);
+                const exitFade = Math.min(Math.max(horizontalRect.bottom / (window.innerHeight * 0.24), 0), 1);
+                const sectionPresence = Math.min(entryFade, exitFade);
+                const sectionLift = (1 - sectionPresence) * 28;
+
+                horizontalViewport.style.setProperty('--h3-horizontal-progress', visual.toFixed(4));
+                horizontalViewport.style.setProperty('--h3-horizontal-shift', `${horizontalShift.toFixed(4)}vw`);
+                horizontalViewport.style.setProperty('--h3-horizontal-presence', sectionPresence.toFixed(4));
+                horizontalViewport.style.setProperty('--h3-horizontal-lift', `${sectionLift.toFixed(2)}px`);
+                horizontalViewport.classList.toggle('is-scroll-locked', horizontalLockedRef.current);
+
+                const slideProgress = visual * (horizontalCategories.length - 1);
+                horizontalPanelRefs.current.forEach((panel, index) => {
+                    if (!panel) return;
+
+                    const distance = Math.abs(slideProgress - index);
+                    const boundedDistance = Math.min(distance, 1.25);
+                    const panelOpacity = Math.max(1 - boundedDistance * 0.82, 0.12);
+                    const mediaScale = 1 + Math.max(0.06 - boundedDistance * 0.035, 0);
+                    const mediaBrightness = 0.58 + Math.max(0.34 - boundedDistance * 0.16, 0);
+                    const contentOpacity = Math.max(1 - boundedDistance * 1.18, 0);
+                    const contentShift = Math.min(boundedDistance * 92, 92);
+                    const blur = Math.min(boundedDistance * 3.5, 3.5);
+
+                    panel.style.setProperty('--h3-panel-opacity', panelOpacity.toFixed(4));
+                    panel.style.setProperty('--h3-panel-scale', mediaScale.toFixed(4));
+                    panel.style.setProperty('--h3-panel-brightness', mediaBrightness.toFixed(4));
+                    panel.style.setProperty('--h3-content-opacity', contentOpacity.toFixed(4));
+                    panel.style.setProperty('--h3-content-shift', `${contentShift.toFixed(2)}px`);
+                    panel.style.setProperty('--h3-panel-blur', `${blur.toFixed(2)}px`);
+                });
+
+                const nextIndex = Math.min(
+                    horizontalCategories.length - 1,
+                    Math.round(visual * (horizontalCategories.length - 1)),
+                );
+                setActiveHorizontalIndex((prev) => (prev === nextIndex ? prev : nextIndex));
+            }
+
             // Strip parallax
             if (stripBg) {
                 const r = stripBg.parentElement?.getBoundingClientRect();
@@ -238,6 +335,170 @@ export const Home3: React.FC = () => {
             if (hasHover) window.removeEventListener('mousemove', onMouse);
         };
     }, []);
+
+    useEffect(() => {
+        const horizontalScene = horizontalSceneRef.current;
+        const horizontalViewport = horizontalViewportRef.current;
+        if (!horizontalScene || !horizontalViewport) return;
+
+        const wheelFactor = window.innerWidth < 768 ? 0.00052 : 0.00042;
+        const keyStep = 0.12;
+        const targetBoundaryTolerance = 0.002;
+        const visualBoundaryTolerance = 0.02;
+        const previousHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+        const previousBodyOverscroll = document.body.style.overscrollBehavior;
+
+        const setLockedState = (locked: boolean) => {
+            horizontalLockedRef.current = locked;
+            horizontalViewport.classList.toggle('is-scroll-locked', locked);
+            document.documentElement.style.overscrollBehavior = locked ? 'none' : previousHtmlOverscroll;
+            document.body.style.overscrollBehavior = locked ? 'none' : previousBodyOverscroll;
+        };
+
+        const getSceneTop = () => window.scrollY + horizontalScene.getBoundingClientRect().top;
+
+        const alignSceneToViewport = () => {
+            const absoluteTop = getSceneTop();
+            if (Math.abs(horizontalScene.getBoundingClientRect().top) > 18) {
+                window.scrollTo({ top: absoluteTop, behavior: 'auto' });
+            }
+        };
+
+        const isCaptureZone = (direction: number) => {
+            if (horizontalLockedRef.current) return true;
+
+            const rect = horizontalScene.getBoundingClientRect();
+            const enterLine = window.innerHeight * (window.innerWidth < 768 ? 0.72 : 0.64);
+            const reverseLine = window.innerHeight * (window.innerWidth < 768 ? 0.28 : 0.36);
+
+            if (direction > 0) {
+                return rect.top <= enterLine && rect.bottom > enterLine;
+            }
+
+            return rect.top < reverseLine && rect.bottom >= reverseLine;
+        };
+
+        const releaseScene = (direction: number) => {
+            const absoluteTop = getSceneTop();
+            const releaseTarget = direction > 0
+                ? absoluteTop + horizontalScene.offsetHeight + window.innerHeight * 0.08
+                : Math.max(absoluteTop - window.innerHeight * 0.32, 0);
+            window.scrollTo({ top: releaseTarget, behavior: 'auto' });
+        };
+
+        const applyProgressDelta = (deltaProgress: number) => {
+            const nextProgress = Math.min(
+                Math.max(horizontalTargetProgressRef.current + deltaProgress, 0),
+                1,
+            );
+            horizontalTargetProgressRef.current = nextProgress;
+            return nextProgress;
+        };
+
+        const shouldRelease = (direction: number) => {
+            const target = horizontalTargetProgressRef.current;
+            const visual = horizontalVisualProgressRef.current;
+            const atStart = target <= targetBoundaryTolerance && visual <= visualBoundaryTolerance;
+            const atEnd = target >= 1 - targetBoundaryTolerance && visual >= 1 - visualBoundaryTolerance;
+            return (direction < 0 && atStart) || (direction > 0 && atEnd);
+        };
+
+        const handleDirectionalInput = (deltaProgress: number) => {
+            const direction = Math.sign(deltaProgress);
+            if (direction === 0) return false;
+
+            if (!isCaptureZone(direction)) {
+                setLockedState(false);
+                return false;
+            }
+
+            alignSceneToViewport();
+
+            if (shouldRelease(direction)) {
+                setLockedState(false);
+                releaseScene(direction);
+                return true;
+            }
+
+            setLockedState(true);
+            applyProgressDelta(deltaProgress);
+            return true;
+        };
+
+        const onWheel = (e: WheelEvent) => {
+            if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+            if (!handleDirectionalInput(e.deltaY * wheelFactor)) return;
+            e.preventDefault();
+        };
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            const keyMap: Record<string, number> = {
+                ArrowDown: keyStep,
+                PageDown: keyStep * 1.75,
+                ' ': e.shiftKey ? -keyStep * 1.75 : keyStep * 1.75,
+                ArrowUp: -keyStep,
+                PageUp: -keyStep * 1.75,
+            };
+
+            if (!(e.key in keyMap)) return;
+            if (!handleDirectionalInput(keyMap[e.key])) return;
+            e.preventDefault();
+        };
+
+        const onTouchStart = (e: TouchEvent) => {
+            horizontalTouchYRef.current = e.touches[0]?.clientY ?? null;
+        };
+
+        const onTouchMove = (e: TouchEvent) => {
+            const currentY = e.touches[0]?.clientY;
+            if (currentY == null || horizontalTouchYRef.current == null) return;
+
+            const deltaY = horizontalTouchYRef.current - currentY;
+            if (Math.abs(deltaY) < 3) return;
+            if (!handleDirectionalInput(deltaY * wheelFactor * 1.6)) return;
+
+            horizontalTouchYRef.current = currentY;
+            e.preventDefault();
+        };
+
+        const onTouchEnd = () => {
+            horizontalTouchYRef.current = null;
+        };
+
+        horizontalTargetProgressRef.current = 0;
+        horizontalVisualProgressRef.current = 0;
+        setLockedState(false);
+        horizontalViewport.style.setProperty('--h3-horizontal-progress', '0');
+        horizontalViewport.style.setProperty('--h3-horizontal-shift', '0vw');
+
+        window.addEventListener('wheel', onWheel, { passive: false });
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('touchstart', onTouchStart, { passive: true });
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd);
+        window.addEventListener('touchcancel', onTouchEnd);
+
+        return () => {
+            window.removeEventListener('wheel', onWheel);
+            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('touchstart', onTouchStart);
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+            window.removeEventListener('touchcancel', onTouchEnd);
+            setLockedState(false);
+        };
+    }, []);
+
+    useEffect(() => {
+        horizontalVideoRefs.current.forEach((video, index) => {
+            if (!video) return;
+            if (index === activeHorizontalIndex) {
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+            }
+        });
+    }, [activeHorizontalIndex]);
 
     return (
         <main className="h3-page">
@@ -383,7 +644,7 @@ export const Home3: React.FC = () => {
                             </Link>
                         </div>
                         <div className="h3-about-visual">
-                            <img src="/images/nature 1.jpg" alt="Coorg highlands" />
+                            <img src="/images/nature1.jpg" alt="North" />
                             <div className="h3-about-badge">
                                 <Globe size={20} />
                                 <span>200+ Destinations<br />across 6 continents</span>
@@ -423,6 +684,59 @@ export const Home3: React.FC = () => {
             </section>
 
             {/* ── DESTINATIONS ──────────────────────────────────────── */}
+            <section ref={horizontalSceneRef} className="h3-horizontal-scene">
+                <div
+                    ref={horizontalViewportRef}
+                    className="h3-horizontal-sticky"
+                    style={{ '--h3-horizontal-slides': horizontalCategories.length } as React.CSSProperties}
+                >
+                    <div className="h3-horizontal-track">
+                        {horizontalCategories.map((item, index) => (
+                            <article
+                                key={item.label}
+                                ref={(el) => { horizontalPanelRefs.current[index] = el; }}
+                                className={`h3-horizontal-panel ${index === activeHorizontalIndex ? 'is-active' : ''}`}
+                                aria-hidden={index === activeHorizontalIndex ? undefined : true}
+                            >
+                                <video
+                                    ref={(el) => { horizontalVideoRefs.current[index] = el; }}
+                                    className="h3-horizontal-video"
+                                    src={item.video}
+                                    loop
+                                    muted
+                                    playsInline
+                                    preload="auto"
+                                />
+                                <div className="h3-horizontal-overlay" />
+                                <div className="h3-horizontal-panel-content">
+                                    <div className="h3-horizontal-identity">
+                                        <span className="h3-horizontal-kicker">{item.kicker}</span>
+                                        <h2 className="h3-horizontal-title">{item.title}</h2>
+                                        <p className="h3-horizontal-desc">{item.description}</p>
+                                        <Link to="/auth" className="h3-btn-hero-primary h3-horizontal-cta">
+                                            Explore {item.label} <ArrowRight size={16} />
+                                        </Link>
+                                    </div>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+
+                    <div className="h3-horizontal-content">
+                        <div className="h3-horizontal-top-bar">
+                            <div className="h3-horizontal-intro">
+                                <span className="h3-section-eyebrow h3-horizontal-eyebrow">Curated Moods</span>
+                                <p>Vertical scroll locks here. Keep scrolling to travel sideways through five cinematic worlds.</p>
+                            </div>
+                            <div className="h3-horizontal-count">
+                                <span>{String(activeHorizontalIndex + 1).padStart(2, '0')}</span>
+                                <small>/{String(horizontalCategories.length).padStart(2, '0')}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section className="h3-section h3-dest-section">
                 <div className="container">
                     <Reveal className="h3-section-head h3-section-head-row">
