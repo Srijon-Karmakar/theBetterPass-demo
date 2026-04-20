@@ -21,7 +21,7 @@ alter table public.profiles
     add column if not exists languages text[];
 
 -- Optional internal admin access:
--- 1. set profiles.role = 'admin' for staff users, or
+-- 1. set profiles.role = 'admin' for staff users, or-
 -- 2. list staff emails in VITE_ADMIN_EMAILS on the frontend.
 
 update public.profiles
@@ -100,6 +100,17 @@ alter table public.conversations
     add column if not exists provider_id uuid,
     add column if not exists booking_id uuid;
 
+create table if not exists public.conversation_messages (
+    id uuid primary key default gen_random_uuid(),
+    conversation_id uuid not null references public.conversations(id) on delete cascade,
+    sender_user_id uuid not null references auth.users(id) on delete cascade,
+    body text not null check (length(trim(body)) > 0),
+    created_at timestamptz not null default now()
+);
+
+create index if not exists conversation_messages_conversation_idx
+    on public.conversation_messages(conversation_id, created_at);
+
 alter table public.posts
     add column if not exists provider_user_id uuid references auth.users(id) on delete set null,
     add column if not exists company_profile_id uuid references public.profiles(id) on delete set null,
@@ -168,16 +179,17 @@ alter table public.posts enable row level security;
 alter table public.bookings enable row level security;
 alter table public.favorites enable row level security;
 alter table public.conversations enable row level security;
+alter table public.conversation_messages enable row level security;
 alter table public.moderation_audit_logs enable row level security;
 
+drop policy if exists "profiles_select_authenticated" on public.profiles;
 drop policy if exists "profiles_select_self_or_admin" on public.profiles;
-create policy "profiles_select_self_or_admin"
+create policy "profiles_select_authenticated"
 on public.profiles
 for select
 to authenticated
 using (
-    id = auth.uid()
-    or public.is_admin_user()
+    true
 );
 
 drop policy if exists "profiles_insert_self" on public.profiles;
@@ -367,6 +379,43 @@ with check (
     or public.is_admin_user()
 );
 
+drop policy if exists "conversation_messages_select_participants" on public.conversation_messages;
+create policy "conversation_messages_select_participants"
+on public.conversation_messages
+for select
+to authenticated
+using (
+    exists (
+        select 1
+        from public.conversations c
+        where c.id = conversation_id
+          and (
+              c.traveler_id = auth.uid()
+              or c.provider_id = auth.uid()
+              or public.is_admin_user()
+          )
+    )
+);
+
+drop policy if exists "conversation_messages_insert_participants" on public.conversation_messages;
+create policy "conversation_messages_insert_participants"
+on public.conversation_messages
+for insert
+to authenticated
+with check (
+    sender_user_id = auth.uid()
+    and exists (
+        select 1
+        from public.conversations c
+        where c.id = conversation_id
+          and (
+              c.traveler_id = auth.uid()
+              or c.provider_id = auth.uid()
+              or public.is_admin_user()
+          )
+    )
+);
+
 drop policy if exists "moderation_audit_logs_select_admin_only" on public.moderation_audit_logs;
 create policy "moderation_audit_logs_select_admin_only"
 on public.moderation_audit_logs
@@ -383,6 +432,52 @@ with check (
     actor_user_id = auth.uid()
     or target_user_id = auth.uid()
     or public.is_admin_user()
+);
+
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do update
+set public = excluded.public;
+
+drop policy if exists "avatars_public_read" on storage.objects;
+create policy "avatars_public_read"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'avatars');
+
+drop policy if exists "avatars_user_insert_own" on storage.objects;
+create policy "avatars_user_insert_own"
+on storage.objects
+for insert
+to authenticated
+with check (
+    bucket_id = 'avatars'
+    and split_part(name, '/', 1) = auth.uid()::text
+);
+
+drop policy if exists "avatars_user_update_own" on storage.objects;
+create policy "avatars_user_update_own"
+on storage.objects
+for update
+to authenticated
+using (
+    bucket_id = 'avatars'
+    and split_part(name, '/', 1) = auth.uid()::text
+)
+with check (
+    bucket_id = 'avatars'
+    and split_part(name, '/', 1) = auth.uid()::text
+);
+
+drop policy if exists "avatars_user_delete_own" on storage.objects;
+create policy "avatars_user_delete_own"
+on storage.objects
+for delete
+to authenticated
+using (
+    bucket_id = 'avatars'
+    and split_part(name, '/', 1) = auth.uid()::text
 );
 
 -- Notes:

@@ -34,6 +34,7 @@ export interface Profile {
     country?: string;
     city?: string;
     profile_image_url?: string;
+    cover_image_url?: string;
     bio?: string;
     facebook?: string;
     instagram?: string;
@@ -118,6 +119,14 @@ export interface ConversationRecord {
     traveler_id?: string;
     provider_id?: string;
     booking_id?: string | null;
+    created_at?: string;
+}
+
+export interface ConversationMessageRecord {
+    id: string;
+    conversation_id: string;
+    sender_user_id: string;
+    body: string;
     created_at?: string;
 }
 
@@ -221,6 +230,39 @@ const isMissingRelationError = (error: { code?: string; message?: string } | nul
     error?.code === 'PGRST205' || error?.message?.toLowerCase().includes('moderation_audit_logs')
 );
 
+const isMissingColumnError = (error: { code?: string; message?: string } | null | undefined) => {
+    const message = error?.message?.toLowerCase() || '';
+    return (
+        error?.code === '42703'
+        || error?.code === 'PGRST204'
+        || (message.includes('column') && message.includes('does not exist'))
+        || message.includes('could not find the') && message.includes('column')
+    );
+};
+
+const extractMissingColumnName = (message: string | undefined): string | null => {
+    if (!message) return null;
+
+    const quoted = message.match(/"([a-zA-Z_][a-zA-Z0-9_]*)"/);
+    if (quoted?.[1]) return quoted[1];
+
+    const postgrest = message.match(/the\s+['"]?([a-zA-Z_][a-zA-Z0-9_]*)['"]?\s+column/i);
+    if (postgrest?.[1]) return postgrest[1];
+
+    return null;
+};
+
+const PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
+    'full_name',
+    'bio',
+    'phone',
+    'city',
+    'country',
+    'website',
+    'profile_image_url',
+    'cover_image_url',
+];
+
 const normalizeListingType = (value: string | null | undefined): ListingType => {
     const normalized = (value || '').trim().toLowerCase();
     if (normalized === 'tour' || normalized === 'activity' || normalized === 'event') return normalized;
@@ -256,6 +298,7 @@ const mapProfile = (data: Record<string, unknown> | null): Profile | null => {
         country: typeof data.country === 'string' ? data.country : undefined,
         city: typeof data.city === 'string' ? data.city : undefined,
         profile_image_url: typeof data.profile_image_url === 'string' ? data.profile_image_url : undefined,
+        cover_image_url: typeof data.cover_image_url === 'string' ? data.cover_image_url : undefined,
         bio: typeof data.bio === 'string' ? data.bio : undefined,
         facebook: typeof data.facebook === 'string' ? data.facebook : undefined,
         instagram: typeof data.instagram === 'string' ? data.instagram : undefined,
@@ -633,27 +676,86 @@ export const getDestinationById = async (id: string) => {
     return data as Destination;
 };
 
+export const getListingById = async (
+    id: string,
+    type?: ListingType
+): Promise<PostRecord | null> => {
+    if (!id) return null;
+
+    const mapActivity = async () => {
+        const { data, error } = await supabase.from('activities').select('*').eq('id', id).maybeSingle();
+        if (error || !data) return null;
+        return mapLegacyDestinationToPost(data as Destination, 'activity');
+    };
+
+    const mapTour = async () => {
+        const { data, error } = await supabase.from('tours').select('*').eq('id', id).maybeSingle();
+        if (error || !data) return null;
+        return mapLegacyDestinationToPost(data as Destination, 'tour');
+    };
+
+    const mapEvent = async () => {
+        const { data, error } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+        if (error || !data) return null;
+        return mapLegacyEventToPost(data as EventRecord);
+    };
+
+    if (type) {
+        const { data: postData, error: postError } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('id', id)
+            .eq('type', type)
+            .maybeSingle();
+        if (postError) console.error('Error fetching listing from posts:', postError);
+        if (postData) return postData as PostRecord;
+
+        if (type === 'activity') return mapActivity();
+        if (type === 'tour') return mapTour();
+        return mapEvent();
+    }
+
+    const { data: postData, error: postError } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+    if (postError) console.error('Error fetching listing from posts:', postError);
+    if (postData) return postData as PostRecord;
+
+    const [activity, tour, event] = await Promise.all([mapActivity(), mapTour(), mapEvent()]);
+    return activity || tour || event;
+};
+
 export const createBooking = async (booking: {
     user_id: string;
     activity_id?: string;
     listing_id?: string;
     listing_type?: ListingType;
+    provider_user_id?: string | null;
+    listing_title?: string;
+    listing_image?: string;
     number_of_people: number;
     price?: number;
     unit_price?: number;
     total_price: number;
     status?: BookingStatus;
     payment_status?: PaymentStatus;
+    booking_date?: string | null;
 }) => {
     const unifiedPayload = {
         user_id: booking.user_id,
         listing_id: booking.listing_id || booking.activity_id,
         listing_type: booking.listing_type || 'activity',
+        provider_user_id: booking.provider_user_id || null,
+        listing_title: booking.listing_title || null,
+        listing_image: booking.listing_image || null,
         number_of_people: booking.number_of_people,
         unit_price: booking.unit_price ?? booking.price ?? 0,
         total_price: booking.total_price,
         status: booking.status || 'pending',
         payment_status: booking.payment_status || 'pending',
+        booking_date: booking.booking_date || null,
     };
 
     const unifiedInsert = await supabase.from('bookings').insert([unifiedPayload]).select();
@@ -719,15 +821,35 @@ export const getProfile = async (userId: string) => {
 
 export const updateProfile = async (profile: Partial<Profile>) => {
     if (!profile.id) return null;
-    const { data, error } = await supabase
-        .from('profiles')
-        .update(profile)
-        .eq('id', profile.id)
-        .select()
-        .maybeSingle();
+    const payload: Record<string, unknown> = {};
+    for (const key of PROFILE_UPDATE_KEYS) {
+        const value = profile[key];
+        if (value !== undefined) {
+            payload[key] = value;
+        }
+    }
 
-    if (error) throw error;
-    return mapProfile(data as Record<string, unknown> | null);
+    if (Object.keys(payload).length === 0) {
+        return getProfile(profile.id);
+    }
+
+    while (Object.keys(payload).length > 0) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(payload)
+            .eq('id', profile.id)
+            .select()
+            .maybeSingle();
+
+        if (!error) return mapProfile(data as Record<string, unknown> | null);
+        if (!isMissingColumnError(error)) throw error;
+
+        const missingColumn = extractMissingColumnName(error.message);
+        if (!missingColumn || !(missingColumn in payload)) throw error;
+        delete payload[missingColumn as keyof Profile];
+    }
+
+    throw new Error('Profile update failed because the profiles table is missing required columns.');
 };
 
 export const createOrUpdateProfileFromSignup = async (userId: string, input: SignupInput) => {
@@ -915,6 +1037,106 @@ export const getConversations = async (userId: string): Promise<ConversationReco
     }
 
     return safeArray(data) as ConversationRecord[];
+};
+
+export const getConversationByUsers = async (
+    currentUserId: string,
+    otherUserId: string
+): Promise<ConversationRecord | null> => {
+    const { data, error } = await supabase
+        .from('conversations')
+        .select('*')
+        .or(
+            `and(traveler_id.eq.${currentUserId},provider_id.eq.${otherUserId}),and(traveler_id.eq.${otherUserId},provider_id.eq.${currentUserId})`
+        )
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching conversation by users:', error);
+        return null;
+    }
+
+    return data as ConversationRecord | null;
+};
+
+export const getOrCreateConversation = async (
+    currentUserId: string,
+    otherUserId: string
+): Promise<ConversationRecord> => {
+    if (currentUserId === otherUserId) {
+        throw new Error('Cannot create a conversation with yourself.');
+    }
+
+    const existing = await getConversationByUsers(currentUserId, otherUserId);
+    if (existing) return existing;
+
+    const { data, error } = await supabase
+        .from('conversations')
+        .insert([{
+            traveler_id: currentUserId,
+            provider_id: otherUserId,
+        }])
+        .select('*')
+        .maybeSingle();
+
+    if (error || !data) throw error || new Error('Failed to create conversation.');
+    return data as ConversationRecord;
+};
+
+export const getConversationMessages = async (
+    conversationId: string
+): Promise<ConversationMessageRecord[]> => {
+    const { data, error } = await supabase
+        .from('conversation_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        if (error.code === 'PGRST205' || error.message?.toLowerCase().includes('conversation_messages')) {
+            return [];
+        }
+        console.error('Error fetching conversation messages:', error);
+        return [];
+    }
+
+    return safeArray(data) as ConversationMessageRecord[];
+};
+
+export const sendConversationMessage = async (input: {
+    conversation_id: string;
+    sender_user_id: string;
+    body: string;
+}): Promise<ConversationMessageRecord | null> => {
+    const { data, error } = await supabase
+        .from('conversation_messages')
+        .insert([{
+            conversation_id: input.conversation_id,
+            sender_user_id: input.sender_user_id,
+            body: input.body.trim(),
+        }])
+        .select('*')
+        .maybeSingle();
+
+    if (error) throw error;
+    return (data as ConversationMessageRecord | null) || null;
+};
+
+export const getUserProfileById = async (userId: string): Promise<Profile | null> => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+    }
+
+    return mapProfile(data as Record<string, unknown> | null);
 };
 
 export const getLatestVerification = async (userId: string): Promise<VerificationRecord | null> => {

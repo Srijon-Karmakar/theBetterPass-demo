@@ -313,7 +313,7 @@ export const Home2: React.FC = () => {
         title: destination.title,
         copy: summarize(destination.description, 88),
         image: destination.image_url,
-        link: `/destination/${destination.id}`,
+        link: `/listings/activity/${destination.id}`,
     }));
 
     const essentials = [
@@ -510,7 +510,7 @@ export const Home2: React.FC = () => {
                                         <p>{summarize(heroDestination.description, 150)}</p>
 
                                         <div className="home2-film-actions">
-                                            <Link to={`/destination/${heroDestination.id}`} className="home2-cta-dark">
+                                            <Link to={`/listings/activity/${heroDestination.id}`} className="home2-cta-dark">
                                                 Start exploring
                                                 <ArrowRight size={18} />
                                             </Link>
@@ -691,7 +691,6 @@ export const Home2: React.FC = () => {
         </main>
     );
 };
-
 
 
 

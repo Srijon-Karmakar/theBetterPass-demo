@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LogOut, Menu, Moon, Sun, X } from 'lucide-react';
+import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
-type DashboardTab = 'home' | 'tours' | 'activities' | 'events';
+type NavTab = 'home' | 'tours' | 'activities' | 'messages' | 'bookings';
 
 export const Navbar: React.FC = () => {
-    const { user, profile, signOut, isAdmin, isProvider } = useAuth();
+    const { user, profile, signOut, isAdmin, isProvider, roleLabel } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [showMenu, setShowMenu] = useState(false);
     const location = useLocation();
@@ -15,330 +15,385 @@ export const Navbar: React.FC = () => {
     const isDark = theme === 'dark';
     const homePath = user ? '/dashboard' : '/';
     const logoSrc = isDark ? '/logo/logo-white.png' : '/logo/logo.png';
-    const activeDashboardTab: DashboardTab = (() => {
+
+    const activeTab: NavTab = (() => {
+        if (location.pathname === '/profile') return 'bookings';
+        if (location.pathname === '/messages') return 'messages';
         if (location.pathname !== '/dashboard') return 'home';
         const tab = new URLSearchParams(location.search).get('tab');
-        if (tab === 'tours' || tab === 'activities' || tab === 'events') return tab;
+        if (tab === 'tours') return 'tours';
+        if (tab === 'activities') return 'activities';
         return 'home';
     })();
-    const dashboardLinks: Array<{ key: DashboardTab; label: string; to: string }> = [
+
+    const navLinks: Array<{ key: NavTab; label: string; to: string }> = [
         { key: 'home', label: 'Home', to: '/dashboard' },
         { key: 'tours', label: 'Tours', to: '/dashboard?tab=tours' },
         { key: 'activities', label: 'Activities', to: '/dashboard?tab=activities' },
-        { key: 'events', label: 'Events', to: '/dashboard?tab=events' },
+        { key: 'messages', label: 'Messages', to: '/messages' },
+        { key: 'bookings', label: 'Bookings', to: '/profile' },
     ];
 
+    const shortName = (() => {
+        const name = profile?.full_name?.trim();
+        if (!name || name.includes('@')) {
+            const local = user?.email?.split('@')[0] || 'User';
+            return local.charAt(0).toUpperCase() + local.slice(1);
+        }
+        const parts = name.split(' ').filter(Boolean);
+        if (parts.length <= 1) return parts[0];
+        return `${parts[0]} ${parts[parts.length - 1][0]}`;
+    })();
+
+    const avatarSrc = profile?.profile_image_url
+        || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`;
+
     return (
-        <nav className="glass glass-nav animate-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 24px' }}>
-            <div
-                className="flex items-center px-4 nav-desktop"
-                style={{ width: '100%', justifyContent: 'space-between', gap: '20px' }}
-            >
-                <Link
-                    to={homePath}
-                    aria-label="Vagabond home"
-                    className="nav-logo-link"
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        textDecoration: 'none'
-                    }}
-                >
-                    <img src={logoSrc} alt="Vagabond" className="nav-logo-image" />
-                </Link>
+        <>
+            {/* ── Desktop nav bar ─────────────────────────────── */}
+            <div className="nbr-bar nbr-desktop">
+                {/* Centered glass pill */}
+                <div className="nbr-pill">
+                    <Link to={homePath} aria-label="Home" className="nbr-logo-wrap">
+                        <img src={logoSrc} alt="The Better Pass" className="nbr-logo" />
+                    </Link>
 
-                <div className="flex items-center gap-2" style={{ marginLeft: 'auto' }}>
                     {user && (
                         <>
-                            {dashboardLinks.map((item) => {
-                                const isActive = location.pathname === '/dashboard' && activeDashboardTab === item.key;
-
-                                return (
-                                    <Link key={item.key} to={item.to} style={{
-                                        padding: '8px 16px',
-                                        borderRadius: 'var(--radius-full)',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        color: isActive ? 'var(--text-inverse)' : 'var(--text-main)',
-                                        backgroundColor: isActive ? 'var(--primary)' : 'transparent',
-                                        textDecoration: 'none',
-                                        transition: 'all 0.2s'
-                                    }}>{item.label}</Link>
-                                );
-                            })}
-                            {isAdmin && (
-                                <Link to="/admin" style={{
-                                    padding: '8px 16px',
-                                    borderRadius: 'var(--radius-full)',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    color: location.pathname === '/admin' ? 'var(--text-inverse)' : 'var(--text-main)',
-                                    backgroundColor: location.pathname === '/admin' ? 'var(--primary)' : 'transparent',
-                                    textDecoration: 'none',
-                                    transition: 'all 0.2s'
-                                }}>Admin</Link>
-                            )}
-                            {isProvider && (
-                                <Link to="/provider/studio" style={{
-                                    padding: '8px 16px',
-                                    borderRadius: 'var(--radius-full)',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    color: location.pathname === '/provider/studio' ? 'var(--text-inverse)' : 'var(--text-main)',
-                                    backgroundColor: location.pathname === '/provider/studio' ? 'var(--primary)' : 'transparent',
-                                    textDecoration: 'none',
-                                    transition: 'all 0.2s'
-                                }}>Studio</Link>
-                            )}
-                        </>
-                    )}
-
-                    <button
-                        type="button"
-                        onClick={toggleTheme}
-                        className="theme-toggle"
-                        aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-                        title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-                    >
-                        {isDark ? <Sun size={16} /> : <Moon size={16} />}
-                    </button>
-
-                    {user ? (
-                        <div className="flex items-center gap-2 ml-4">
-                            <Link to="/profile" style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                overflow: 'hidden',
-                                border: '1px solid var(--border-light)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}>
-                                <img
-                                    src={profile?.profile_image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-                                    alt="U"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                            </Link>
-                            <button onClick={() => signOut()} style={{ padding: '8px', background: 'none', border: 'none', color: 'var(--danger-text)', cursor: 'pointer' }}>
-                                <LogOut size={16} />
-                            </button>
-                        </div>
-                    ) : (
-                        <Link to="/auth" style={{
-                            padding: '8px 20px',
-                            borderRadius: 'var(--radius-full)',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            color: 'var(--accent)',
-                            textDecoration: 'none'
-                        }}>Join</Link>
-                    )}
-                </div>
-            </div>
-
-            {/* Mobile Actions */}
-            <div className="nav-mobile items-center gap-2" style={{ display: 'none', width: '100%', justifyContent: 'space-between' }}>
-                <Link
-                    to={homePath}
-                    aria-label="Vagabond home"
-                    className="nav-logo-link"
-                    style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
-                >
-                    <img src={logoSrc} alt="Vagabond" className="nav-logo-image nav-logo-image-mobile" />
-                </Link>
-                <div className="flex items-center gap-4">
-                    <button
-                        type="button"
-                        onClick={toggleTheme}
-                        className="theme-toggle"
-                        aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-                        title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-                    >
-                        {isDark ? <Sun size={16} /> : <Moon size={16} />}
-                    </button>
-                    {user && (
-                        <Link to="/profile" style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
-                            <img
-                                src={profile?.profile_image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-                                alt="U"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                        </Link>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => setShowMenu(!showMenu)}
-                        className="nav-mobile-hamburger"
-                        aria-label={showMenu ? 'Close menu' : 'Open menu'}
-                    >
-                        {showMenu ? <X size={20} /> : <Menu size={20} />}
-                    </button>
-                </div>
-            </div>
-
-            {/* Mobile Dropdown */}
-                    {showMenu && (
-                <div className="glass nav-mobile-dropdown" style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 12px)',
-                    right: 0,
-                    left: 0,
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    boxShadow: 'var(--shadow-card)',
-                    animation: 'fadeIn 0.2s ease-out'
-                }}>
-                    {user && (
-                        <>
-                            {dashboardLinks.map((item) => (
-                                <Link key={item.key} to={item.to} className="nav-mobile-menu-link" onClick={() => setShowMenu(false)} style={{
-                                    padding: '12px 16px',
-                                    borderRadius: 'var(--radius-md)',
-                                    textDecoration: 'none',
-                                    color: 'var(--text-main)',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem'
-                                }}>{item.label}</Link>
+                            <div className="nbr-sep" />
+                            {navLinks.map((item) => (
+                                <Link
+                                    key={item.key}
+                                    to={item.to}
+                                    className={`nbr-link${activeTab === item.key ? ' nbr-link--active' : ''}`}
+                                >
+                                    {item.label}
+                                </Link>
                             ))}
                             {isAdmin && (
-                                <Link to="/admin" className="nav-mobile-menu-link" onClick={() => setShowMenu(false)} style={{
-                                    padding: '12px 16px',
-                                    borderRadius: 'var(--radius-md)',
-                                    textDecoration: 'none',
-                                    color: 'var(--text-main)',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem'
-                                }}>Admin</Link>
+                                <Link to="/admin" className={`nbr-link${location.pathname === '/admin' ? ' nbr-link--active' : ''}`}>
+                                    Admin
+                                </Link>
                             )}
                             {isProvider && (
-                                <Link to="/provider/studio" className="nav-mobile-menu-link" onClick={() => setShowMenu(false)} style={{
-                                    padding: '12px 16px',
-                                    borderRadius: 'var(--radius-md)',
-                                    textDecoration: 'none',
-                                    color: 'var(--text-main)',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem'
-                                }}>Studio</Link>
+                                <Link to="/provider/studio" className={`nbr-link${location.pathname === '/provider/studio' ? ' nbr-link--active' : ''}`}>
+                                    Studio
+                                </Link>
                             )}
                         </>
                     )}
+
                     {!user && (
-                        <Link to="/auth" className="nav-mobile-menu-link nav-mobile-menu-link-accent" onClick={() => setShowMenu(false)} style={{
-                            padding: '12px 16px', borderRadius: 'var(--radius-md)', textDecoration: 'none', color: 'var(--accent)', fontWeight: 800, fontSize: '0.9rem'
-                        }}>Join Membership</Link>
-                    )}
-                    {user && (
-                        <button className="nav-mobile-menu-button" onClick={() => { signOut(); setShowMenu(false); }} style={{
-                            padding: '12px 16px', borderRadius: 'var(--radius-md)', textAlign: 'left', border: 'none', background: 'none', color: 'var(--danger-text)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer'
-                        }}>Sign Out</button>
+                        <Link to="/auth" className="nbr-join">Join</Link>
                     )}
                 </div>
-            )}
+
+                {/* Right: user chip (outside the pill) */}
+                {user && (
+                    <Link to="/profile" className="nbr-user-chip">
+                        <div className="nbr-user-text">
+                            <span className="nbr-user-name">{shortName}</span>
+                            <span className="nbr-user-role">{roleLabel}</span>
+                        </div>
+                        <img src={avatarSrc} alt={shortName} className="nbr-avatar" />
+                    </Link>
+                )}
+            </div>
+
+            {/* ── Mobile nav bar ──────────────────────────────── */}
+            <div className="nbr-bar nbr-mobile">
+                <div className="nbr-pill nbr-mobile-pill">
+                    <Link to={homePath} aria-label="Home" className="nbr-logo-wrap">
+                        <img src={logoSrc} alt="The Better Pass" className="nbr-logo nbr-logo--sm" />
+                    </Link>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {user && (
+                            <Link to="/profile" className="nbr-avatar-sm-wrap">
+                                <img src={avatarSrc} alt={shortName} className="nbr-avatar-sm" />
+                            </Link>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="nbr-hamburger"
+                            aria-label={showMenu ? 'Close' : 'Menu'}
+                        >
+                            {showMenu ? <X size={18} /> : <Menu size={18} />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile dropdown */}
+                {showMenu && (
+                    <div className="nbr-dropdown">
+                        {user && navLinks.map((item) => (
+                            <Link key={item.key} to={item.to} className="nbr-drop-item" onClick={() => setShowMenu(false)}>
+                                {item.label}
+                            </Link>
+                        ))}
+                        {user && isAdmin && (
+                            <Link to="/admin" className="nbr-drop-item" onClick={() => setShowMenu(false)}>Admin</Link>
+                        )}
+                        {user && isProvider && (
+                            <Link to="/provider/studio" className="nbr-drop-item" onClick={() => setShowMenu(false)}>Studio</Link>
+                        )}
+                        {!user && (
+                            <Link to="/auth" className="nbr-drop-item nbr-drop-item--accent" onClick={() => setShowMenu(false)}>
+                                Join Membership
+                            </Link>
+                        )}
+                        <div className="nbr-drop-sep" />
+                        <button type="button" className="nbr-drop-item nbr-drop-item--btn" onClick={toggleTheme}>
+                            {isDark ? <Sun size={14} /> : <Moon size={14} />}
+                            {isDark ? 'Light Mode' : 'Dark Mode'}
+                        </button>
+                        {user && (
+                            <button
+                                type="button"
+                                className="nbr-drop-item nbr-drop-item--btn nbr-drop-item--danger"
+                                onClick={() => { void signOut(); setShowMenu(false); }}
+                            >
+                                Sign Out
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <style>{`
-                .nav-logo-image {
-                    display: block;
-                    width: auto;
-                    height: 40px;
-                    max-width: 188px;
-                    object-fit: contain;
-                }
-
-                .nav-logo-image-mobile {
-                    height: 34px;
-                    max-width: 156px;
-                }
-
-                .nav-mobile-hamburger {
+                /* ── Fixed bar ──────────────────────────────────────── */
+                .nbr-bar {
                     align-items: center;
-                    background:
-                        linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08));
-                    border: 1px solid rgba(255, 255, 255, 0.22);
-                    border-radius: 999px;
-                    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
-                    color: var(--primary);
-                    cursor: pointer;
-                    display: inline-flex;
-                    height: 38px;
+                    display: flex;
                     justify-content: center;
-                    padding: 0;
-                    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-                    width: 38px;
-                    backdrop-filter: blur(18px) saturate(170%);
-                    -webkit-backdrop-filter: blur(18px) saturate(170%);
-                }
-
-                .nav-mobile-hamburger:hover {
-                    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
-                    transform: translateY(-1px);
-                }
-
-                .nav-mobile-dropdown {
-                    background:
-                        linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12)),
-                        var(--glass-bg) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.22) !important;
-                    box-shadow:
-                        0 18px 46px rgba(15, 23, 42, 0.18),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
-                    backdrop-filter: blur(22px) saturate(190%) !important;
-                    -webkit-backdrop-filter: blur(22px) saturate(190%) !important;
-                    overflow: hidden;
-                }
-
-                .nav-mobile-dropdown::before {
-                    content: '';
-                    position: absolute;
-                    inset: 0;
-                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 42%, rgba(255, 255, 255, 0.08));
+                    left: 0;
+                    padding: 0 32px;
+                    position: fixed;
+                    right: 0;
+                    top: 28px;
+                    z-index: 1000;
                     pointer-events: none;
                 }
 
-                .nav-mobile-menu-link,
-                .nav-mobile-menu-button {
-                    position: relative;
-                    background: rgba(255, 255, 255, 0.08);
-                    border: 1px solid transparent;
-                    backdrop-filter: blur(10px);
-                    -webkit-backdrop-filter: blur(10px);
-                    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+                .nbr-bar > * { pointer-events: all; }
+
+                /* ── Glass pill ─────────────────────────────────────── */
+                .nbr-pill {
+                    align-items: center;
+                    animation: fadeInDown 0.5s cubic-bezier(0.23,1,0.32,1) both;
+                    backdrop-filter: blur(20px) saturate(200%);
+                    -webkit-backdrop-filter: blur(20px) saturate(200%);
+                    background: ${isDark
+                        ? 'rgba(12,12,12,0.72)'
+                        : 'rgba(255,255,255,0.78)'};
+                    border: 1px solid ${isDark
+                        ? 'rgba(255,255,255,0.10)'
+                        : 'rgba(255,255,255,0.70)'};
+                    border-radius: 999px;
+                    box-shadow:
+                        0 4px 24px rgba(15,23,42,0.10),
+                        inset 0 1px 0 ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)'};
+                    display: inline-flex;
+                    gap: 2px;
+                    padding: 7px 10px;
                 }
 
-                .nav-mobile-menu-link:hover,
-                .nav-mobile-menu-button:hover {
-                    background: rgba(255, 255, 255, 0.16);
-                    border-color: rgba(255, 255, 255, 0.22);
+                @keyframes fadeInDown {
+                    from { opacity: 0; transform: translateY(-12px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+
+                /* Logo */
+                .nbr-logo-wrap {
+                    align-items: center;
+                    display: inline-flex;
+                    flex-shrink: 0;
+                    margin-right: 4px;
+                    text-decoration: none;
+                }
+                .nbr-logo     { display: block; height: 34px; max-width: 150px; object-fit: contain; width: auto; }
+                .nbr-logo--sm { height: 28px; max-width: 130px; }
+
+                /* Divider between logo and links */
+                .nbr-sep {
+                    background: ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'};
+                    border-radius: 1px;
+                    flex-shrink: 0;
+                    height: 20px;
+                    margin: 0 6px;
+                    width: 1px;
+                }
+
+                /* Nav links */
+                .nbr-link {
+                    border-radius: 999px;
+                    color: var(--text-muted);
+                    font-family: 'Outfit', sans-serif;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    padding: 6px 14px;
+                    text-decoration: none;
+                    transition: color 0.18s, background 0.18s;
+                    white-space: nowrap;
+                }
+                .nbr-link:hover { color: var(--text-main); }
+                .nbr-link--active {
+                    background: var(--primary);
+                    color: var(--text-inverse);
+                }
+
+                /* Join (guest) */
+                .nbr-join {
+                    border-radius: 999px;
+                    color: var(--accent);
+                    font-size: 0.875rem;
+                    font-weight: 700;
+                    margin-left: 4px;
+                    padding: 6px 16px;
+                    text-decoration: none;
+                }
+
+                /* ── User chip (right, outside pill) ────────────────── */
+                .nbr-user-chip {
+                    align-items: center;
+                    animation: fadeInDown 0.5s cubic-bezier(0.23,1,0.32,1) both;
+                    animation-delay: 0.06s;
+                    backdrop-filter: blur(20px) saturate(200%);
+                    -webkit-backdrop-filter: blur(20px) saturate(200%);
+                    background: ${isDark ? 'rgba(12,12,12,0.72)' : 'rgba(255,255,255,0.78)'};
+                    border: 1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.70)'};
+                    border-radius: 999px;
+                    box-shadow: 0 4px 24px rgba(15,23,42,0.10), inset 0 1px 0 ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)'};
+                    display: inline-flex;
+                    gap: 8px;
+                    padding: 5px 5px 5px 12px;
+                    position: absolute;
+                    right: 32px;
+                    text-decoration: none;
+                    transition: box-shadow 0.2s, transform 0.2s;
+                }
+                .nbr-user-chip:hover {
+                    box-shadow: 0 6px 20px rgba(15,23,42,0.15);
                     transform: translateY(-1px);
                 }
 
-                .nav-mobile-menu-link-accent {
-                    color: var(--accent) !important;
+                .nbr-user-text {
+                    display: flex;
+                    flex-direction: column;
+                    line-height: 1.25;
+                }
+                .nbr-user-name {
+                    color: var(--text-main);
+                    font-size: 0.82rem;
+                    font-weight: 700;
+                }
+                .nbr-user-role {
+                    color: var(--text-muted);
+                    font-size: 0.68rem;
+                    font-weight: 500;
+                }
+
+                .nbr-avatar {
+                    border-radius: 50%;
+                    flex-shrink: 0;
+                    height: 30px;
+                    object-fit: cover;
+                    width: 30px;
+                }
+
+                /* ── Mobile ─────────────────────────────────────────── */
+                .nbr-desktop { display: flex !important; }
+                .nbr-mobile  { display: none !important; }
+
+                .nbr-mobile-pill {
+                    flex: 1;
+                    max-width: 100%;
+                    width: 100%;
+                }
+
+                .nbr-avatar-sm-wrap {
+                    border: 1.5px solid var(--border-light);
+                    border-radius: 50%;
+                    display: block;
+                    flex-shrink: 0;
+                    height: 28px;
+                    overflow: hidden;
+                    width: 28px;
+                }
+                .nbr-avatar-sm { height: 100%; object-fit: cover; width: 100%; }
+
+                .nbr-hamburger {
+                    align-items: center;
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
+                    border: 1px solid var(--border-light);
+                    border-radius: 999px;
+                    color: var(--text-main);
+                    cursor: pointer;
+                    display: inline-flex;
+                    height: 32px;
+                    justify-content: center;
+                    padding: 0;
+                    transition: background 0.18s;
+                    width: 32px;
+                }
+                .nbr-hamburger:hover { background: ${isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'}; }
+
+                /* ── Dropdown ───────────────────────────────────────── */
+                .nbr-dropdown {
+                    animation: fadeInDown 0.18s ease-out;
+                    backdrop-filter: blur(22px) saturate(190%);
+                    -webkit-backdrop-filter: blur(22px) saturate(190%);
+                    background: ${isDark ? 'rgba(14,14,14,0.88)' : 'rgba(255,255,255,0.92)'};
+                    border: 1px solid var(--border-light);
+                    border-radius: 20px;
+                    box-shadow: 0 16px 48px rgba(15,23,42,0.18);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    margin-top: 10px;
+                    padding: 8px;
+                    pointer-events: all;
+                    width: 100%;
+                }
+
+                .nbr-drop-item {
+                    border-radius: 12px;
+                    color: var(--text-main);
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    padding: 10px 14px;
+                    text-decoration: none;
+                    transition: background 0.14s;
+                }
+                .nbr-drop-item:hover { background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}; }
+                .nbr-drop-item--accent { color: var(--accent); font-weight: 800; }
+                .nbr-drop-item--danger { color: var(--danger-text, #e53e3e); }
+
+                .nbr-drop-item--btn {
+                    align-items: center;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    display: flex;
+                    font-family: inherit;
+                    gap: 10px;
+                    text-align: left;
+                    width: 100%;
+                }
+
+                .nbr-drop-sep {
+                    background: var(--border-light);
+                    height: 1px;
+                    margin: 4px 2px;
                 }
 
                 @media (max-width: 768px) {
-                    .nav-desktop { display: none !important; }
-                    .nav-mobile { display: flex !important; }
-                    .glass-nav { 
-                        min-width: 300px !important; 
-                        padding: 8px 16px !important;
-                    }
-
-                    .nav-logo-link {
-                        flex-shrink: 1;
-                        min-width: 0;
-                    }
-
-                    .nav-mobile-dropdown {
-                        left: 8px !important;
-                        right: 8px !important;
-                    }
+                    .nbr-desktop { display: none !important; }
+                    .nbr-mobile  { display: flex !important; flex-direction: column; align-items: stretch; padding: 0 16px; top: 16px; }
                 }
             `}</style>
-        </nav>
+        </>
     );
 };

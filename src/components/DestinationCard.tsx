@@ -29,7 +29,7 @@ export const DestinationCard: React.FC<DestinationProps> = ({ id, title, locatio
                             </div>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>{title}</h3>
                         </div>
-                        <Link to={`/destination/${id}`} className="btn-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Link to={`/listings/activity/${id}`} className="btn-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <ArrowRight size={18} />
                         </Link>
                     </div>

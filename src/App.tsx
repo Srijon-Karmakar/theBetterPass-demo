@@ -7,6 +7,9 @@ import { DestinationDetail } from './pages/DestinationDetail';
 import { Profile } from './pages/Profile';
 import { AdminConsole } from './pages/AdminConsole';
 import { ProviderStudio } from './pages/ProviderStudio';
+import { ListingDetail } from './pages/ListingDetail';
+import { UserProfile } from './pages/UserProfile';
+import { Messages } from './pages/Messages';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './hooks/useTheme';
 
@@ -90,8 +93,11 @@ function App() {
           <Route path="/activities" element={<ProtectedRoute><Navigate to={DASHBOARD_ACTIVITIES_PATH} replace /></ProtectedRoute>} />
           <Route path="/tours" element={<ProtectedRoute><Navigate to={DASHBOARD_TOURS_PATH} replace /></ProtectedRoute>} />
           <Route path="/events" element={<ProtectedRoute><Navigate to={DASHBOARD_EVENTS_PATH} replace /></ProtectedRoute>} />
+          <Route path="/listings/:type/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />
           <Route path="/destination/:id" element={<ProtectedRoute><DestinationDetail /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/users/:id" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminConsole /></AdminRoute>} />
           <Route path="/provider/studio" element={<ProviderRoute><ProviderStudio /></ProviderRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
