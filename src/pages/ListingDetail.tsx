@@ -9,9 +9,10 @@ import {
     type PostRecord,
 } from '../lib/destinations';
 import type { ListingType } from '../lib/platform';
+import './listing-detail.css';
 
 const isListingType = (value: string | undefined): value is ListingType => (
-    value === 'tour' || value === 'activity' || value === 'event'
+    value === 'tour' || value === 'activity' || value === 'guide'
 );
 
 const getListingTitle = (listing: PostRecord): string => {
@@ -29,7 +30,7 @@ const getListingImage = (listing: PostRecord): string => (
 export const ListingDetail: React.FC = () => {
     const { id, type } = useParams<{ id: string; type?: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [bookingLoading, setBookingLoading] = useState(false);
@@ -70,11 +71,16 @@ export const ListingDetail: React.FC = () => {
         ? (listingTypeValue as ListingType)
         : (listingType || 'activity');
     const total = useMemo(() => unitPrice * guests, [guests, unitPrice]);
+    const canBook = profile?.role === 'tourist';
 
     const handleBooking = async (event: React.FormEvent) => {
         event.preventDefault();
         if (!user || !listing?.id) {
             navigate('/auth');
+            return;
+        }
+        if (!canBook) {
+            alert('Only tourist accounts can place bookings.');
             return;
         }
 
@@ -133,35 +139,35 @@ export const ListingDetail: React.FC = () => {
     }
 
     return (
-        <main style={{ background: 'var(--bg-main)', paddingTop: '128px', paddingBottom: '90px' }}>
-            <div className="container" style={{ display: 'grid', gap: '26px' }}>
+        <main className="listing-detail-page">
+            <div className="container listing-detail-shell">
                 <button
                     type="button"
                     onClick={() => navigate(-1)}
-                    style={{ border: 'none', background: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer' }}
+                    className="listing-detail-back"
                 >
                     <ArrowLeft size={16} /> Back
                 </button>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '22px' }} className="listing-detail-grid">
-                    <section style={{ background: 'var(--surface-main)', border: '1px solid var(--border-light)', borderRadius: '24px', overflow: 'hidden' }}>
-                        <div style={{ width: '100%', aspectRatio: '16/9', backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                        <div style={{ padding: '20px 22px 24px' }}>
-                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
-                                <span style={{ background: 'var(--surface-muted)', border: '1px solid var(--border-light)', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.06em', padding: '5px 11px', textTransform: 'uppercase' }}>{effectiveType}</span>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                <div className="listing-detail-grid">
+                    <section className="listing-detail-card">
+                        <div className="listing-detail-hero-image" style={{ backgroundImage: `url(${image})` }} />
+                        <div className="listing-detail-content">
+                            <div className="listing-detail-meta-row">
+                                <span className="listing-detail-type-pill">{effectiveType}</span>
+                                <span className="listing-detail-location-chip">
                                     <MapPin size={14} /> {location}
                                 </span>
                             </div>
-                            <h1 style={{ margin: 0, fontSize: 'clamp(1.8rem, 3vw, 2.6rem)', fontFamily: 'Outfit, sans-serif' }}>{title}</h1>
-                            <p style={{ marginTop: '12px', color: 'var(--text-muted)', lineHeight: 1.75 }}>{description}</p>
+                            <h1 className="listing-detail-title">{title}</h1>
+                            <p className="listing-detail-description">{description}</p>
                             {ownerUserId && (
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px' }}>
-                                    <Link to={`/users/${ownerUserId}`} className="btn btn-secondary" style={{ borderRadius: '999px' }}>
+                                <div className="listing-detail-actions">
+                                    <Link to={`/users/${ownerUserId}`} className="btn btn-secondary listing-detail-pill-btn">
                                         View Host
                                     </Link>
                                     {user && ownerUserId !== user.id && (
-                                        <button type="button" onClick={handleMessage} className="btn btn-secondary" disabled={messageLoading} style={{ borderRadius: '999px' }}>
+                                        <button type="button" onClick={handleMessage} className="btn btn-secondary listing-detail-pill-btn" disabled={messageLoading}>
                                             {messageLoading ? <Loader2 className="animate-spin" size={16} /> : <MessageCircle size={16} />}
                                             Message
                                         </button>
@@ -171,35 +177,35 @@ export const ListingDetail: React.FC = () => {
                         </div>
                     </section>
 
-                    <aside style={{ background: 'var(--surface-main)', border: '1px solid var(--border-light)', borderRadius: '24px', padding: '20px' }}>
+                    <aside className="listing-book-card">
                         {bookingSuccess ? (
-                            <div style={{ display: 'grid', gap: '10px' }}>
-                                <h3 style={{ margin: 0 }}>Booking confirmed</h3>
-                                <p style={{ color: 'var(--text-muted)', margin: 0 }}>Your spot is reserved for this listing.</p>
-                                <Link to="/profile" className="btn btn-primary" style={{ justifyContent: 'center', borderRadius: '999px' }}>
+                            <div className="listing-book-success">
+                                <h3>Booking confirmed</h3>
+                                <p>Your spot is reserved for this listing.</p>
+                                <Link to="/profile" className="btn btn-primary listing-detail-pill-btn listing-detail-center-btn">
                                     View My Bookings
                                 </Link>
                             </div>
                         ) : (
-                            <form onSubmit={handleBooking} style={{ display: 'grid', gap: '14px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                    <h3 style={{ margin: 0 }}>Reserve</h3>
-                                    <strong style={{ color: 'var(--accent)', fontSize: '1.6rem' }}>Rs {unitPrice.toLocaleString()}</strong>
+                            <form onSubmit={handleBooking} className="listing-book-form">
+                                <div className="listing-book-head">
+                                    <h3>Reserve</h3>
+                                    <strong>Rs {unitPrice.toLocaleString()}</strong>
                                 </div>
 
-                                <label style={{ display: 'grid', gap: '7px' }}>
-                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Date</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '10px 12px' }}>
+                                <label className="listing-book-field">
+                                    <span>Date</span>
+                                    <span className="listing-book-input-wrap">
                                         <Calendar size={16} />
-                                        <input value={checkIn} onChange={(e) => setCheckIn(e.target.value)} required type="date" style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontFamily: 'inherit' }} />
+                                        <input value={checkIn} onChange={(e) => setCheckIn(e.target.value)} required type="date" />
                                     </span>
                                 </label>
 
-                                <label style={{ display: 'grid', gap: '7px' }}>
-                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Travelers</span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '10px 12px' }}>
+                                <label className="listing-book-field">
+                                    <span>Travelers</span>
+                                    <span className="listing-book-input-wrap">
                                         <Users size={16} />
-                                        <select value={guests} onChange={(e) => setGuests(Number(e.target.value))} style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontFamily: 'inherit' }}>
+                                        <select value={guests} onChange={(e) => setGuests(Number(e.target.value))}>
                                             {[1, 2, 3, 4, 5, 6].map((count) => (
                                                 <option key={count} value={count}>{count}</option>
                                             ))}
@@ -207,16 +213,22 @@ export const ListingDetail: React.FC = () => {
                                     </span>
                                 </label>
 
-                                <div style={{ paddingTop: '10px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Total</span>
+                                <div className="listing-book-total">
+                                    <span>Total</span>
                                     <strong>Rs {total.toLocaleString()}</strong>
                                 </div>
 
-                                <button className="btn btn-primary" type="submit" disabled={bookingLoading} style={{ justifyContent: 'center', borderRadius: '999px' }}>
+                                {!canBook && (
+                                    <p className="listing-book-warning">
+                                        Only tourist accounts can place bookings.
+                                    </p>
+                                )}
+
+                                <button className="btn btn-primary listing-detail-pill-btn listing-detail-center-btn" type="submit" disabled={bookingLoading || !canBook}>
                                     {bookingLoading ? <Loader2 className="animate-spin" size={18} /> : 'Book Now'}
                                 </button>
 
-                                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                                <p className="listing-book-security">
                                     <ShieldCheck size={14} /> Secure booking, no hidden charges.
                                 </p>
                             </form>
@@ -224,12 +236,6 @@ export const ListingDetail: React.FC = () => {
                     </aside>
                 </div>
             </div>
-
-            <style>{`
-              @media (max-width: 960px) {
-                .listing-detail-grid { grid-template-columns: 1fr !important; }
-              }
-            `}</style>
         </main>
     );
 };

@@ -53,8 +53,8 @@ const getPrimaryActionCopy = (type: ListingType) => {
             return 'Publish tour';
         case 'activity':
             return 'Publish activity';
-        case 'event':
-            return 'Publish event';
+        case 'guide':
+            return 'Publish guide service';
     }
 };
 
@@ -64,8 +64,8 @@ const getSingularListingLabel = (type: ListingType) => {
             return 'Tour';
         case 'activity':
             return 'Activity';
-        case 'event':
-            return 'Event';
+        case 'guide':
+            return 'Guide';
     }
 };
 
@@ -78,7 +78,7 @@ export const ProviderStudio: React.FC = () => {
     const [form, setForm] = useState<ListingInput>(EMPTY_FORM('tour'));
 
     const allowedTypes = useMemo(
-        () => (['tour', 'activity', 'event'] as ListingType[]).filter((type) => canRolePublish(profile?.role, type)),
+        () => (['tour', 'activity', 'guide'] as ListingType[]).filter((type) => canRolePublish(profile?.role, type)),
         [profile?.role]
     );
     const canAccessStudio = isProvider && profile?.verification_status === 'approved' && allowedTypes.length > 0;
@@ -115,7 +115,7 @@ export const ProviderStudio: React.FC = () => {
     };
 
     const beginEdit = (listing: PostRecord) => {
-        const listingType = (listing.type || allowedTypes[0] || 'tour') as ListingType;
+        const listingType = (listing.type === 'event' ? 'guide' : listing.type || allowedTypes[0] || 'tour') as ListingType;
         setEditingListingId(listing.id);
         setForm({
             id: listing.id,
@@ -167,7 +167,7 @@ export const ProviderStudio: React.FC = () => {
                 <section className="provider-studio-hero">
                     <div className="provider-studio-hero-copy">
                         <span className="provider-studio-kicker">Provider Studio</span>
-                        <h1>Role-based publishing for live tours, activities, and events.</h1>
+                        <h1>Role-based publishing for live tours, activities, and guide services.</h1>
                         <p>
                             Verified providers publish directly to the live catalog. Account approval stays in admin review,
                             but listing publishing is instant once your provider account is approved.
@@ -200,7 +200,7 @@ export const ProviderStudio: React.FC = () => {
                                     ? 'Create itinerary-led tours with title, location, pricing, cover image, and launch timing.'
                                     : type === 'activity'
                                         ? 'Publish guided activities with immediate visibility after account verification.'
-                                        : 'Launch events with date-aware availability and instant public listing visibility.'}
+                                        : 'Launch guide services with date-aware availability and instant public listing visibility.'}
                             </p>
                             <button
                                 type="button"
@@ -390,7 +390,7 @@ export const ProviderStudio: React.FC = () => {
                                                 </span>
                                             </div>
                                             <div className="provider-studio-listing-meta">
-                                                <span>{LISTING_LABELS[(listing.type as ListingType) || form.type] || 'Listing'}</span>
+                                                <span>{LISTING_LABELS[((listing.type === 'event' ? 'guide' : listing.type) as ListingType) || form.type] || 'Listing'}</span>
                                                 <span>{typeof listing.price === 'number' ? `Rs ${listing.price.toLocaleString()}` : 'Custom pricing'}</span>
                                             </div>
                                             <div className="provider-studio-listing-actions">

@@ -4,7 +4,7 @@ import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 
-type NavTab = 'home' | 'tours' | 'activities' | 'messages' | 'bookings';
+type NavTab = 'home' | 'tours' | 'activities' | 'guides' | 'messages' | 'bookings';
 
 export const Navbar: React.FC = () => {
     const { user, profile, signOut, isAdmin, isProvider, roleLabel } = useAuth();
@@ -19,10 +19,12 @@ export const Navbar: React.FC = () => {
     const activeTab: NavTab = (() => {
         if (location.pathname === '/profile') return 'bookings';
         if (location.pathname === '/messages') return 'messages';
+        if (location.pathname === '/guides' || location.search.includes('tab=guides')) return 'guides';
         if (location.pathname !== '/dashboard') return 'home';
         const tab = new URLSearchParams(location.search).get('tab');
         if (tab === 'tours') return 'tours';
         if (tab === 'activities') return 'activities';
+        if (tab === 'guides') return 'guides';
         return 'home';
     })();
 
@@ -30,6 +32,7 @@ export const Navbar: React.FC = () => {
         { key: 'home', label: 'Home', to: '/dashboard' },
         { key: 'tours', label: 'Tours', to: '/dashboard?tab=tours' },
         { key: 'activities', label: 'Activities', to: '/dashboard?tab=activities' },
+        { key: 'guides', label: 'Guides', to: '/dashboard?tab=guides' },
         { key: 'messages', label: 'Messages', to: '/messages' },
         { key: 'bookings', label: 'Bookings', to: '/profile' },
     ];

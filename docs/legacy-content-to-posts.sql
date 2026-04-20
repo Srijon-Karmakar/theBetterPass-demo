@@ -8,7 +8,7 @@ begin;
 alter table public.posts
     add column if not exists starts_at timestamptz;
 
-do $$
+do language plpgsql $$
 declare
     has_tours_table boolean;
     has_activities_table boolean;
@@ -232,7 +232,7 @@ begin
             %s,
             %s,
             %s,
-            'event',
+            'guide',
             %s,
             %s,
             %s,
@@ -241,7 +241,7 @@ begin
         where not exists (
             select 1
             from public.posts p
-            where p.type = 'event'
+            where p.type = 'guide'
               and coalesce(p.title, '') = coalesce(e.title, '')
               and coalesce(p.location, '') = coalesce(%s, '')
         )

@@ -4,7 +4,7 @@ export type UserRole = (typeof USER_ROLES)[number];
 export const PROVIDER_ROLES = ['tour_company', 'tour_instructor', 'tour_guide'] as const;
 export type ProviderRole = (typeof PROVIDER_ROLES)[number];
 
-export const LISTING_TYPES = ['tour', 'activity', 'event'] as const;
+export const LISTING_TYPES = ['tour', 'activity', 'guide'] as const;
 export type ListingType = (typeof LISTING_TYPES)[number];
 
 export const VERIFICATION_STATUSES = ['not_required', 'pending', 'approved', 'rejected', 'resubmitted'] as const;
@@ -30,7 +30,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const LISTING_LABELS: Record<ListingType, string> = {
     tour: 'Tours',
     activity: 'Activities',
-    event: 'Events',
+    guide: 'Guides',
 };
 
 export interface RoleSignupConfig {
@@ -115,9 +115,9 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_company: {
-        summary: 'Manage a company profile and publish tours, events, and activities after approval.',
+        summary: 'Manage a company profile and publish tours, activities, and guides after approval.',
         requiresVerification: true,
-        allowedListingTypes: ['tour', 'event', 'activity'],
+        allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
             { key: 'phone', label: 'Business Phone', placeholder: '+91 98765 43210', required: true },
             { key: 'country', label: 'Country', placeholder: 'India', required: true },
@@ -130,9 +130,9 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_instructor: {
-        summary: 'Offer approved activity listings and operate independently or under a company profile.',
+        summary: 'Offer approved tours, activities, and guide services independently or under a company profile.',
         requiresVerification: true,
-        allowedListingTypes: ['activity'],
+        allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
             { key: 'phone', label: 'Phone', placeholder: '+91 98765 43210', required: true },
             { key: 'country', label: 'Country', placeholder: 'India', required: true },
@@ -145,9 +145,9 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_guide: {
-        summary: 'Lead approved tour listings and optionally operate under a company profile.',
+        summary: 'Lead approved tours, activities, and guide services, optionally under a company profile.',
         requiresVerification: true,
-        allowedListingTypes: ['tour'],
+        allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
             { key: 'phone', label: 'Phone', placeholder: '+91 98765 43210', required: true },
             { key: 'country', label: 'Country', placeholder: 'India', required: true },

@@ -265,7 +265,8 @@ const PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
 
 const normalizeListingType = (value: string | null | undefined): ListingType => {
     const normalized = (value || '').trim().toLowerCase();
-    if (normalized === 'tour' || normalized === 'activity' || normalized === 'event') return normalized;
+    if (normalized === 'event') return 'guide';
+    if (normalized === 'tour' || normalized === 'activity' || normalized === 'guide') return normalized;
     return 'activity';
 };
 
@@ -372,7 +373,7 @@ const mapLegacyEventToPost = (row: EventRecord): PostRecord => ({
     description: row.description,
     location: row.location,
     image_url: row.image_url,
-    type: 'event',
+    type: 'guide',
     sub_category: row.category,
     created_at: row.created_at || new Date().toISOString(),
     starts_at: row.starts_at,
@@ -428,7 +429,7 @@ export const getEvents = async () => {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching events:', error);
+        console.error('Error fetching legacy guides(events):', error);
         return [];
     }
 
@@ -466,7 +467,7 @@ export const getPosts = async () => {
         console.error('Error fetching activities for unified feed:', activitiesResult.error);
     }
     if (eventsResult.error) {
-        console.error('Error fetching events for unified feed:', eventsResult.error);
+        console.error('Error fetching guides(events) for unified feed:', eventsResult.error);
     }
 
     const combined = [
@@ -524,8 +525,8 @@ export const getPublicListingsByType = async (type: ListingType): Promise<PostRe
         supabase.from('events').select('*').order('created_at', { ascending: false }),
     ]);
 
-    if (postsResult.error) console.error('Error fetching published events from posts:', postsResult.error);
-    if (eventsResult.error) console.error('Error fetching legacy events:', eventsResult.error);
+    if (postsResult.error) console.error('Error fetching published guides from posts:', postsResult.error);
+    if (eventsResult.error) console.error('Error fetching legacy guides(events):', eventsResult.error);
 
     return dedupePostsById([
         ...safeArray(postsResult.data) as PostRecord[],
@@ -694,25 +695,43 @@ export const getListingById = async (
         return mapLegacyDestinationToPost(data as Destination, 'tour');
     };
 
-    const mapEvent = async () => {
+    const mapGuide = async () => {
         const { data, error } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
         if (error || !data) return null;
         return mapLegacyEventToPost(data as EventRecord);
     };
 
     if (type) {
-        const { data: postData, error: postError } = await supabase
+        let postData: PostRecord | null = null;
+        const { data: typedPostData, error: postError } = await supabase
             .from('posts')
             .select('*')
             .eq('id', id)
             .eq('type', type)
             .maybeSingle();
         if (postError) console.error('Error fetching listing from posts:', postError);
-        if (postData) return postData as PostRecord;
+        if (typedPostData) postData = typedPostData as PostRecord;
+
+        if (!postData && type === 'guide') {
+            const { data: legacyGuidePost } = await supabase
+                .from('posts')
+                .select('*')
+                .eq('id', id)
+                .eq('type', 'event')
+                .maybeSingle();
+            if (legacyGuidePost) {
+                postData = {
+                    ...(legacyGuidePost as PostRecord),
+                    type: 'guide',
+                };
+            }
+        }
+
+        if (postData) return postData;
 
         if (type === 'activity') return mapActivity();
         if (type === 'tour') return mapTour();
-        return mapEvent();
+        return mapGuide();
     }
 
     const { data: postData, error: postError } = await supabase
@@ -723,8 +742,8 @@ export const getListingById = async (
     if (postError) console.error('Error fetching listing from posts:', postError);
     if (postData) return postData as PostRecord;
 
-    const [activity, tour, event] = await Promise.all([mapActivity(), mapTour(), mapEvent()]);
-    return activity || tour || event;
+    const [activity, tour, guide] = await Promise.all([mapActivity(), mapTour(), mapGuide()]);
+    return activity || tour || guide;
 };
 
 export const createBooking = async (booking: {
@@ -743,6 +762,17 @@ export const createBooking = async (booking: {
     payment_status?: PaymentStatus;
     booking_date?: string | null;
 }) => {
+    const { data: travelerProfile, error: travelerProfileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', booking.user_id)
+        .maybeSingle();
+
+    if (travelerProfileError) throw travelerProfileError;
+    if ((travelerProfile as { role?: string } | null)?.role !== 'tourist') {
+        throw new Error('Only tourist accounts can place bookings.');
+    }
+
     const unifiedPayload = {
         user_id: booking.user_id,
         listing_id: booking.listing_id || booking.activity_id,

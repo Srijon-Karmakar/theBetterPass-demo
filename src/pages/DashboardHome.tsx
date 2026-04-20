@@ -6,16 +6,71 @@ import {
     getPublicListingsByType,
     type PostRecord,
 } from '../lib/destinations';
+import { isProviderRole } from '../lib/platform';
 import './dashboard-home.css';
 
-type SectionTab = 'tours' | 'activities' | 'events';
+type SectionTab = 'tours' | 'activities' | 'guides';
 
-const getGreeting = (): string => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+type GreetingPhase = 'morning' | 'afternoon' | 'night';
+type GreetingAudience = 'tourist' | 'provider';
+
+const GREETING_COPY: Record<GreetingAudience, Record<GreetingPhase, string[]>> = {
+    tourist: {
+        morning: [
+            'Let us build a travel plan for today.',
+            'Ready to map your next getaway?',
+            'Morning is perfect for planning your next trip.',
+            'Pick a destination and start your adventure.',
+        ],
+        afternoon: [
+            'Let us shape your next travel plan.',
+            'Got time for a quick trip plan today?',
+            'Your next tour is a few taps away.',
+            'Plan now, travel smoother later.',
+        ],
+        night: [
+            'Wind down by planning your next escape.',
+            'Tonight is great for your next travel plan.',
+            'Browse now and lock in your next journey.',
+            'Dream destination? Let us plan it tonight.',
+        ],
+    },
+    provider: {
+        morning: [
+            'Ready to post a new tour package?',
+            'Start the day by publishing a fresh listing.',
+            'Morning momentum: add your next package.',
+            'Update your catalog and reach new travelers.',
+        ],
+        afternoon: [
+            'Up for posting a new tour package?',
+            'Afternoon push: publish a new listing now.',
+            'Add a new package while demand is active.',
+            'Refresh your offerings with a new post.',
+        ],
+        night: [
+            'Close the day by posting a new package.',
+            'Night shift: prep tomorrow with a new listing.',
+            'Publish tonight, capture bookings tomorrow.',
+            'One more listing can boost tomorrow’s leads.',
+        ],
+    },
 };
+
+const getGreetingPhase = (): GreetingPhase => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 18) return 'afternoon';
+    return 'night';
+};
+
+const getGreetingHeading = (phase: GreetingPhase): string => {
+    if (phase === 'morning') return 'Good Morning';
+    if (phase === 'afternoon') return 'Good Afternoon';
+    return 'Good Night';
+};
+
+const pickRandom = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
 
 const getPostImage = (post: PostRecord): string | undefined => {
     const candidate = post.image_url || post.cover_image_url || post.thumbnail_url;
@@ -39,13 +94,13 @@ const getPostSubtitle = (post: PostRecord): string => {
 
 const getPostType = (post: PostRecord): SectionTab => {
     if (post.type === 'tour') return 'tours';
-    if (post.type === 'event') return 'events';
+    if (post.type === 'guide' || post.type === 'event') return 'guides';
     return 'activities';
 };
 
-const toListingTypePath = (tab: SectionTab): 'tour' | 'activity' | 'event' => {
+const toListingTypePath = (tab: SectionTab): 'tour' | 'activity' | 'guide' => {
     if (tab === 'tours') return 'tour';
-    if (tab === 'events') return 'event';
+    if (tab === 'guides') return 'guide';
     return 'activity';
 };
 
@@ -104,15 +159,21 @@ export const DashboardHome: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [tourPosts, setTourPosts] = useState<PostRecord[]>([]);
     const [activityPosts, setActivityPosts] = useState<PostRecord[]>([]);
-    const [eventPosts, setEventPosts] = useState<PostRecord[]>([]);
+    const [guidePosts, setGuidePosts] = useState<PostRecord[]>([]);
 
     const activeTab = useMemo<SectionTab | null>(() => {
         const t = searchParams.get('tab');
-        if (t === 'tours' || t === 'activities' || t === 'events') return t;
+        if (t === 'tours' || t === 'activities' || t === 'guides') return t;
         return null;
     }, [searchParams]);
 
-    const greeting = useMemo(() => getGreeting(), []);
+    const greetingPhase = useMemo(() => getGreetingPhase(), []);
+    const greeting = useMemo(() => getGreetingHeading(greetingPhase), [greetingPhase]);
+    const greetingAudience: GreetingAudience = isProviderRole(profile?.role) ? 'provider' : 'tourist';
+    const greetingSub = useMemo(
+        () => pickRandom(GREETING_COPY[greetingAudience][greetingPhase]),
+        [greetingAudience, greetingPhase]
+    );
     const name = profile?.full_name || user?.email?.split('@')[0] || 'Explorer';
 
     useEffect(() => {
@@ -120,14 +181,14 @@ export const DashboardHome: React.FC = () => {
         const load = async () => {
             setLoading(true);
             try {
-                const [tours, activities, events] = await Promise.all([
+                const [tours, activities, guides] = await Promise.all([
                     getPublicListingsByType('tour'),
                     getPublicListingsByType('activity'),
-                    getPublicListingsByType('event'),
+                    getPublicListingsByType('guide'),
                 ]);
                 setTourPosts(tours);
                 setActivityPosts(activities);
-                setEventPosts(events);
+                setGuidePosts(guides);
             } catch (err) {
                 console.error('Dashboard load error:', err);
             } finally {
@@ -142,7 +203,7 @@ export const DashboardHome: React.FC = () => {
     const showAll = activeTab === null;
     const showTours = showAll || activeTab === 'tours';
     const showActivities = showAll || activeTab === 'activities';
-    const showEvents = showAll || activeTab === 'events';
+    const showGuides = showAll || activeTab === 'guides';
 
     const handleTab = (tab: SectionTab) => {
         if (activeTab === tab) {
@@ -159,12 +220,12 @@ export const DashboardHome: React.FC = () => {
                 <section className="dh-greeting">
                     <h1 className="dh-greeting-title">{greeting}</h1>
                     <p className="dh-greeting-name">{name},</p>
-                    <p className="dh-greeting-sub">Have any tour plans yet?</p>
+                    <p className="dh-greeting-sub">{greetingSub}</p>
                 </section>
 
                 {/* Tab strip */}
                 <div className="dh-tab-strip" role="tablist" aria-label="Content filter">
-                    {(['tours', 'activities', 'events'] as const).map((tab) => (
+                    {(['tours', 'activities', 'guides'] as const).map((tab) => (
                         <button
                             key={tab}
                             type="button"
@@ -199,11 +260,11 @@ export const DashboardHome: React.FC = () => {
                                 moreHref="/dashboard?tab=activities"
                             />
                         )}
-                        {showEvents && (
+                        {showGuides && (
                             <Section
-                                title="Events"
-                                posts={eventPosts}
-                                moreHref="/dashboard?tab=events"
+                                title="Guides"
+                                posts={guidePosts}
+                                moreHref="/dashboard?tab=guides"
                             />
                         )}
                     </div>

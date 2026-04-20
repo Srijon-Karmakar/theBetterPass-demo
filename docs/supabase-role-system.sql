@@ -64,7 +64,7 @@ create table if not exists public.bookings (
     provider_user_id uuid references auth.users(id) on delete set null,
     company_profile_id uuid references public.profiles(id) on delete set null,
     listing_id uuid not null,
-    listing_type text not null check (listing_type in ('tour', 'activity', 'event')),
+    listing_type text not null check (listing_type in ('tour', 'activity', 'guide')),
     listing_title text,
     listing_image text,
     number_of_people integer not null default 1,
@@ -86,6 +86,35 @@ alter table public.bookings
     add column if not exists unit_price numeric(12,2) default 0,
     add column if not exists payment_status text default 'pending',
     add column if not exists booking_date date;
+
+update public.bookings
+set listing_type = 'guide'
+where listing_type = 'event';
+
+do $$
+declare
+    constraint_name text;
+begin
+    for constraint_name in
+        select c.conname
+        from pg_constraint c
+        join pg_class t on t.oid = c.conrelid
+        join pg_namespace n on n.oid = t.relnamespace
+        where n.nspname = 'public'
+          and t.relname = 'bookings'
+          and c.contype = 'c'
+          and pg_get_constraintdef(c.oid) ilike '%listing_type%'
+    loop
+        execute format('alter table public.bookings drop constraint if exists %I', constraint_name);
+    end loop;
+end $$;
+
+alter table public.bookings
+    drop constraint if exists bookings_listing_type_check;
+
+alter table public.bookings
+    add constraint bookings_listing_type_check
+    check (listing_type in ('tour', 'activity', 'guide'));
 
 create index if not exists bookings_user_id_idx on public.bookings(user_id);
 create index if not exists bookings_provider_user_id_idx on public.bookings(provider_user_id);
@@ -120,6 +149,24 @@ alter table public.posts
     add column if not exists reviewed_at timestamptz,
     add column if not exists reviewed_by uuid references auth.users(id) on delete set null;
 
+do $$
+declare
+    constraint_name text;
+begin
+    for constraint_name in
+        select c.conname
+        from pg_constraint c
+        join pg_class t on t.oid = c.conrelid
+        join pg_namespace n on n.oid = t.relnamespace
+        where n.nspname = 'public'
+          and t.relname = 'posts'
+          and c.contype = 'c'
+          and pg_get_constraintdef(c.oid) ilike '%type%'
+    loop
+        execute format('alter table public.posts drop constraint if exists %I', constraint_name);
+    end loop;
+end $$;
+
 create table if not exists public.moderation_audit_logs (
     id uuid primary key default gen_random_uuid(),
     entity_type text not null check (entity_type in ('verification', 'listing')),
@@ -138,6 +185,22 @@ create index if not exists moderation_audit_logs_created_at_idx on public.modera
 update public.posts
 set status = coalesce(status, 'published')
 where status is null;
+
+update public.posts
+set type = 'guide'
+where type = 'event';
+
+update public.posts
+set type = 'activity'
+where type is not null
+  and type not in ('tour', 'activity', 'guide');
+
+alter table public.posts
+    drop constraint if exists posts_type_check;
+
+alter table public.posts
+    add constraint posts_type_check
+    check (type in ('tour', 'activity', 'guide'));
 
 create or replace function public.is_admin_user(check_user_id uuid default auth.uid())
 returns boolean
@@ -318,6 +381,12 @@ for insert
 to authenticated
 with check (
     user_id = auth.uid()
+    and exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'tourist'
+    )
 );
 
 drop policy if exists "bookings_update_participants_or_admin" on public.bookings;
@@ -484,4 +553,6 @@ using (
 -- 1. Admin moderation in the app assumes admins have profiles.role = 'admin'.
 -- 2. Provider listings publish instantly after account verification; only provider accounts, not listings, go through admin approval.
 -- 3. Service role bypasses RLS; keep it server-side only.
--- 4. If you still have public data in legacy tours / activities / events tables, run docs/legacy-content-to-posts.sql and then remove the temporary client-side fallback merge.
+-- 4. Legacy events are now treated as guides in product UX. Optional migration:
+--    update public.posts set type = 'guide' where type = 'event';
+-- 5. If you still have public data in legacy tours / activities / events tables, run docs/legacy-content-to-posts.sql and then remove the temporary client-side fallback merge.

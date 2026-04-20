@@ -44,7 +44,7 @@ export const AdminConsole: React.FC = () => {
     const [verificationStatusFilter, setVerificationStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'resubmitted'>('all');
     const [verificationRoleFilter, setVerificationRoleFilter] = useState<'all' | 'tour_company' | 'tour_instructor' | 'tour_guide'>('all');
     const [listingStatusFilter, setListingStatusFilter] = useState<'all' | 'pending' | 'rejected' | 'published'>('all');
-    const [listingTypeFilter, setListingTypeFilter] = useState<'all' | 'tour' | 'activity' | 'event'>('all');
+    const [listingTypeFilter, setListingTypeFilter] = useState<'all' | 'tour' | 'activity' | 'guide'>('all');
     const [verificationSearch, setVerificationSearch] = useState('');
     const [listingSearch, setListingSearch] = useState('');
     const [verificationSort, setVerificationSort] = useState<'updated_desc' | 'updated_asc' | 'reviewed_desc'>('updated_desc');
@@ -124,12 +124,13 @@ export const AdminConsole: React.FC = () => {
         const query = listingSearch.trim().toLowerCase();
         const filtered = listingQueue.filter((item) => {
             const matchesStatus = listingStatusFilter === 'all' || item.status === listingStatusFilter;
-            const matchesType = listingTypeFilter === 'all' || item.type === listingTypeFilter;
+            const normalizedType = item.type === 'event' ? 'guide' : item.type;
+            const matchesType = listingTypeFilter === 'all' || normalizedType === listingTypeFilter;
             const haystack = [
                 item.title,
                 item.name,
                 item.location,
-                item.type,
+                normalizedType,
                 item.sub_category,
             ].filter(Boolean).join(' ').toLowerCase();
             const matchesSearch = !query || haystack.includes(query);
@@ -461,7 +462,7 @@ export const AdminConsole: React.FC = () => {
                                     <option value="all">All types</option>
                                     <option value="tour">{LISTING_LABELS.tour}</option>
                                     <option value="activity">{LISTING_LABELS.activity}</option>
-                                    <option value="event">{LISTING_LABELS.event}</option>
+                                    <option value="guide">{LISTING_LABELS.guide}</option>
                                 </select>
                             </label>
                             <label>
@@ -806,7 +807,7 @@ export const AdminConsole: React.FC = () => {
                                                 <div>
                                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
                                                     <span style={{ padding: '0.45rem 0.75rem', borderRadius: '999px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                                                        {listing.type || 'listing'}
+                                                        {(listing.type === 'event' ? 'guide' : listing.type) || 'listing'}
                                                     </span>
                                                     <span style={{ padding: '0.45rem 0.75rem', borderRadius: '999px', background: 'rgba(37, 99, 235, 0.1)', color: '#1d4ed8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                                         {listing.status || 'pending'}
