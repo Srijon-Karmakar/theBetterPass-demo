@@ -31,7 +31,7 @@ const EMPTY_FORM = (type: ListingType): ListingInput => ({
     sub_category: '',
     price: null,
     starts_at: '',
-    status: 'published',
+    status: 'pending',
 });
 
 const getListingTone = (status?: string | null) => {
@@ -50,11 +50,11 @@ const getListingTitle = (listing: PostRecord) => listing.title || listing.name |
 const getPrimaryActionCopy = (type: ListingType) => {
     switch (type) {
         case 'tour':
-            return 'Publish tour';
+            return 'Submit tour for review';
         case 'activity':
-            return 'Publish activity';
+            return 'Submit activity for review';
         case 'guide':
-            return 'Publish guide service';
+            return 'Submit event for review';
     }
 };
 
@@ -65,7 +65,7 @@ const getSingularListingLabel = (type: ListingType) => {
         case 'activity':
             return 'Activity';
         case 'guide':
-            return 'Guide';
+            return 'Event';
     }
 };
 
@@ -130,7 +130,7 @@ export const ProviderStudio: React.FC = () => {
             sub_category: listing.sub_category || '',
             price: typeof listing.price === 'number' ? listing.price : null,
             starts_at: listing.starts_at || '',
-            status: 'published',
+            status: 'pending',
         });
     };
 
@@ -146,7 +146,7 @@ export const ProviderStudio: React.FC = () => {
                 provider_user_id: user.id,
                 user_id: user.id,
                 company_profile_id: profile?.company_profile_id || null,
-                status: 'published',
+                status: 'pending',
                 rejection_reason: null,
                 price: typeof form.price === 'number' ? form.price : Number(form.price || 0) || null,
                 starts_at: form.starts_at || null,
@@ -154,8 +154,8 @@ export const ProviderStudio: React.FC = () => {
             await loadListings();
             resetForm();
         } catch (error) {
-            console.error('Failed to publish listing:', error);
-            alert('Failed to publish listing. Please try again.');
+            console.error('Failed to submit listing:', error);
+            alert('Failed to submit listing. Please try again.');
         } finally {
             setSaving(false);
         }
@@ -167,10 +167,9 @@ export const ProviderStudio: React.FC = () => {
                 <section className="provider-studio-hero">
                     <div className="provider-studio-hero-copy">
                         <span className="provider-studio-kicker">Provider Studio</span>
-                        <h1>Role-based publishing for live tours, activities, and guide services.</h1>
+                        <h1>Role-based publishing for live tours, activities, and events.</h1>
                         <p>
-                            Verified providers publish directly to the live catalog. Account approval stays in admin review,
-                            but listing publishing is instant once your provider account is approved.
+                            Verified providers submit listings for admin review. Once approved by an admin, your listing goes live on the catalog.
                         </p>
                     </div>
                     <aside className="provider-studio-status-card">
@@ -200,7 +199,7 @@ export const ProviderStudio: React.FC = () => {
                                     ? 'Create itinerary-led tours with title, location, pricing, cover image, and launch timing.'
                                     : type === 'activity'
                                         ? 'Publish guided activities with immediate visibility after account verification.'
-                                        : 'Launch guide services with date-aware availability and instant public listing visibility.'}
+                                        : 'Launch events with date-aware availability and instant public listing visibility.'}
                             </p>
                             <button
                                 type="button"

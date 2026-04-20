@@ -252,6 +252,15 @@ const extractMissingColumnName = (message: string | undefined): string | null =>
     return null;
 };
 
+const isMissingSpecificColumnError = (
+    error: { code?: string; message?: string } | null | undefined,
+    columnName: string
+) => {
+    if (!isMissingColumnError(error)) return false;
+    const missing = extractMissingColumnName(error?.message);
+    return missing === columnName;
+};
+
 const PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
     'full_name',
     'bio',
@@ -429,7 +438,7 @@ export const getEvents = async () => {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching legacy guides(events):', error);
+        console.error('Error fetching legacy events:', error);
         return [];
     }
 
@@ -467,7 +476,7 @@ export const getPosts = async () => {
         console.error('Error fetching activities for unified feed:', activitiesResult.error);
     }
     if (eventsResult.error) {
-        console.error('Error fetching guides(events) for unified feed:', eventsResult.error);
+        console.error('Error fetching events for unified feed:', eventsResult.error);
     }
 
     const combined = [
@@ -525,8 +534,8 @@ export const getPublicListingsByType = async (type: ListingType): Promise<PostRe
         supabase.from('events').select('*').order('created_at', { ascending: false }),
     ]);
 
-    if (postsResult.error) console.error('Error fetching published guides from posts:', postsResult.error);
-    if (eventsResult.error) console.error('Error fetching legacy guides(events):', eventsResult.error);
+    if (postsResult.error) console.error('Error fetching published events from posts:', postsResult.error);
+    if (eventsResult.error) console.error('Error fetching legacy events:', eventsResult.error);
 
     return dedupePostsById([
         ...safeArray(postsResult.data) as PostRecord[],
@@ -637,7 +646,7 @@ export const resubmitListing = async (listingId: string) => {
     const { data, error } = await supabase
         .from('posts')
         .update({
-            status: 'published',
+            status: 'pending',
             rejection_reason: null,
             reviewed_at: null,
             reviewed_by: null,
@@ -776,7 +785,7 @@ export const createBooking = async (booking: {
     const unifiedPayload = {
         user_id: booking.user_id,
         listing_id: booking.listing_id || booking.activity_id,
-        listing_type: booking.listing_type || 'activity',
+        listing_type: normalizeListingType(booking.listing_type || 'activity'),
         provider_user_id: booking.provider_user_id || null,
         listing_title: booking.listing_title || null,
         listing_image: booking.listing_image || null,
@@ -824,13 +833,26 @@ export const getProfile = async (userId: string) => {
         verification_status: normalizeVerificationStatus(profile),
     };
 
-    const { data: verificationData, error: verificationError } = await supabase
+    let verificationResult = await supabase
         .from('verification')
         .select('role, status')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+    if (isMissingSpecificColumnError(verificationResult.error, 'updated_at')) {
+        verificationResult = await supabase
+            .from('verification')
+            .select('role, status')
+            .eq('user_id', userId)
+            .order('submitted_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+    }
+
+    const verificationData = verificationResult.data;
+    const verificationError = verificationResult.error;
 
     if (verificationError) {
         console.error('Error fetching latest verification for profile:', verificationError);
@@ -863,6 +885,18 @@ export const updateProfile = async (profile: Partial<Profile>) => {
         return getProfile(profile.id);
     }
 
+    const upsertProfilePayload = async () => {
+        const { data: upsertData, error: upsertError } = await supabase
+            .from('profiles')
+            .upsert([{ id: profile.id, ...payload }], { onConflict: 'id' })
+            .select()
+            .maybeSingle();
+
+        if (upsertError) throw upsertError;
+        if (!upsertData) throw new Error('Profile save did not return persisted data.');
+        return mapProfile(upsertData as Record<string, unknown> | null);
+    };
+
     while (Object.keys(payload).length > 0) {
         const { data, error } = await supabase
             .from('profiles')
@@ -871,7 +905,10 @@ export const updateProfile = async (profile: Partial<Profile>) => {
             .select()
             .maybeSingle();
 
-        if (!error) return mapProfile(data as Record<string, unknown> | null);
+        if (!error) {
+            if (data) return mapProfile(data as Record<string, unknown> | null);
+            return upsertProfilePayload();
+        }
         if (!isMissingColumnError(error)) throw error;
 
         const missingColumn = extractMissingColumnName(error.message);
@@ -879,7 +916,7 @@ export const updateProfile = async (profile: Partial<Profile>) => {
         delete payload[missingColumn as keyof Profile];
     }
 
-    throw new Error('Profile update failed because the profiles table is missing required columns.');
+    return upsertProfilePayload();
 };
 
 export const createOrUpdateProfileFromSignup = async (userId: string, input: SignupInput) => {
@@ -923,10 +960,14 @@ export const createOrUpdateProfileFromSignup = async (userId: string, input: Sig
 export const submitVerificationApplication = async (userId: string, input: SignupInput) => {
     if (!isProviderRole(input.role)) return null;
 
+    const now = new Date().toISOString();
     const payload = {
+        id: crypto.randomUUID(),
         user_id: userId,
         role: input.role,
         status: 'pending',
+        submitted_at: now,
+        updated_at: now,
         company_name: input.companyName || null,
         website: input.website || null,
         registration_number: input.registrationNumber || null,
@@ -955,6 +996,53 @@ export const submitVerificationApplication = async (userId: string, input: Signu
     return data as VerificationRecord | null;
 };
 
+export const ensureProviderVerificationRecord = async (
+    userId: string,
+    profile: Profile | null | undefined
+) => {
+    if (!profile?.role || !isProviderRole(profile.role)) return null;
+
+    const existing = await getLatestVerification(userId);
+    if (existing) return existing;
+
+    const now = new Date().toISOString();
+    const payload: Record<string, unknown> = {
+        id: crypto.randomUUID(),
+        user_id: userId,
+        role: profile.role,
+        status: 'pending',
+        submitted_at: now,
+        updated_at: now,
+    };
+
+    while (Object.keys(payload).length > 0) {
+        const { data, error } = await supabase
+            .from('verification')
+            .insert([payload])
+            .select()
+            .maybeSingle();
+
+        if (!error) {
+            await supabase
+                .from('profiles')
+                .update({
+                    verification_status: 'pending',
+                    is_verified: false,
+                })
+                .eq('id', userId);
+
+            return data as VerificationRecord | null;
+        }
+
+        if (!isMissingColumnError(error)) throw error;
+        const missingColumn = extractMissingColumnName(error.message);
+        if (!missingColumn || !(missingColumn in payload)) throw error;
+        delete payload[missingColumn];
+    }
+
+    return null;
+};
+
 export const signUpWithRole = async (input: SignupInput) => {
     const { data, error } = await supabase.auth.signUp({
         email: input.email,
@@ -971,7 +1059,11 @@ export const signUpWithRole = async (input: SignupInput) => {
     if (!data.user) return data;
 
     await createOrUpdateProfileFromSignup(data.user.id, input);
-    await submitVerificationApplication(data.user.id, input);
+    try {
+        await submitVerificationApplication(data.user.id, input);
+    } catch (verificationErr) {
+        console.error('Failed to submit verification application during signup (will retry on first login):', verificationErr);
+    }
     return data;
 };
 
@@ -1170,13 +1262,25 @@ export const getUserProfileById = async (userId: string): Promise<Profile | null
 };
 
 export const getLatestVerification = async (userId: string): Promise<VerificationRecord | null> => {
-    const { data, error } = await supabase
+    let result = await supabase
         .from('verification')
         .select('*')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+    if (isMissingSpecificColumnError(result.error, 'updated_at')) {
+        result = await supabase
+            .from('verification')
+            .select('*')
+            .eq('user_id', userId)
+            .order('submitted_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+    }
+
+    const { data, error } = result;
 
     if (error) {
         console.error('Error fetching verification:', error);
@@ -1195,18 +1299,45 @@ export const resubmitVerificationApplication = async (userId: string) => {
     const now = new Date().toISOString();
     const nextStatus: VerificationStatus = 'resubmitted';
 
-    const verificationUpdate = await supabase
-        .from('verification')
-        .update({
-            status: nextStatus,
-            updated_at: now,
-            rejection_reason: null,
-            reviewed_at: null,
-            reviewed_by: null,
-        })
-        .eq('id', latest.id)
-        .select()
-        .maybeSingle();
+    const verificationPayload: Record<string, unknown> = {
+        status: nextStatus,
+        updated_at: now,
+        rejection_reason: null,
+        reviewed_at: null,
+        reviewed_by: null,
+    };
+    let verificationUpdate: {
+        data: VerificationRecord | null;
+        error: { code?: string; message?: string } | null;
+    } = { data: null, error: null };
+
+    while (Object.keys(verificationPayload).length > 0) {
+        const result = await supabase
+            .from('verification')
+            .update(verificationPayload)
+            .eq('id', latest.id)
+            .select()
+            .maybeSingle();
+
+        if (!result.error) {
+            verificationUpdate = {
+                data: result.data as VerificationRecord | null,
+                error: null,
+            };
+            break;
+        }
+        if (!isMissingColumnError(result.error)) {
+            verificationUpdate = { data: null, error: result.error };
+            break;
+        }
+
+        const missingColumn = extractMissingColumnName(result.error.message);
+        if (!missingColumn || !(missingColumn in verificationPayload)) {
+            verificationUpdate = { data: null, error: result.error };
+            break;
+        }
+        delete verificationPayload[missingColumn];
+    }
 
     if (verificationUpdate.error) throw verificationUpdate.error;
 
@@ -1241,36 +1372,125 @@ export const resubmitVerificationApplication = async (userId: string) => {
 };
 
 export const getVerificationQueue = async (): Promise<VerificationRecord[]> => {
-    const { data, error } = await supabase
-        .from('verification')
-        .select(`
-            *,
-            profiles:user_id (
-                id,
-                full_name,
-                email,
-                phone,
-                country,
-                city,
-                role,
-                verification_status,
-                company_name,
-                website,
-                bio,
-                works_under_company
-            )
-        `)
-        .order('updated_at', { ascending: false });
+    const attempts: Array<PromiseLike<{
+        data: unknown[] | null;
+        error: { code?: string; message?: string } | null;
+    }>> = [
+        supabase
+            .from('verification')
+            .select('*')
+            .order('updated_at', { ascending: false }),
+        supabase
+            .from('verification')
+            .select('*')
+            .order('submitted_at', { ascending: false }),
+        supabase
+            .from('verification')
+            .select('*')
+            .order('created_at', { ascending: false }),
+        supabase
+            .from('verification')
+            .select('*'),
+    ];
 
-    if (error) {
-        console.error('Error fetching verification queue:', error);
-        return [];
+    let verificationRows: unknown[] | null = null;
+    let lastError: { code?: string; message?: string } | null = null;
+
+    for (const attempt of attempts) {
+        const { data, error } = await attempt;
+        if (!error) {
+            verificationRows = data;
+            lastError = null;
+            break;
+        }
+        lastError = error;
     }
 
-    return safeArray(data as VerificationRecord[]).map((item) => ({
+    if (lastError) {
+        console.error('Error fetching verification queue:', lastError);
+        verificationRows = [];
+    }
+
+    const items = safeArray(verificationRows as VerificationRecord[]);
+
+    const userIds = Array.from(new Set(items.map((item) => item.user_id).filter(Boolean)));
+    const profileMap = new Map<string, Profile>();
+
+    if (userIds.length > 0) {
+        const { data: profileRows, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('id', userIds);
+
+        if (profileError) {
+            console.error('Error fetching profiles for verification queue:', profileError);
+        } else {
+            for (const row of safeArray(profileRows as Record<string, unknown>[])) {
+                const mapped = mapProfile(row);
+                if (mapped?.id) profileMap.set(mapped.id, mapped);
+            }
+        }
+    }
+
+    const normalizedFromVerification = items.map((item) => ({
         ...item,
-        profiles: item.profiles ? mapProfile(item.profiles as unknown as Record<string, unknown>) : null,
+        profiles: profileMap.get(item.user_id) || null,
     }));
+
+    const coveredUserIds = new Set(normalizedFromVerification.map((item) => item.user_id));
+    let pendingProfilesResult = await supabase
+        .from('profiles')
+        .select('*')
+        .in('role', ['tour_company', 'tour_instructor', 'tour_guide'])
+        .in('verification_status', ['pending', 'rejected', 'resubmitted']);
+
+    if (pendingProfilesResult.error && isMissingColumnError(pendingProfilesResult.error)) {
+        pendingProfilesResult = await supabase
+            .from('profiles')
+            .select('*')
+            .in('role', ['tour_company', 'tour_instructor', 'tour_guide'])
+            .eq('is_verified', false);
+    }
+
+    const { data: pendingProfiles, error: pendingProfilesError } = pendingProfilesResult;
+
+    if (pendingProfilesError) {
+        console.error('Error fetching fallback provider profiles for verification queue:', pendingProfilesError);
+        return normalizedFromVerification;
+    }
+
+    const fallbackRows = safeArray(pendingProfiles as Record<string, unknown>[])
+        .map((row) => mapProfile(row))
+        .filter((profile): profile is Profile => Boolean(profile?.id && profile?.role && isProviderRole(profile.role)))
+        .filter((profile) => !coveredUserIds.has(profile.id))
+        .map((profile) => ({
+            id: `profile-${profile.id}`,
+            user_id: profile.id,
+            role: profile.role as UserRole,
+            status: (profile.verification_status || 'pending') as VerificationStatus,
+            company_name: profile.company_name || null,
+            website: profile.website || null,
+            works_under_company: !!profile.works_under_company,
+            specialties: profile.provider_specialties || null,
+            license_number: profile.guide_license_number || null,
+            languages: Array.isArray(profile.languages)
+                ? profile.languages
+                : typeof profile.languages === 'string'
+                    ? profile.languages.split(',').map((item) => item.trim()).filter(Boolean)
+                    : null,
+            years_experience: profile.years_experience || null,
+            certificate_id: profile.certificate_id || null,
+            government_id_ref: profile.government_id_ref || null,
+            bio: profile.bio || null,
+            rejection_reason: null,
+            reviewed_at: null,
+            reviewed_by: null,
+            submitted_at: undefined,
+            updated_at: undefined,
+            profiles: profile,
+        } as VerificationRecord));
+
+    return [...normalizedFromVerification, ...fallbackRows];
 };
 
 export const reviewVerificationApplication = async (
@@ -1279,19 +1499,92 @@ export const reviewVerificationApplication = async (
     options?: { reason?: string; reviewerId?: string }
 ) => {
     const now = new Date().toISOString();
+    const isProfileFallbackRow = typeof application.id === 'string' && application.id.startsWith('profile-');
 
-    const verificationUpdate = await supabase
-        .from('verification')
-        .update({
-            status,
-            updated_at: now,
-            rejection_reason: status === 'rejected' ? options?.reason || null : null,
-            reviewed_at: now,
-            reviewed_by: options?.reviewerId || null,
-        })
-        .eq('id', application.id)
-        .select()
-        .maybeSingle();
+    if (isProfileFallbackRow) {
+        const profileUpdate = await supabase
+            .from('profiles')
+            .update({
+                role: application.role,
+                is_verified: status === 'approved',
+                verification_status: status,
+                company_name: application.company_name || null,
+                website: application.website || null,
+                provider_specialties: application.specialties || null,
+                guide_license_number: application.license_number || null,
+                certificate_id: application.certificate_id || null,
+                government_id_ref: application.government_id_ref || null,
+                years_experience: application.years_experience || null,
+                languages: application.languages || null,
+                bio: application.bio || null,
+                works_under_company: application.works_under_company || false,
+            })
+            .eq('id', application.user_id)
+            .select()
+            .maybeSingle();
+
+        if (profileUpdate.error) throw profileUpdate.error;
+
+        await writeModerationAuditLog({
+            entityType: 'verification',
+            entityId: application.id,
+            action: status,
+            actorUserId: options?.reviewerId,
+            targetUserId: application.user_id,
+            reason: status === 'rejected' ? options?.reason || null : null,
+            metadata: {
+                role: application.role,
+                companyName: application.company_name || null,
+                reviewedAt: now,
+                source: 'profiles-fallback',
+            },
+        });
+
+        return {
+            verification: null,
+            profile: mapProfile(profileUpdate.data as Record<string, unknown> | null),
+        };
+    }
+
+    const verificationPayload: Record<string, unknown> = {
+        status,
+        updated_at: now,
+        rejection_reason: status === 'rejected' ? options?.reason || null : null,
+        reviewed_at: now,
+        reviewed_by: options?.reviewerId || null,
+    };
+    let verificationUpdate: {
+        data: VerificationRecord | null;
+        error: { code?: string; message?: string } | null;
+    } = { data: null, error: null };
+
+    while (Object.keys(verificationPayload).length > 0) {
+        const result = await supabase
+            .from('verification')
+            .update(verificationPayload)
+            .eq('id', application.id)
+            .select()
+            .maybeSingle();
+
+        if (!result.error) {
+            verificationUpdate = {
+                data: result.data as VerificationRecord | null,
+                error: null,
+            };
+            break;
+        }
+        if (!isMissingColumnError(result.error)) {
+            verificationUpdate = { data: null, error: result.error };
+            break;
+        }
+
+        const missingColumn = extractMissingColumnName(result.error.message);
+        if (!missingColumn || !(missingColumn in verificationPayload)) {
+            verificationUpdate = { data: null, error: result.error };
+            break;
+        }
+        delete verificationPayload[missingColumn];
+    }
 
     if (verificationUpdate.error) throw verificationUpdate.error;
 
@@ -1389,7 +1682,7 @@ export const getAllowedListingTypes = (role: UserRole | null | undefined): Listi
 export const getProviderCapabilitySummary = (role: UserRole | null | undefined) => {
     const listingTypes = getAllowedListingTypes(role);
     if (!role || listingTypes.length === 0) return 'Bookings, favorites, reviews, and provider chat';
-    return `Can publish ${listingTypes.join(', ')} listings after approval`;
+    return `Can publish ${listingTypes.map((type) => (type === 'guide' ? 'event' : type)).join(', ')} listings after approval`;
 };
 
 export const canCreateListing = (role: UserRole | null | undefined, type: ListingType) => canRolePublish(role, type);

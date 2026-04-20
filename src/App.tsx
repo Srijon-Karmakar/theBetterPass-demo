@@ -12,21 +12,64 @@ import { UserProfile } from './pages/UserProfile';
 import { Messages } from './pages/Messages';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './hooks/useTheme';
+import { getRoleLabel, getVerificationLabel, isProviderRole } from './lib/platform';
 
 const APP_HOME_PATH = '/dashboard';
 const DASHBOARD_TOURS_PATH = '/dashboard?tab=tours';
 const DASHBOARD_ACTIVITIES_PATH = '/dashboard?tab=activities';
-const DASHBOARD_GUIDES_PATH = '/dashboard?tab=guides';
+const DASHBOARD_EVENTS_PATH = '/dashboard?tab=events';
+
+const ProviderPendingView: React.FC<{ roleLabel: string; verificationLabel: string; onSignOut: () => Promise<void> }> = ({ roleLabel, verificationLabel, onSignOut }) => (
+  <main className="animate-fade" style={{ minHeight: '100vh', padding: '140px 16px 32px', background: 'var(--bg-main)' }}>
+    <div style={{ maxWidth: 640, margin: '0 auto', background: 'var(--surface-main)', border: '1px solid var(--border-light)', borderRadius: 20, boxShadow: 'var(--shadow-card)', padding: '24px 20px' }}>
+      <span style={{ display: 'inline-flex', padding: '6px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'rgba(245, 158, 11, 0.12)', color: '#b45309', marginBottom: 12 }}>
+        Account Review
+      </span>
+      <h1 style={{ margin: 0, fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', lineHeight: 1.15 }}>Provider account pending approval</h1>
+      <p style={{ margin: '12px 0 0', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+        Your {roleLabel} account is currently under admin verification. Marketplace content and posting features unlock after approval.
+      </p>
+      <div style={{ marginTop: 18, display: 'grid', gap: 10 }}>
+        <div style={{ border: '1px solid var(--border-light)', borderRadius: 12, padding: '10px 12px', background: 'var(--bg-main)' }}>
+          <strong style={{ display: 'block', fontSize: '0.76rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Status</strong>
+          <span style={{ fontWeight: 700 }}>{verificationLabel}</span>
+        </div>
+      </div>
+      <p style={{ marginTop: 14, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+        You can sign out and back in later. This screen will automatically unlock once approved.
+      </p>
+      <button
+        type="button"
+        onClick={() => { void onSignOut(); }}
+        className="btn btn-soft"
+        style={{ marginTop: 14, borderRadius: '999px', padding: '10px 16px' }}
+      >
+        Sign Out
+      </button>
+    </div>
+  </main>
+);
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, profile, profileLoading, roleLabel, verificationLabel, signOut } = useAuth();
 
-  if (loading) {
+  if (loading || profileLoading) {
     return null;
   }
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  const authRole = typeof user?.user_metadata?.role === 'string' ? user.user_metadata.role : null;
+  const isProviderIdentity = isProviderRole(profile?.role) || isProviderRole(authRole);
+
+  if (isProviderIdentity && profile?.verification_status !== 'approved') {
+    const pendingRoleLabel = profile?.role ? roleLabel : getRoleLabel(authRole);
+    const pendingVerificationLabel = profile?.verification_status
+      ? verificationLabel
+      : getVerificationLabel('pending');
+    return <ProviderPendingView roleLabel={pendingRoleLabel} verificationLabel={pendingVerificationLabel} onSignOut={signOut} />;
   }
 
   return <>{children}</>;
@@ -92,8 +135,8 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><DashboardHome /></ProtectedRoute>} />
           <Route path="/activities" element={<ProtectedRoute><Navigate to={DASHBOARD_ACTIVITIES_PATH} replace /></ProtectedRoute>} />
           <Route path="/tours" element={<ProtectedRoute><Navigate to={DASHBOARD_TOURS_PATH} replace /></ProtectedRoute>} />
-          <Route path="/guides" element={<ProtectedRoute><Navigate to={DASHBOARD_GUIDES_PATH} replace /></ProtectedRoute>} />
-          <Route path="/events" element={<ProtectedRoute><Navigate to={DASHBOARD_GUIDES_PATH} replace /></ProtectedRoute>} />
+          <Route path="/guides" element={<ProtectedRoute><Navigate to={DASHBOARD_EVENTS_PATH} replace /></ProtectedRoute>} />
+          <Route path="/events" element={<ProtectedRoute><Navigate to={DASHBOARD_EVENTS_PATH} replace /></ProtectedRoute>} />
           <Route path="/listings/:type/:id" element={<ProtectedRoute><ListingDetail /></ProtectedRoute>} />
           <Route path="/destination/:id" element={<ProtectedRoute><DestinationDetail /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -139,7 +182,7 @@ function App() {
                 <Link to={homePath} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Home</Link>
                 <Link to={user ? DASHBOARD_TOURS_PATH : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Tours</Link>
                 <Link to={user ? DASHBOARD_ACTIVITIES_PATH : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Activities</Link>
-                <Link to={user ? DASHBOARD_GUIDES_PATH : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Guides</Link>
+                <Link to={user ? DASHBOARD_EVENTS_PATH : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Events</Link>
                 <Link to={user ? '/profile' : '/auth'} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Membership</Link>
               </div>
 
@@ -150,7 +193,7 @@ function App() {
                     <Link to="/dashboard" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Dashboard</Link>
                     <Link to={DASHBOARD_TOURS_PATH} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Tour Collections</Link>
                     <Link to={DASHBOARD_ACTIVITIES_PATH} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Activity Catalog</Link>
-                    <Link to={DASHBOARD_GUIDES_PATH} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Guide Services</Link>
+                    <Link to={DASHBOARD_EVENTS_PATH} style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Events</Link>
                     <Link to="/profile" style={{ fontSize: '0.92rem', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 500 }}>Profile Center</Link>
                   </>
                 ) : (

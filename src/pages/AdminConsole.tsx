@@ -807,7 +807,7 @@ export const AdminConsole: React.FC = () => {
                                                 <div>
                                                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
                                                     <span style={{ padding: '0.45rem 0.75rem', borderRadius: '999px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                                                        {(listing.type === 'event' ? 'guide' : listing.type) || 'listing'}
+                                                        {LISTING_LABELS[((listing.type === 'event' ? 'guide' : listing.type) as 'tour' | 'activity' | 'guide')] || 'Listing'}
                                                     </span>
                                                     <span style={{ padding: '0.45rem 0.75rem', borderRadius: '999px', background: 'rgba(37, 99, 235, 0.1)', color: '#1d4ed8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                                         {listing.status || 'pending'}

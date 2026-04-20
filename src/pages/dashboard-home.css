@@ -39,6 +39,45 @@
   margin: 2px 0 0;
 }
 
+.dh-provider-cta-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dh-provider-cta-primary,
+.dh-provider-cta-secondary {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 8px 16px;
+  text-decoration: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.dh-provider-cta-primary:hover,
+.dh-provider-cta-secondary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.dh-provider-cta-primary {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.dh-provider-cta-secondary {
+  background: color-mix(in srgb, var(--surface-muted) 90%, transparent);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+}
+
 .dh-tab-strip {
   align-items: center;
   background: color-mix(in srgb, var(--surface-main) 90%, transparent);

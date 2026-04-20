@@ -21,8 +21,7 @@ alter table public.profiles
     add column if not exists languages text[];
 
 -- Optional internal admin access:
--- 1. set profiles.role = 'admin' for staff users, or-
--- 2. list staff emails in VITE_ADMIN_EMAILS on the frontend.
+-- set profiles.role = 'admin' for staff users.
 
 update public.profiles
 set verification_status = case
@@ -338,7 +337,7 @@ with check (
         provider_user_id = auth.uid()
         or user_id = auth.uid()
     )
-    and status = 'published'
+    and status in ('pending', 'published')
 );
 
 drop policy if exists "posts_update_owner_or_admin" on public.posts;
@@ -359,7 +358,7 @@ with check (
             provider_user_id = auth.uid()
             or user_id = auth.uid()
         )
-        and status = 'published'
+        and status in ('pending', 'published')
     )
 );
 

@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { getProfile } from '../lib/destinations';
+import { ensureProviderVerificationRecord, getProfile } from '../lib/destinations';
 import type { Profile } from '../lib/destinations';
-import { getRoleLabel, getVerificationLabel, isProviderRole } from '../lib/platform';
+import { getRoleLabel, getVerificationLabel, isProviderRole, type UserRole } from '../lib/platform';
 
 interface AuthContextType {
     user: User | null;
@@ -20,6 +20,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const parseAuthRole = (value: unknown): UserRole | null => {
+    if (
+        value === 'tourist'
+        || value === 'tour_company'
+        || value === 'tour_instructor'
+        || value === 'tour_guide'
+        || value === 'admin'
+    ) {
+        return value;
+    }
+    return null;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -35,7 +48,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setProfileLoading(true);
         try {
-            const profileData = await getProfile(nextUser.id);
+            let profileData = await getProfile(nextUser.id);
+
+            const authRole = parseAuthRole(nextUser.user_metadata?.role);
+            const providerRoleFromAuth = isProviderRole(authRole) ? authRole : null;
+
+            if (!profileData && authRole) {
+                const fallbackPayload: Record<string, unknown> = {
+                    id: nextUser.id,
+                    email: nextUser.email || null,
+                    full_name: (typeof nextUser.user_metadata?.full_name === 'string' && nextUser.user_metadata.full_name.trim()) || nextUser.email?.split('@')[0] || 'Member',
+                    role: authRole,
+                    is_verified: authRole === 'tourist',
+                    verification_status: isProviderRole(authRole) ? 'pending' : 'not_required',
+                };
+
+                try {
+                    await supabase.from('profiles').upsert([fallbackPayload], { onConflict: 'id' });
+                    profileData = await getProfile(nextUser.id);
+                } catch (error) {
+                    console.error('Failed bootstrapping profile from auth metadata:', error);
+                }
+            }
+
+            const effectiveProviderRole = isProviderRole(profileData?.role)
+                ? profileData.role
+                : providerRoleFromAuth;
+
+            if (effectiveProviderRole) {
+                try {
+                    if (!isProviderRole(profileData?.role)) {
+                        await supabase
+                            .from('profiles')
+                            .upsert([{
+                                id: nextUser.id,
+                                email: nextUser.email || null,
+                                full_name: profileData?.full_name || (typeof nextUser.user_metadata?.full_name === 'string' ? nextUser.user_metadata.full_name : null) || nextUser.email?.split('@')[0] || 'Provider',
+                                role: effectiveProviderRole,
+                                verification_status: 'pending',
+                                is_verified: false,
+                            }], { onConflict: 'id' });
+                        profileData = await getProfile(nextUser.id);
+                    }
+
+                    const providerProfile = ({
+                        ...(profileData || {}),
+                        id: nextUser.id,
+                        role: effectiveProviderRole,
+                        full_name: profileData?.full_name || nextUser.email?.split('@')[0] || 'Provider',
+                    } as Profile);
+                    await ensureProviderVerificationRecord(nextUser.id, providerProfile);
+                    profileData = await getProfile(nextUser.id);
+                } catch (error) {
+                    console.error('Failed ensuring provider verification record:', error);
+                }
+            }
             setProfile(profileData);
         } finally {
             setProfileLoading(false);
@@ -80,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 roleLabel: getRoleLabel(profile?.role),
                 verificationLabel: getVerificationLabel(profile?.verification_status),
                 isProvider: isProviderRole(profile?.role),
-                isAdmin: profile?.role === 'admin' || (!!user?.email && adminEmails.includes(user.email.toLowerCase())),
+                isAdmin: profile?.role === 'admin',
                 refreshProfile,
                 signOut,
             }}
@@ -97,7 +164,3 @@ export const useAuth = () => {
     }
     return context;
 };
-    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '')
-        .split(',')
-        .map((item: string) => item.trim().toLowerCase())
-        .filter(Boolean);

@@ -11,9 +11,11 @@ import {
 import type { ListingType } from '../lib/platform';
 import './listing-detail.css';
 
-const isListingType = (value: string | undefined): value is ListingType => (
-    value === 'tour' || value === 'activity' || value === 'guide'
-);
+const toInternalListingType = (value: string | undefined): ListingType | undefined => {
+    if (value === 'event') return 'guide';
+    if (value === 'tour' || value === 'activity' || value === 'guide') return value;
+    return undefined;
+};
 
 const getListingTitle = (listing: PostRecord): string => {
     const title = listing.title || listing.name;
@@ -40,7 +42,7 @@ export const ListingDetail: React.FC = () => {
     const [guests, setGuests] = useState(1);
     const [listing, setListing] = useState<PostRecord | null>(null);
 
-    const listingType = isListingType(type) ? type : undefined;
+    const listingType = toInternalListingType(type);
 
     useEffect(() => {
         if (!id) return;
@@ -67,9 +69,10 @@ export const ListingDetail: React.FC = () => {
             ? listing.user_id
             : null;
     const listingTypeValue = listing?.type;
-    const effectiveType: ListingType = isListingType(listingTypeValue || undefined)
-        ? (listingTypeValue as ListingType)
+    const effectiveType: ListingType = toInternalListingType(listingTypeValue || undefined)
+        ? (toInternalListingType(listingTypeValue || undefined) as ListingType)
         : (listingType || 'activity');
+    const displayType = effectiveType === 'guide' ? 'event' : effectiveType;
     const total = useMemo(() => unitPrice * guests, [guests, unitPrice]);
     const canBook = profile?.role === 'tourist';
 
@@ -154,7 +157,7 @@ export const ListingDetail: React.FC = () => {
                         <div className="listing-detail-hero-image" style={{ backgroundImage: `url(${image})` }} />
                         <div className="listing-detail-content">
                             <div className="listing-detail-meta-row">
-                                <span className="listing-detail-type-pill">{effectiveType}</span>
+                                <span className="listing-detail-type-pill">{displayType}</span>
                                 <span className="listing-detail-location-chip">
                                     <MapPin size={14} /> {location}
                                 </span>

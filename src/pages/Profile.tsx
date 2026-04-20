@@ -459,8 +459,8 @@ export const Profile: React.FC = () => {
                     ) : (
                         <div className="prf-empty">
                             <p>{isProvider ? 'No inbound bookings yet.' : 'No journeys recorded yet.'}</p>
-                            <Link to="/dashboard" className="btn btn-primary" style={{ borderRadius: '999px', marginTop: '16px' }}>
-                                {isProvider ? 'Go to Dashboard' : 'Find Adventures'}
+                            <Link to={isProvider ? '/provider/studio' : '/dashboard'} className="btn btn-primary" style={{ borderRadius: '999px', marginTop: '16px' }}>
+                                {isProvider ? 'Post a Listing' : 'Find Adventures'}
                             </Link>
                         </div>
                     )}

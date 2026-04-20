@@ -9,7 +9,7 @@ import {
 import { isProviderRole } from '../lib/platform';
 import './dashboard-home.css';
 
-type SectionTab = 'tours' | 'activities' | 'guides';
+type SectionTab = 'tours' | 'activities' | 'events';
 
 type GreetingPhase = 'morning' | 'afternoon' | 'night';
 type GreetingAudience = 'tourist' | 'provider';
@@ -94,13 +94,13 @@ const getPostSubtitle = (post: PostRecord): string => {
 
 const getPostType = (post: PostRecord): SectionTab => {
     if (post.type === 'tour') return 'tours';
-    if (post.type === 'guide' || post.type === 'event') return 'guides';
+    if (post.type === 'guide' || post.type === 'event') return 'events';
     return 'activities';
 };
 
-const toListingTypePath = (tab: SectionTab): 'tour' | 'activity' | 'guide' => {
+const toListingTypePath = (tab: SectionTab): 'tour' | 'activity' | 'event' => {
     if (tab === 'tours') return 'tour';
-    if (tab === 'guides') return 'guide';
+    if (tab === 'events') return 'event';
     return 'activity';
 };
 
@@ -159,17 +159,19 @@ export const DashboardHome: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [tourPosts, setTourPosts] = useState<PostRecord[]>([]);
     const [activityPosts, setActivityPosts] = useState<PostRecord[]>([]);
-    const [guidePosts, setGuidePosts] = useState<PostRecord[]>([]);
+    const [eventPosts, setEventPosts] = useState<PostRecord[]>([]);
 
     const activeTab = useMemo<SectionTab | null>(() => {
         const t = searchParams.get('tab');
-        if (t === 'tours' || t === 'activities' || t === 'guides') return t;
+        if (t === 'tours' || t === 'activities' || t === 'events') return t;
+        if (t === 'guides') return 'events';
         return null;
     }, [searchParams]);
 
     const greetingPhase = useMemo(() => getGreetingPhase(), []);
     const greeting = useMemo(() => getGreetingHeading(greetingPhase), [greetingPhase]);
-    const greetingAudience: GreetingAudience = isProviderRole(profile?.role) ? 'provider' : 'tourist';
+    const isProvider = isProviderRole(profile?.role);
+    const greetingAudience: GreetingAudience = isProvider ? 'provider' : 'tourist';
     const greetingSub = useMemo(
         () => pickRandom(GREETING_COPY[greetingAudience][greetingPhase]),
         [greetingAudience, greetingPhase]
@@ -181,14 +183,14 @@ export const DashboardHome: React.FC = () => {
         const load = async () => {
             setLoading(true);
             try {
-                const [tours, activities, guides] = await Promise.all([
+                const [tours, activities, events] = await Promise.all([
                     getPublicListingsByType('tour'),
                     getPublicListingsByType('activity'),
                     getPublicListingsByType('guide'),
                 ]);
                 setTourPosts(tours);
                 setActivityPosts(activities);
-                setGuidePosts(guides);
+                setEventPosts(events);
             } catch (err) {
                 console.error('Dashboard load error:', err);
             } finally {
@@ -203,7 +205,7 @@ export const DashboardHome: React.FC = () => {
     const showAll = activeTab === null;
     const showTours = showAll || activeTab === 'tours';
     const showActivities = showAll || activeTab === 'activities';
-    const showGuides = showAll || activeTab === 'guides';
+    const showEvents = showAll || activeTab === 'events';
 
     const handleTab = (tab: SectionTab) => {
         if (activeTab === tab) {
@@ -221,11 +223,21 @@ export const DashboardHome: React.FC = () => {
                     <h1 className="dh-greeting-title">{greeting}</h1>
                     <p className="dh-greeting-name">{name},</p>
                     <p className="dh-greeting-sub">{greetingSub}</p>
+                    {isProvider && (
+                        <div className="dh-provider-cta-row">
+                            <Link to="/provider/studio" className="dh-provider-cta-primary">
+                                Post Tours, Activities, Events
+                            </Link>
+                            <Link to="/provider/studio" className="dh-provider-cta-secondary">
+                                Open Provider Studio
+                            </Link>
+                        </div>
+                    )}
                 </section>
 
                 {/* Tab strip */}
                 <div className="dh-tab-strip" role="tablist" aria-label="Content filter">
-                    {(['tours', 'activities', 'guides'] as const).map((tab) => (
+                    {(['tours', 'activities', 'events'] as const).map((tab) => (
                         <button
                             key={tab}
                             type="button"
@@ -260,11 +272,11 @@ export const DashboardHome: React.FC = () => {
                                 moreHref="/dashboard?tab=activities"
                             />
                         )}
-                        {showGuides && (
+                        {showEvents && (
                             <Section
-                                title="Guides"
-                                posts={guidePosts}
-                                moreHref="/dashboard?tab=guides"
+                                title="Events"
+                                posts={eventPosts}
+                                moreHref="/dashboard?tab=events"
                             />
                         )}
                     </div>
