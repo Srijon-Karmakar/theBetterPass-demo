@@ -395,6 +395,19 @@ export const Navbar: React.FC = () => {
                 @media (max-width: 768px) {
                     .nbr-desktop { display: none !important; }
                     .nbr-mobile  { display: flex !important; flex-direction: column; align-items: stretch; padding: 0 16px; top: 16px; }
+
+                    /* Mobile-only: remove glass pill shell, keep only logo + hamburger */
+                    .nbr-mobile-pill {
+                        backdrop-filter: none !important;
+                        -webkit-backdrop-filter: none !important;
+                        background: transparent !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        padding: 0 !important;
+                    }
+
+                    .nbr-avatar-sm-wrap { display: none !important; }
                 }
             `}</style>
         </>
