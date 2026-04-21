@@ -1,11 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Heart, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import {
+    addListingFavorite,
     getPublicListingsByType,
+    isListingFavorited,
+    removeListingFavorite,
     type PostRecord,
 } from '../lib/destinations';
+import type { ListingType } from '../lib/platform';
 import { isProviderRole } from '../lib/platform';
 import './dashboard-home.css';
 
@@ -104,19 +108,87 @@ const toListingTypePath = (tab: SectionTab): 'tour' | 'activity' | 'event' => {
     return 'activity';
 };
 
+const toListingTypeValue = (tab: SectionTab): ListingType => {
+    if (tab === 'tours') return 'tour';
+    if (tab === 'events') return 'guide';
+    return 'activity';
+};
+
 const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
+    const navigate = useNavigate();
+    const { user, profile } = useAuth();
+    const canFavorite = profile?.role === 'tourist';
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
+
     const image = getPostImage(post);
     const title = getPostTitle(post);
     const subtitle = getPostSubtitle(post);
     const type = getPostType(post);
     const listingTypePath = toListingTypePath(type);
+    const listingTypeValue = toListingTypeValue(type);
+
+    useEffect(() => {
+        if (!user || !post.id || !canFavorite) {
+            setIsFavorite(false);
+            return;
+        }
+
+        const loadFavorite = async () => {
+            const favorited = await isListingFavorited(user.id, post.id, listingTypeValue);
+            setIsFavorite(favorited);
+        };
+
+        void loadFavorite();
+    }, [canFavorite, listingTypeValue, post.id, user]);
+
+    const handleFavoriteToggle = async () => {
+        if (!user) {
+            navigate('/auth');
+            return;
+        }
+        if (!canFavorite) {
+            alert('Only tourist accounts can save favorites.');
+            return;
+        }
+
+        setFavoriteLoading(true);
+        try {
+            if (isFavorite) {
+                await removeListingFavorite(user.id, post.id, listingTypeValue);
+                setIsFavorite(false);
+            } else {
+                await addListingFavorite(user.id, post.id, listingTypeValue);
+                setIsFavorite(true);
+            }
+        } catch (error) {
+            console.error('Favorite update failed:', error);
+            alert('Could not update favorites. Please try again.');
+        } finally {
+            setFavoriteLoading(false);
+        }
+    };
 
     return (
         <article className="listing-card">
             <div
                 className="listing-card-media"
                 style={image ? { backgroundImage: `url(${image})` } : undefined}
-            />
+            >
+                <button
+                    type="button"
+                    className={`listing-card-fav-btn${isFavorite ? ' is-active' : ''}`}
+                    onClick={handleFavoriteToggle}
+                    disabled={favoriteLoading || !canFavorite}
+                    title={canFavorite ? undefined : 'Only tourist accounts can save favorites'}
+                >
+                    {favoriteLoading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                        <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+                    )}
+                </button>
+            </div>
             <div className="listing-card-body">
                 <h3 className="listing-card-title">{title}</h3>
                 {subtitle && <p className="listing-card-sub">{subtitle}</p>}

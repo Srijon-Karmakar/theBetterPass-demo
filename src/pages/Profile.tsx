@@ -8,10 +8,10 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { supabase } from '../lib/supabase';
 import {
-    getBookings, getConversations, getFavorites,
+    getBookings, getConversations, getFavoriteListings,
     getLatestVerification, getProviderBookings,
     resubmitVerificationApplication, updateProfile,
-    type UnifiedBooking, type VerificationRecord,
+    type FavoriteListingRecord, type UnifiedBooking, type VerificationRecord,
 } from '../lib/destinations';
 import { isProviderRole } from '../lib/platform';
 
@@ -67,6 +67,27 @@ const BookingCard: React.FC<{ booking: UnifiedBooking }> = ({ booking }) => (
     </div>
 );
 
+const FavoriteCard: React.FC<{ item: FavoriteListingRecord }> = ({ item }) => {
+    const listingTypePath = item.listing_type === 'guide' ? 'event' : item.listing_type;
+    const image = item.image_url || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800';
+
+    return (
+        <Link to={`/listings/${listingTypePath}/${item.listing_id}`} className="prf-favorite-card">
+            <div className="prf-favorite-thumb">
+                <img src={image} alt={item.title} />
+            </div>
+            <div className="prf-favorite-info">
+                <h4>{item.title}</h4>
+                <p>{item.location}</p>
+            </div>
+            <div className="prf-favorite-right">
+                <span className="prf-favorite-type">{item.listing_type === 'guide' ? 'event' : item.listing_type}</span>
+                <strong>{typeof item.price === 'number' ? `Rs ${item.price.toLocaleString()}` : 'View details'}</strong>
+            </div>
+        </Link>
+    );
+};
+
 /* ── ToggleSwitch ──────────────────────────────────────────── */
 const ToggleSwitch: React.FC<{ on: boolean; onToggle: () => void; label: string }> = ({ on, onToggle, label }) => (
     <button
@@ -89,6 +110,7 @@ export const Profile: React.FC = () => {
     /* data */
     const [travelerBookings, setTravelerBookings] = useState<UnifiedBooking[]>([]);
     const [providerBookings, setProviderBookings] = useState<UnifiedBooking[]>([]);
+    const [favoriteListings, setFavoriteListings] = useState<FavoriteListingRecord[]>([]);
     const [favoritesCount, setFavoritesCount] = useState(0);
     const [conversationsCount, setConversationsCount] = useState(0);
     const [latestVerification, setLatestVerification] = useState<VerificationRecord | null>(null);
@@ -133,11 +155,12 @@ export const Profile: React.FC = () => {
                 const [bookings, inbound, favorites, conversations] = await Promise.all([
                     getBookings(user.id),
                     isProviderRole(profile?.role) ? getProviderBookings(user.id) : Promise.resolve([]),
-                    getFavorites(user.id),
+                    getFavoriteListings(user.id),
                     getConversations(user.id),
                 ]);
                 setTravelerBookings(bookings);
                 setProviderBookings(inbound);
+                setFavoriteListings(favorites);
                 setFavoritesCount(favorites.length);
                 setConversationsCount(conversations.length);
                 if (isProviderRole(profile?.role)) {
@@ -467,6 +490,33 @@ export const Profile: React.FC = () => {
                 </section>
 
                 {/* ── Settings ─────────────────────────────────── */}
+                {!isProvider && (
+                    <section className="prf-card">
+                        <div className="prf-card-head">
+                            <div>
+                                <h2 className="prf-card-title">Saved Favorites</h2>
+                                <p className="prf-card-sub">Tours, activities, and events you saved.</p>
+                            </div>
+                            <span className="prf-count-badge">{favoriteListings.length} records</span>
+                        </div>
+
+                        {(loading || profileLoading) ? (
+                            <div className="prf-center-loader"><Loader2 className="animate-spin" size={28} /></div>
+                        ) : favoriteListings.length > 0 ? (
+                            <div className="prf-favorite-list">
+                                {favoriteListings.map(item => <FavoriteCard key={item.favorite_id} item={item} />)}
+                            </div>
+                        ) : (
+                            <div className="prf-empty">
+                                <p>No favorites saved yet.</p>
+                                <Link to="/dashboard" className="btn btn-primary" style={{ borderRadius: '999px', marginTop: '16px' }}>
+                                    Explore Listings
+                                </Link>
+                            </div>
+                        )}
+                    </section>
+                )}
+
                 <section className="prf-card">
                     <h2 className="prf-card-title" style={{ marginBottom: '8px' }}>Settings</h2>
 
@@ -937,6 +987,62 @@ export const Profile: React.FC = () => {
                     color: var(--danger-text);
                 }
 
+                .prf-favorite-list { display: flex; flex-direction: column; gap: 12px; }
+                .prf-favorite-card {
+                    align-items: center;
+                    background: var(--bg-main);
+                    border: 1px solid var(--border-light);
+                    border-radius: 16px;
+                    color: inherit;
+                    display: flex;
+                    gap: 14px;
+                    padding: 14px;
+                    text-decoration: none;
+                    transition: box-shadow 0.18s, border-color 0.18s;
+                }
+                .prf-favorite-card:hover {
+                    border-color: color-mix(in srgb, var(--accent) 35%, var(--border-light));
+                    box-shadow: var(--shadow-subtle);
+                }
+                .prf-favorite-thumb {
+                    border-radius: 12px;
+                    flex-shrink: 0;
+                    height: 68px;
+                    overflow: hidden;
+                    width: 68px;
+                }
+                .prf-favorite-thumb img { height: 100%; object-fit: cover; width: 100%; }
+                .prf-favorite-info { flex: 1; min-width: 0; }
+                .prf-favorite-info h4 {
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                    margin: 0 0 4px;
+                }
+                .prf-favorite-info p {
+                    color: var(--text-muted);
+                    font-size: 0.82rem;
+                    margin: 0;
+                }
+                .prf-favorite-right { flex-shrink: 0; text-align: right; }
+                .prf-favorite-type {
+                    background: var(--surface-muted);
+                    border: 1px solid var(--border-light);
+                    border-radius: 999px;
+                    color: var(--text-muted);
+                    display: inline-block;
+                    font-size: 0.62rem;
+                    font-weight: 800;
+                    letter-spacing: 0.06em;
+                    margin-bottom: 7px;
+                    padding: 4px 9px;
+                    text-transform: uppercase;
+                }
+                .prf-favorite-right strong {
+                    display: block;
+                    font-size: 0.9rem;
+                    font-weight: 800;
+                }
+
                 /* Empty state */
                 .prf-empty {
                     align-items: center;
@@ -1049,6 +1155,9 @@ export const Profile: React.FC = () => {
                     .prf-stat:nth-child(4) { border-top: 1px solid var(--border-light); }
                     .prf-booking-card { flex-wrap: wrap; }
                     .prf-booking-right { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+                    .prf-favorite-card { flex-wrap: wrap; }
+                    .prf-favorite-right { width: 100%; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+                    .prf-favorite-type { margin-bottom: 0; }
                 }
             `}</style>
         </main>

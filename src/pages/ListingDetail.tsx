@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Loader2, MapPin, MessageCircle, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, Heart, Loader2, MapPin, MessageCircle, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import {
+    addListingFavorite,
     createBooking,
     getListingById,
     getOrCreateConversation,
+    isListingFavorited,
+    removeListingFavorite,
     type PostRecord,
 } from '../lib/destinations';
 import type { ListingType } from '../lib/platform';
@@ -37,6 +40,8 @@ export const ListingDetail: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [bookingLoading, setBookingLoading] = useState(false);
     const [messageLoading, setMessageLoading] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [checkIn, setCheckIn] = useState('');
     const [guests, setGuests] = useState(1);
@@ -75,6 +80,21 @@ export const ListingDetail: React.FC = () => {
     const displayType = effectiveType === 'guide' ? 'event' : effectiveType;
     const total = useMemo(() => unitPrice * guests, [guests, unitPrice]);
     const canBook = profile?.role === 'tourist';
+    const canFavorite = profile?.role === 'tourist';
+
+    useEffect(() => {
+        if (!user || !listing?.id || !canFavorite) {
+            setIsFavorite(false);
+            return;
+        }
+
+        const loadFavorite = async () => {
+            const favorited = await isListingFavorited(user.id, listing.id, effectiveType);
+            setIsFavorite(favorited);
+        };
+
+        void loadFavorite();
+    }, [canFavorite, effectiveType, listing?.id, user]);
 
     const handleBooking = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -125,6 +145,33 @@ export const ListingDetail: React.FC = () => {
         }
     };
 
+    const handleFavoriteToggle = async () => {
+        if (!user || !listing?.id) {
+            navigate('/auth');
+            return;
+        }
+        if (!canFavorite) {
+            alert('Only tourist accounts can save favorites.');
+            return;
+        }
+
+        setFavoriteLoading(true);
+        try {
+            if (isFavorite) {
+                await removeListingFavorite(user.id, listing.id, effectiveType);
+                setIsFavorite(false);
+            } else {
+                await addListingFavorite(user.id, listing.id, effectiveType);
+                setIsFavorite(true);
+            }
+        } catch (error) {
+            console.error('Favorite update failed:', error);
+            alert('Could not update favorites. Please try again.');
+        } finally {
+            setFavoriteLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <main className="container" style={{ minHeight: '70vh', display: 'grid', placeItems: 'center', paddingTop: '120px' }}>
@@ -169,6 +216,16 @@ export const ListingDetail: React.FC = () => {
                                     <Link to={`/users/${ownerUserId}`} className="btn btn-secondary listing-detail-pill-btn">
                                         View Host
                                     </Link>
+                                    <button
+                                        type="button"
+                                        onClick={handleFavoriteToggle}
+                                        className={`btn btn-secondary listing-detail-pill-btn${isFavorite ? ' listing-detail-fav-active' : ''}`}
+                                        disabled={favoriteLoading || !canFavorite}
+                                        title={canFavorite ? undefined : 'Only tourist accounts can save favorites'}
+                                    >
+                                        {favoriteLoading ? <Loader2 className="animate-spin" size={16} /> : <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />}
+                                        {isFavorite ? 'Saved' : 'Save'}
+                                    </button>
                                     {user && ownerUserId !== user.id && (
                                         <button type="button" onClick={handleMessage} className="btn btn-secondary listing-detail-pill-btn" disabled={messageLoading}>
                                             {messageLoading ? <Loader2 className="animate-spin" size={16} /> : <MessageCircle size={16} />}

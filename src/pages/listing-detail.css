@@ -178,6 +178,11 @@
   min-height: 44px;
 }
 
+.listing-detail-fav-active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-light));
+  color: var(--accent);
+}
+
 .listing-detail-center-btn {
   justify-content: center;
 }

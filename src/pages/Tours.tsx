@@ -95,6 +95,7 @@ export const Tours: React.FC = () => {
                                 location={tour.location}
                                 price={tour.price}
                                 image_url={tour.image_url}
+                                listingType="tour"
                             />
                         ))}
                     </div>

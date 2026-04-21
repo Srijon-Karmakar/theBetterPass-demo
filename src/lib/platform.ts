@@ -179,8 +179,25 @@ export const canRolePublish = (role: UserRole | null | undefined, type: ListingT
 };
 
 export const getRoleLabel = (role?: string | null) => {
-    if (!role || !(role in ROLE_LABELS)) return 'Member';
-    return ROLE_LABELS[role as UserRole];
+    if (!role) return 'Member';
+
+    const normalized = role.trim().toLowerCase();
+    if (!normalized) return 'Member';
+
+    if (normalized in ROLE_LABELS) {
+        return ROLE_LABELS[normalized as UserRole];
+    }
+
+    if (normalized === 'guide' || normalized === 'tour guide') return 'Guide';
+    if (normalized === 'instructor' || normalized === 'tour instructor') return 'Instructor';
+    if (normalized === 'company' || normalized === 'tour company') return 'Tour Company';
+    if (normalized === 'provider') return 'Provider';
+
+    return normalized
+        .split(/[_\s]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
 };
 
 export const getVerificationLabel = (status?: string | null) => {

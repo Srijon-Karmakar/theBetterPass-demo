@@ -164,7 +164,35 @@
   background-color: color-mix(in srgb, var(--accent) 12%, var(--surface-muted));
   background-position: center;
   background-size: cover;
+  position: relative;
   width: 100%;
+}
+
+.listing-card-fav-btn {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.36);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 34px;
+  z-index: 2;
+}
+
+.listing-card-fav-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.listing-card-fav-btn.is-active {
+  background: color-mix(in srgb, var(--accent) 85%, #000 15%);
+  border-color: color-mix(in srgb, var(--accent) 80%, #fff 20%);
 }
 
 .listing-card-body {

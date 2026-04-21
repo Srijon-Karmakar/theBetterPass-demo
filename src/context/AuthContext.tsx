@@ -146,6 +146,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await supabase.auth.signOut();
     };
 
+    const authMetadataRole = typeof user?.user_metadata?.role === 'string'
+        ? user.user_metadata.role
+        : null;
+
     return (
         <AuthContext.Provider
             value={{
@@ -153,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 profile,
                 loading,
                 profileLoading,
-                roleLabel: getRoleLabel(profile?.role),
+                roleLabel: getRoleLabel(profile?.role || authMetadataRole),
                 verificationLabel: getVerificationLabel(profile?.verification_status),
                 isProvider: isProviderRole(profile?.role),
                 isAdmin: profile?.role === 'admin',

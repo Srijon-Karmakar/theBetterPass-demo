@@ -114,6 +114,18 @@ export interface FavoriteRecord {
     user_id: string;
     listing_id: string;
     listing_type: ListingType;
+    has_explicit_type?: boolean;
+    created_at?: string;
+}
+
+export interface FavoriteListingRecord {
+    favorite_id: string;
+    listing_id: string;
+    listing_type: ListingType;
+    title: string;
+    image_url: string;
+    location: string;
+    price: number | null;
     created_at?: string;
 }
 
@@ -270,6 +282,106 @@ const extractCheckConstraintName = (message: string | undefined): string | null 
     return match?.[1] || null;
 };
 
+type FavoriteIdColumn = 'listing_id' | 'activity_id' | 'destination_id' | 'post_id';
+type FavoriteTypeColumn = 'listing_type' | 'type';
+
+const FAVORITE_ID_COLUMNS: FavoriteIdColumn[] = ['listing_id', 'activity_id', 'destination_id', 'post_id'];
+const FAVORITE_TYPE_COLUMNS: FavoriteTypeColumn[] = ['listing_type', 'type'];
+
+let favoriteIdColumnHint: FavoriteIdColumn = 'listing_id';
+let favoriteTypeColumnHint: FavoriteTypeColumn | null = 'listing_type';
+let favoriteGuideTypeHint: 'guide' | 'event' = 'guide';
+
+const uniqueValues = <T,>(values: T[]): T[] => Array.from(new Set(values));
+
+const getOrderedFavoriteIdColumns = (): FavoriteIdColumn[] => uniqueValues([
+    favoriteIdColumnHint,
+    ...FAVORITE_ID_COLUMNS,
+]);
+
+const getOrderedFavoriteTypeColumns = (): Array<FavoriteTypeColumn | null> => uniqueValues([
+    favoriteTypeColumnHint,
+    ...FAVORITE_TYPE_COLUMNS,
+    null,
+]);
+
+const getFavoriteTypeValues = (listingType: ListingType): string[] => {
+    if (listingType === 'guide') {
+        return uniqueValues([favoriteGuideTypeHint, 'guide', 'event']);
+    }
+    return [listingType];
+};
+
+const isInvalidUuidInputError = (error: { code?: string; message?: string } | null | undefined) => {
+    const message = error?.message?.toLowerCase() || '';
+    return (
+        error?.code === '22P02'
+        || message.includes('invalid input syntax for type uuid')
+        || message.includes('invalid input syntax for uuid')
+    );
+};
+
+const pickFavoriteListingId = (row: Record<string, unknown>): string | null => {
+    for (const column of FAVORITE_ID_COLUMNS) {
+        const value = row[column];
+        if (typeof value === 'string' && value.trim().length > 0) {
+            return value.trim();
+        }
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return String(value);
+        }
+    }
+    return null;
+};
+
+const pickFavoriteListingType = (row: Record<string, unknown>): ListingType => normalizeListingType(
+    typeof row.listing_type === 'string'
+        ? row.listing_type
+        : typeof row.type === 'string'
+            ? row.type
+            : 'activity'
+);
+
+const normalizeFavoriteLookupId = (value: string | number): string => String(value).trim();
+
+const mapFavoriteRow = (row: Record<string, unknown>): FavoriteRecord | null => {
+    const listingId = pickFavoriteListingId(row);
+    const userId = typeof row.user_id === 'string' ? row.user_id : '';
+    const rawId = row.id;
+    const id = typeof rawId === 'string'
+        ? rawId
+        : typeof rawId === 'number' && Number.isFinite(rawId)
+            ? String(rawId)
+            : '';
+    const hasExplicitType = (
+        typeof row.listing_type === 'string' && row.listing_type.trim().length > 0
+    ) || (
+        typeof row.type === 'string' && row.type.trim().length > 0
+    );
+    if (!listingId || !userId || !id) return null;
+
+    return {
+        id,
+        user_id: userId,
+        listing_id: listingId,
+        listing_type: pickFavoriteListingType(row),
+        has_explicit_type: hasExplicitType,
+        created_at: typeof row.created_at === 'string' ? row.created_at : undefined,
+    };
+};
+
+const rememberFavoriteSchemaHints = (
+    idColumn: FavoriteIdColumn,
+    typeColumn: FavoriteTypeColumn | null,
+    typeValue?: string | null
+) => {
+    favoriteIdColumnHint = idColumn;
+    favoriteTypeColumnHint = typeColumn;
+    if (typeValue === 'guide' || typeValue === 'event') {
+        favoriteGuideTypeHint = typeValue;
+    }
+};
+
 const isMissingSpecificColumnError = (
     error: { code?: string; message?: string } | null | undefined,
     columnName: string
@@ -327,6 +439,18 @@ const normalizeListingType = (value: string | null | undefined): ListingType => 
     if (normalized === 'tour' || normalized === 'activity' || normalized === 'guide') return normalized;
     return 'activity';
 };
+
+const getListingTitleFromPost = (post: PostRecord): string => {
+    const title = post.title || post.name;
+    return typeof title === 'string' && title.trim().length > 0 ? title : 'Untitled listing';
+};
+
+const getListingImageFromPost = (post: PostRecord): string => (
+    post.image_url
+    || post.cover_image_url
+    || post.thumbnail_url
+    || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=1200'
+);
 
 const normalizeBookingStatus = (value: string | null | undefined): BookingStatus => {
     const normalized = (value || '').trim().toLowerCase();
@@ -1404,18 +1528,205 @@ export const getProviderBookings = async (userId: string): Promise<UnifiedBookin
 };
 
 export const getFavorites = async (userId: string): Promise<FavoriteRecord[]> => {
-    const { data, error } = await supabase
+    let result = await supabase
         .from('favorites')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
+
+    if (isMissingSpecificColumnError(result.error, 'created_at')) {
+        result = await supabase
+            .from('favorites')
+            .select('*')
+            .eq('user_id', userId);
+    }
+
+    const { data, error } = result;
 
     if (error) {
         console.error('Error fetching favorites:', error);
         return [];
     }
 
-    return safeArray(data) as FavoriteRecord[];
+    return safeArray(data as Record<string, unknown>[])
+        .map((row) => mapFavoriteRow(row))
+        .filter((row): row is FavoriteRecord => Boolean(row));
+};
+
+export const isListingFavorited = async (
+    userId: string,
+    listingId: string | number,
+    listingType: ListingType
+): Promise<boolean> => {
+    const normalizedListingId = normalizeFavoriteLookupId(listingId);
+    const favorites = await getFavorites(userId);
+    if (!favorites.length) return false;
+
+    const normalizedRequestedType = normalizeListingType(listingType);
+    return favorites.some((favorite) => {
+        if (normalizeFavoriteLookupId(favorite.listing_id) !== normalizedListingId) return false;
+        if (!favorite.has_explicit_type) return true;
+        return normalizeListingType(favorite.listing_type) === normalizedRequestedType;
+    });
+};
+
+export const addListingFavorite = async (
+    userId: string,
+    listingId: string | number,
+    listingType: ListingType
+) => {
+    const normalizedListingId = normalizeFavoriteLookupId(listingId);
+    const { data: roleData, error: roleError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (roleError) throw roleError;
+    if ((roleData as { role?: string } | null)?.role !== 'tourist') {
+        throw new Error('Only tourist accounts can add favorites.');
+    }
+
+    const alreadyFavorited = await isListingFavorited(userId, normalizedListingId, listingType);
+    if (alreadyFavorited) return true;
+
+    const typeValues = getFavoriteTypeValues(listingType);
+    const numericListingId = /^[0-9]+$/.test(normalizedListingId) ? Number(normalizedListingId) : null;
+    const idValueCandidates: Array<string | number> = numericListingId === null
+        ? [normalizedListingId]
+        : [normalizedListingId, numericListingId];
+    let lastError: { code?: string; message?: string } | null = null;
+
+    for (const idColumn of getOrderedFavoriteIdColumns()) {
+        for (const typeColumn of getOrderedFavoriteTypeColumns()) {
+            const values = typeColumn ? typeValues : [null];
+
+            for (const typeValue of values) {
+                for (const idValue of idValueCandidates) {
+                    const payload: Record<string, unknown> = {
+                        user_id: userId,
+                        [idColumn]: idValue,
+                    };
+
+                    if (typeColumn && typeValue) {
+                        payload[typeColumn] = typeValue;
+                    }
+
+                    const { error } = await supabase.from('favorites').insert([payload]).select('id').limit(1);
+                    if (!error) {
+                        rememberFavoriteSchemaHints(idColumn, typeColumn, typeValue);
+                        return true;
+                    }
+
+                    if (error.code === '23505') return true;
+
+                    if (
+                        isMissingSpecificColumnError(error, idColumn)
+                        || (typeColumn && isMissingSpecificColumnError(error, typeColumn))
+                        || isInvalidUuidInputError(error)
+                    ) {
+                        continue;
+                    }
+
+                    lastError = error;
+                }
+            }
+        }
+    }
+
+    if (lastError) throw lastError;
+    throw new Error('Favorites schema is not compatible with this listing.');
+};
+
+export const removeListingFavorite = async (
+    userId: string,
+    listingId: string | number,
+    listingType: ListingType
+) => {
+    const normalizedListingId = normalizeFavoriteLookupId(listingId);
+    const favorites = await getFavorites(userId);
+    if (!favorites.length) return true;
+
+    const normalizedRequestedType = normalizeListingType(listingType);
+    const targetFavoriteIds = favorites
+        .filter((favorite) => {
+            if (normalizeFavoriteLookupId(favorite.listing_id) !== normalizedListingId) return false;
+            if (!favorite.has_explicit_type) return true;
+            return normalizeListingType(favorite.listing_type) === normalizedRequestedType;
+        })
+        .map((favorite) => favorite.id);
+
+    if (!targetFavoriteIds.length) return true;
+
+    const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .in('id', targetFavoriteIds);
+
+    if (error) {
+        throw error;
+    }
+    return true;
+};
+
+export const getFavoriteListings = async (userId: string): Promise<FavoriteListingRecord[]> => {
+    const favoriteRows = await getFavorites(userId);
+    if (!favoriteRows.length) return [];
+
+    const rows = await Promise.all(
+        favoriteRows.map(async (favorite) => {
+            const primaryType = normalizeListingType(favorite.listing_type);
+            const candidateTypes = uniqueValues<ListingType>([
+                primaryType,
+                'activity',
+                'tour',
+                'guide',
+            ]);
+
+            let listing: PostRecord | null = null;
+            let resolvedType: ListingType = primaryType;
+
+            for (const candidateType of candidateTypes) {
+                const found = await getListingById(favorite.listing_id, candidateType);
+                if (found) {
+                    listing = found;
+                    resolvedType = normalizeListingType(
+                        typeof found.type === 'string' ? found.type : candidateType
+                    );
+                    break;
+                }
+            }
+
+            if (!listing) {
+                listing = await getListingById(favorite.listing_id);
+                if (listing) {
+                    resolvedType = normalizeListingType(typeof listing.type === 'string' ? listing.type : primaryType);
+                }
+            }
+
+            if (!listing) return null;
+
+            const title = getListingTitleFromPost(listing);
+            const image = getListingImageFromPost(listing);
+            const location = typeof listing.location === 'string' && listing.location.trim()
+                ? listing.location
+                : 'Location unavailable';
+            const price = typeof listing.price === 'number' ? listing.price : null;
+
+            return {
+                favorite_id: favorite.id,
+                listing_id: favorite.listing_id,
+                listing_type: resolvedType,
+                title,
+                image_url: image,
+                location,
+                price,
+                created_at: favorite.created_at,
+            } as FavoriteListingRecord;
+        })
+    );
+
+    return rows.filter((row): row is FavoriteListingRecord => Boolean(row));
 };
 
 export const getConversations = async (userId: string): Promise<ConversationRecord[]> => {
