@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Home3 } from './pages/Home3';
 import { DashboardHome } from './pages/DashboardHome';
@@ -147,7 +147,19 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
-        {/* Footer could go here */}
+        <AppFooter homePath={homePath} footerLogoSrc={footerLogoSrc} user={user} />
+      </div>
+    </Router>
+  );
+}
+
+const HIDE_FOOTER_PATHS = ['/auth'];
+
+const AppFooter: React.FC<{ homePath: string; footerLogoSrc: string; user: unknown }> = ({ homePath, footerLogoSrc, user }) => {
+  const { pathname } = useLocation();
+  if (HIDE_FOOTER_PATHS.includes(pathname)) return null;
+
+  return (
         <footer style={{ padding: '88px 0 40px', borderTop: '1px solid var(--border-light)', marginTop: '120px', background: 'var(--surface-main)' }}>
           <div className="container">
             <div
@@ -241,9 +253,7 @@ function App() {
             }
           `}</style>
         </footer>
-      </div>
-    </Router>
   );
-}
+};
 
 export default App;

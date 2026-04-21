@@ -1,5 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { Loader2, Lock, Mail, ShieldCheck, User, Users } from 'lucide-react';
+import {
+    Backpack,
+    Building2,
+    GraduationCap,
+    Loader2,
+    Lock,
+    Mail,
+    Map,
+    MapPin,
+    Phone,
+    User,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { signUpWithRole } from '../lib/destinations';
@@ -11,24 +22,58 @@ import {
     type SignupFormValues,
     type UserRole,
 } from '../lib/platform';
+import './auth.css';
 
+/* ── Background images ────────────────────────────────────────── */
+const BG_IMAGES = [
+    // Unsplash — forest / nature
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1920&q=85',
+    'https://images.unsplash.com/photo-1511884642898-4c92249e20b6?auto=format&fit=crop&w=1920&q=85',
+    // Pexels — mountain / forest
+    'https://images.pexels.com/photos/1179229/pexels-photo-1179229.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/346529/pexels-photo-346529.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/235621/pexels-photo-235621.jpeg?auto=compress&cs=tinysrgb&w=1920',
+    'https://images.pexels.com/photos/371916/pexels-photo-371916.jpeg?auto=compress&cs=tinysrgb&w=1920',
+];
+
+/* ── Field types ──────────────────────────────────────────────── */
 const FIELD_INPUT_TYPES: Partial<Record<RoleFormField, string>> = {
     website: 'url',
     yearsExperience: 'number',
 };
 
-const COMMON_FIELD_STYLES: React.CSSProperties = {
+const FIELD_ICONS: Partial<Record<RoleFormField, React.ReactNode>> = {
+    phone: <Phone size={15} />,
+    country: <MapPin size={15} />,
+    city: <MapPin size={15} />,
+};
+
+/* ── Role display config ──────────────────────────────────────── */
+const ROLE_ICONS: Record<string, React.ReactNode> = {
+    tourist:         <Backpack size={24} />,
+    tour_company:    <Building2 size={24} />,
+    tour_guide:      <Map size={24} />,
+    tour_instructor: <GraduationCap size={24} />,
+};
+
+const FIELD_STYLES: React.CSSProperties = {
     border: 'none',
     background: 'transparent',
     outline: 'none',
     width: '100%',
     fontWeight: 500,
     fontFamily: 'inherit',
-    fontSize: '0.92rem',
-    color: 'var(--text-main)',
+    fontSize: '0.88rem',
+    color: '#fff',
 };
 
+/* ── Component ────────────────────────────────────────────────── */
 export const Auth: React.FC = () => {
+    const [bgImage] = useState(() => BG_IMAGES[Math.floor(Math.random() * BG_IMAGES.length)]);
     const [isLogin, setIsLogin] = useState(true);
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
@@ -40,9 +85,15 @@ export const Auth: React.FC = () => {
 
     const activeRole = formValues.role;
     const roleConfig = useMemo(() => ROLE_SIGNUP_CONFIG[activeRole], [activeRole]);
+    const providerRoles = (Object.keys(ROLE_LABELS) as UserRole[]).filter((r) => r !== 'admin');
 
-    const updateField = <K extends keyof SignupFormValues>(key: K, value: SignupFormValues[K]) => {
-        setFormValues((current) => ({ ...current, [key]: value }));
+    const updateField = <K extends keyof SignupFormValues>(key: K, value: SignupFormValues[K]) =>
+        setFormValues((c) => ({ ...c, [key]: value }));
+
+    const switchMode = (login: boolean) => {
+        setIsLogin(login);
+        setError(null);
+        setInfo(null);
     };
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -50,7 +101,6 @@ export const Auth: React.FC = () => {
         setLoading(true);
         setError(null);
         setInfo(null);
-
         try {
             const { error: signInError } = await supabase.auth.signInWithPassword({
                 email: loginEmail,
@@ -70,7 +120,6 @@ export const Auth: React.FC = () => {
         setLoading(true);
         setError(null);
         setInfo(null);
-
         try {
             await signUpWithRole({
                 fullName: formValues.fullName,
@@ -92,7 +141,6 @@ export const Auth: React.FC = () => {
                 certificateId: formValues.certificateId,
                 worksUnderCompany: formValues.worksUnderCompany,
             });
-
             setInfo(
                 roleConfig.requiresVerification
                     ? 'Account created. Check your email, then sign in to see your verification pending status.'
@@ -109,73 +157,39 @@ export const Auth: React.FC = () => {
     };
 
     return (
-        <main
-            className="animate-fade"
-            style={{
-                minHeight: '100vh',
-                background:
-                    'radial-gradient(circle at top left, rgba(28, 163, 150, 0.12), transparent 32%), radial-gradient(circle at top right, rgba(14, 116, 144, 0.12), transparent 36%), var(--bg-main)',
-                padding: '150px 0 96px',
-            }}
+        <div
+            className="auth-page"
+            style={{ backgroundImage: `url(${bgImage})` }}
         >
-            <div className="container" style={{ maxWidth: '1180px' }}>
-                <div className="auth-layout">
-                    <section className="auth-intro-card">
-                        <span className="auth-kicker">The Better Pass</span>
-                        <h1>{isLogin ? 'Sign back into your travel system.' : 'Create a role-aware account.'}</h1>
-                        <p>
-                            One auth flow now supports travelers, tour companies, instructors, and guides.
-                            Provider roles stay usable after signup but surface a clear verification pending state
-                            until an admin approves them.
-                        </p>
-
-                        <div className="auth-feature-list">
-                            <article>
-                                <ShieldCheck size={18} />
-                                <div>
-                                    <strong>Verification-first providers</strong>
-                                    <span>Provider roles submit onboarding data at signup and can reapply if rejected.</span>
-                                </div>
-                            </article>
-                            <article>
-                                <Users size={18} />
-                                <div>
-                                    <strong>Company + individual model</strong>
-                                    <span>Companies own profiles, while guides and instructors can optionally work under them.</span>
-                                </div>
-                            </article>
-                            <article>
-                                <User size={18} />
-                                <div>
-                                    <strong>Unified traveler experience</strong>
-                                    <span>Favorites, history, reviews after completed bookings, and provider chat are all supported.</span>
-                                </div>
-                            </article>
-                        </div>
-                    </section>
-
-                    <section className="auth-panel">
-                        <div className="auth-panel-top">
-                            <div>
-                                <h2>{isLogin ? 'Welcome back' : 'Join Vagabond'}</h2>
-                                <p>
-                                    {isLogin
-                                        ? 'Use your existing email and password.'
-                                        : 'Choose the role that matches how you will use the platform.'}
-                                </p>
+            <div className="auth-outer">
+                {/* ══════════════════════════════════
+                    LOGIN
+                ══════════════════════════════════ */}
+                {isLogin && (
+                    <div className="auth-card auth-form-enter">
+                        {/* Brand */}
+                        <div className="auth-brand">
+                            <div className="auth-brand-mark">
+                                <MapPin size={22} color="#fff" />
                             </div>
-                            <div className="auth-mode-switch" role="tablist" aria-label="Authentication mode">
+                            <span className="auth-brand-name">The Better Pass</span>
+                            <span className="auth-brand-tagline">Your travel experience starts here</span>
+                        </div>
+
+                        {/* Toggle */}
+                        <div className="auth-toggle-wrap">
+                            <div className="auth-toggle" role="tablist">
                                 <button
                                     type="button"
-                                    className={isLogin ? 'is-active' : ''}
-                                    onClick={() => setIsLogin(true)}
+                                    className={`auth-toggle-btn${isLogin ? ' is-active' : ''}`}
+                                    onClick={() => switchMode(true)}
                                 >
                                     Login
                                 </button>
                                 <button
                                     type="button"
-                                    className={!isLogin ? 'is-active' : ''}
-                                    onClick={() => setIsLogin(false)}
+                                    className={`auth-toggle-btn${!isLogin ? ' is-active' : ''}`}
+                                    onClick={() => switchMode(false)}
                                 >
                                     Signup
                                 </button>
@@ -183,108 +197,137 @@ export const Auth: React.FC = () => {
                         </div>
 
                         {error && <div className="auth-alert auth-alert-error">{error}</div>}
-                        {info && <div className="auth-alert auth-alert-info">{info}</div>}
+                        {info  && <div className="auth-alert auth-alert-info">{info}</div>}
 
-                        {isLogin ? (
-                            <form onSubmit={handleLogin} className="auth-form-grid">
-                                <label className="auth-field">
-                                    <span>Email Address</span>
-                                    <div className="auth-input-shell">
-                                        <Mail size={18} color="var(--text-muted)" />
-                                        <input
-                                            type="email"
-                                            required
-                                            placeholder="alex@example.com"
-                                            value={loginEmail}
-                                            onChange={(e) => setLoginEmail(e.target.value)}
-                                            style={COMMON_FIELD_STYLES}
-                                        />
-                                    </div>
-                                </label>
+                        <form onSubmit={handleLogin} className="auth-form">
+                            <label>
+                                <span className="auth-field-label">Email address</span>
+                                <div className="auth-input-wrap">
+                                    <Mail size={17} />
+                                    <input
+                                        type="email"
+                                        required
+                                        placeholder="alex@example.com"
+                                        value={loginEmail}
+                                        onChange={(e) => setLoginEmail(e.target.value)}
+                                        style={FIELD_STYLES}
+                                    />
+                                </div>
+                            </label>
 
-                                <label className="auth-field">
-                                    <span>Password</span>
-                                    <div className="auth-input-shell">
-                                        <Lock size={18} color="var(--text-muted)" />
-                                        <input
-                                            type="password"
-                                            required
-                                            placeholder="Enter your password"
-                                            value={loginPassword}
-                                            onChange={(e) => setLoginPassword(e.target.value)}
-                                            style={COMMON_FIELD_STYLES}
-                                        />
-                                    </div>
-                                </label>
+                            <label>
+                                <span className="auth-field-label">Password</span>
+                                <div className="auth-input-wrap">
+                                    <Lock size={17} />
+                                    <input
+                                        type="password"
+                                        required
+                                        placeholder="Enter your password"
+                                        value={loginPassword}
+                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                        style={FIELD_STYLES}
+                                    />
+                                </div>
+                            </label>
 
-                                <button className="btn btn-primary auth-submit" disabled={loading}>
-                                    {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
+                            <button type="submit" className="auth-submit" disabled={loading}>
+                                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
+                            </button>
+                        </form>
+
+                        <p className="auth-footer-link">
+                            No account?{' '}
+                            <button type="button" onClick={() => switchMode(false)}>
+                                Sign up here
+                            </button>
+                        </p>
+                    </div>
+                )}
+
+                {/* ══════════════════════════════════
+                    SIGNUP
+                ══════════════════════════════════ */}
+                {!isLogin && (
+                    <div className="auth-signup-wrapper">
+                        {/* Role Picker */}
+                        <div className="auth-roles-row">
+                            {providerRoles.map((role) => (
+                                <button
+                                    key={role}
+                                    type="button"
+                                    className={`auth-role-card${activeRole === role ? ' is-active' : ''}`}
+                                    onClick={() => updateField('role', role)}
+                                >
+                                    {ROLE_ICONS[role] ?? <User size={24} />}
+                                    <span>{ROLE_LABELS[role]}</span>
                                 </button>
-                            </form>
-                        ) : (
-                            <form onSubmit={handleSignup} className="auth-signup-flow">
-                                <div className="auth-role-grid">
-                                    {((Object.keys(ROLE_LABELS) as UserRole[]).filter((role) => role !== 'admin')).map((role) => {
-                                        const config = ROLE_SIGNUP_CONFIG[role];
-                                        const isActive = activeRole === role;
-                                        return (
-                                            <button
-                                                key={role}
-                                                type="button"
-                                                className={`auth-role-card${isActive ? ' is-active' : ''}`}
-                                                onClick={() => updateField('role', role)}
-                                            >
-                                                <strong>{ROLE_LABELS[role]}</strong>
-                                                <span>{config.summary}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                            ))}
+                        </div>
 
-                                <div className="auth-role-summary">
-                                    <strong>{ROLE_LABELS[activeRole]}</strong>
-                                    <span>
-                                        {roleConfig.requiresVerification
-                                            ? 'Needs admin verification after signup.'
-                                            : 'No admin verification required.'}
-                                    </span>
+                        {/* Form Card */}
+                        <div className={`auth-card auth-card--wide auth-form-enter`}>
+                            {/* Toggle */}
+                            <div className="auth-toggle-wrap">
+                                <div className="auth-toggle" role="tablist">
+                                    <button
+                                        type="button"
+                                        className={`auth-toggle-btn${isLogin ? ' is-active' : ''}`}
+                                        onClick={() => switchMode(true)}
+                                    >
+                                        Login
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`auth-toggle-btn${!isLogin ? ' is-active' : ''}`}
+                                        onClick={() => switchMode(false)}
+                                    >
+                                        Signup
+                                    </button>
                                 </div>
+                            </div>
 
-                                <div className="auth-form-grid auth-form-grid-signup">
-                                    <label className="auth-field">
-                                        <span>Full Name</span>
-                                        <div className="auth-input-shell">
-                                            <User size={18} color="var(--text-muted)" />
+                            {error && <div className="auth-alert auth-alert-error" style={{ marginTop: '14px' }}>{error}</div>}
+                            {info  && <div className="auth-alert auth-alert-info" style={{ marginTop: '14px' }}>{info}</div>}
+
+                            <form onSubmit={handleSignup} className="auth-signup-form" style={{ marginTop: '16px' }}>
+                                {/* Core fields always shown */}
+                                <div className="auth-section-sep"><span>Account</span></div>
+
+                                <div className="auth-grid-2">
+                                    <label>
+                                        <span className="auth-field-label">Full Name</span>
+                                        <div className="auth-input-box">
+                                            <User size={14} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
                                             <input
                                                 type="text"
                                                 required
                                                 placeholder="Alex Mercer"
                                                 value={formValues.fullName}
                                                 onChange={(e) => updateField('fullName', e.target.value)}
-                                                style={COMMON_FIELD_STYLES}
+                                                style={FIELD_STYLES}
                                             />
                                         </div>
                                     </label>
 
-                                    <label className="auth-field">
-                                        <span>Email Address</span>
-                                        <div className="auth-input-shell">
-                                            <Mail size={18} color="var(--text-muted)" />
+                                    <label>
+                                        <span className="auth-field-label">Email Address</span>
+                                        <div className="auth-input-box">
+                                            <Mail size={14} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
                                             <input
                                                 type="email"
                                                 required
                                                 placeholder="alex@example.com"
                                                 value={formValues.email}
                                                 onChange={(e) => updateField('email', e.target.value)}
-                                                style={COMMON_FIELD_STYLES}
+                                                style={FIELD_STYLES}
                                             />
                                         </div>
                                     </label>
 
-                                    <label className="auth-field">
-                                        <span>Password</span>
-                                        <div className="auth-input-shell">
-                                            <Lock size={18} color="var(--text-muted)" />
+                                    <label className="auth-full-col">
+                                        <span className="auth-field-label">Password</span>
+                                        <div className="auth-input-box">
+                                            <Lock size={14} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
                                             <input
                                                 type="password"
                                                 required
@@ -292,313 +335,72 @@ export const Auth: React.FC = () => {
                                                 placeholder="Minimum 8 characters"
                                                 value={formValues.password}
                                                 onChange={(e) => updateField('password', e.target.value)}
-                                                style={COMMON_FIELD_STYLES}
+                                                style={FIELD_STYLES}
                                             />
                                         </div>
                                     </label>
-
-                                    {roleConfig.fields.map((field) => (
-                                        <label className="auth-field" key={field.key}>
-                                            <span>{field.label}</span>
-                                            <div className="auth-input-shell">
-                                                <input
-                                                    type={FIELD_INPUT_TYPES[field.key] || 'text'}
-                                                    required={field.required}
-                                                    placeholder={field.placeholder}
-                                                    value={String(formValues[field.key] ?? '')}
-                                                    onChange={(e) => updateField(field.key, e.target.value as SignupFormValues[typeof field.key])}
-                                                    style={COMMON_FIELD_STYLES}
-                                                />
-                                            </div>
-                                        </label>
-                                    ))}
-
-                                    {activeRole !== 'tour_company' && activeRole !== 'tourist' && (
-                                        <label className="auth-toggle-field">
-                                            <input
-                                                type="checkbox"
-                                                checked={formValues.worksUnderCompany}
-                                                onChange={(e) => updateField('worksUnderCompany', e.target.checked)}
-                                            />
-                                            <span>I currently work under or collaborate with a tour company profile.</span>
-                                        </label>
-                                    )}
                                 </div>
 
-                                <button className="btn btn-primary auth-submit" disabled={loading}>
+                                {/* Role-specific fields */}
+                                {roleConfig.fields.length > 0 && (
+                                    <>
+                                        <div className="auth-section-sep" style={{ marginTop: '4px' }}>
+                                            <span>{ROLE_LABELS[activeRole]} details</span>
+                                        </div>
+                                        <div className="auth-grid-2">
+                                            {roleConfig.fields.map((field) => (
+                                                <label key={field.key}>
+                                                    <span className="auth-field-label">{field.label}</span>
+                                                    <div className="auth-input-box">
+                                                        {FIELD_ICONS[field.key] && (
+                                                            <span style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0, display: 'flex' }}>
+                                                                {FIELD_ICONS[field.key]}
+                                                            </span>
+                                                        )}
+                                                        <input
+                                                            type={FIELD_INPUT_TYPES[field.key] || 'text'}
+                                                            required={field.required}
+                                                            placeholder={field.placeholder}
+                                                            value={String(formValues[field.key] ?? '')}
+                                                            onChange={(e) =>
+                                                                updateField(field.key, e.target.value as SignupFormValues[typeof field.key])
+                                                            }
+                                                            style={FIELD_STYLES}
+                                                        />
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Works under company */}
+                                {activeRole !== 'tour_company' && activeRole !== 'tourist' && (
+                                    <label className="auth-toggle-check">
+                                        <input
+                                            type="checkbox"
+                                            checked={formValues.worksUnderCompany}
+                                            onChange={(e) => updateField('worksUnderCompany', e.target.checked)}
+                                        />
+                                        <span>I currently work under or collaborate with a tour company profile.</span>
+                                    </label>
+                                )}
+
+                                <button type="submit" className="auth-submit" disabled={loading}>
                                     {loading ? <Loader2 className="animate-spin" size={18} /> : 'Create Account'}
                                 </button>
                             </form>
-                        )}
-                    </section>
-                </div>
+
+                            <p className="auth-footer-link">
+                                Already have an account?{' '}
+                                <button type="button" onClick={() => switchMode(true)}>
+                                    Sign in here
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
-
-            <style>{`
-                .auth-layout {
-                    display: grid;
-                    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.2fr);
-                    gap: 28px;
-                    align-items: start;
-                }
-
-                .auth-intro-card,
-                .auth-panel {
-                    background: var(--surface-main);
-                    border: 1px solid var(--border-light);
-                    border-radius: var(--radius-xl);
-                    box-shadow: var(--shadow-card);
-                }
-
-                .auth-intro-card {
-                    padding: 40px 34px;
-                    position: sticky;
-                    top: 116px;
-                }
-
-                .auth-kicker {
-                    display: inline-flex;
-                    padding: 8px 12px;
-                    border-radius: 999px;
-                    background: rgba(24, 124, 103, 0.1);
-                    color: var(--accent);
-                    font-size: 0.78rem;
-                    font-weight: 800;
-                    letter-spacing: 0.08em;
-                    text-transform: uppercase;
-                    margin-bottom: 18px;
-                }
-
-                .auth-intro-card h1,
-                .auth-panel h2 {
-                    margin: 0 0 12px;
-                    font-size: clamp(2rem, 2.8vw, 3.1rem);
-                    line-height: 1.04;
-                }
-
-                .auth-intro-card p,
-                .auth-panel p {
-                    margin: 0;
-                    color: var(--text-muted);
-                    line-height: 1.75;
-                }
-
-                .auth-feature-list {
-                    display: grid;
-                    gap: 16px;
-                    margin-top: 28px;
-                }
-
-                .auth-feature-list article {
-                    display: grid;
-                    grid-template-columns: 18px minmax(0, 1fr);
-                    gap: 14px;
-                    align-items: start;
-                    padding: 16px 18px;
-                    border-radius: var(--radius-lg);
-                    background: var(--bg-main);
-                    border: 1px solid var(--border-light);
-                }
-
-                .auth-feature-list strong,
-                .auth-role-summary strong {
-                    display: block;
-                    margin-bottom: 4px;
-                    font-size: 0.95rem;
-                }
-
-                .auth-feature-list span,
-                .auth-role-summary span {
-                    color: var(--text-muted);
-                    font-size: 0.88rem;
-                    line-height: 1.55;
-                }
-
-                .auth-panel {
-                    padding: 34px;
-                }
-
-                .auth-panel-top {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: end;
-                    gap: 18px;
-                    margin-bottom: 24px;
-                }
-
-                .auth-mode-switch {
-                    display: inline-flex;
-                    padding: 4px;
-                    border-radius: 999px;
-                    background: var(--bg-main);
-                    border: 1px solid var(--border-light);
-                }
-
-                .auth-mode-switch button {
-                    border: none;
-                    background: transparent;
-                    color: var(--text-muted);
-                    padding: 10px 16px;
-                    border-radius: 999px;
-                    font-weight: 700;
-                    cursor: pointer;
-                }
-
-                .auth-mode-switch button.is-active {
-                    background: var(--primary);
-                    color: var(--text-inverse);
-                }
-
-                .auth-alert {
-                    padding: 14px 16px;
-                    border-radius: var(--radius-md);
-                    font-size: 0.88rem;
-                    font-weight: 600;
-                    margin-bottom: 16px;
-                }
-
-                .auth-alert-error {
-                    background: rgba(239, 68, 68, 0.1);
-                    color: #d62828;
-                }
-
-                .auth-alert-info {
-                    background: rgba(37, 99, 235, 0.1);
-                    color: #1d4ed8;
-                }
-
-                .auth-signup-flow,
-                .auth-form-grid {
-                    display: grid;
-                    gap: 18px;
-                }
-
-                .auth-role-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                    gap: 14px;
-                }
-
-                .auth-role-card {
-                    text-align: left;
-                    padding: 18px;
-                    border-radius: var(--radius-lg);
-                    border: 1px solid var(--border-light);
-                    background: var(--bg-main);
-                    cursor: pointer;
-                    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-                }
-
-                .auth-role-card strong {
-                    display: block;
-                    margin-bottom: 8px;
-                    font-size: 1rem;
-                }
-
-                .auth-role-card span {
-                    display: block;
-                    color: var(--text-muted);
-                    font-size: 0.84rem;
-                    line-height: 1.55;
-                }
-
-                .auth-role-card.is-active {
-                    border-color: rgba(24, 124, 103, 0.38);
-                    box-shadow: 0 0 0 1px rgba(24, 124, 103, 0.16);
-                    transform: translateY(-1px);
-                }
-
-                .auth-role-summary {
-                    padding: 16px 18px;
-                    border-radius: var(--radius-lg);
-                    border: 1px solid var(--border-light);
-                    background: linear-gradient(180deg, rgba(24, 124, 103, 0.08), rgba(24, 124, 103, 0.02));
-                }
-
-                .auth-form-grid-signup {
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                }
-
-                .auth-field {
-                    display: grid;
-                    gap: 10px;
-                }
-
-                .auth-field span {
-                    font-size: 0.72rem;
-                    font-weight: 800;
-                    text-transform: uppercase;
-                    letter-spacing: 0.08em;
-                    color: var(--text-muted);
-                }
-
-                .auth-input-shell {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    padding: 0 16px;
-                    min-height: 54px;
-                    background: var(--bg-main);
-                    border-radius: var(--radius-md);
-                    border: 1px solid var(--border-light);
-                }
-
-                .auth-toggle-field {
-                    grid-column: 1 / -1;
-                    display: flex;
-                    gap: 12px;
-                    align-items: start;
-                    font-size: 0.92rem;
-                    color: var(--text-muted);
-                    padding: 14px 16px;
-                    background: var(--bg-main);
-                    border-radius: var(--radius-md);
-                    border: 1px solid var(--border-light);
-                }
-
-                .auth-submit {
-                    width: 100%;
-                    justify-content: center;
-                    padding: 16px 24px;
-                    border-radius: 999px;
-                    margin-top: 4px;
-                }
-
-                @media (max-width: 980px) {
-                    .auth-layout {
-                        grid-template-columns: 1fr;
-                    }
-
-                    .auth-intro-card {
-                        position: static;
-                    }
-                }
-
-                @media (max-width: 700px) {
-                    .auth-panel,
-                    .auth-intro-card {
-                        padding: 24px 18px;
-                    }
-
-                    .auth-panel-top {
-                        flex-direction: column;
-                        align-items: start;
-                    }
-
-                    .auth-role-grid,
-                    .auth-form-grid-signup {
-                        grid-template-columns: 1fr;
-                    }
-
-                    .auth-mode-switch {
-                        width: 100%;
-                    }
-
-                    .auth-mode-switch button {
-                        flex: 1;
-                    }
-                }
-            `}</style>
-        </main>
+        </div>
     );
 };

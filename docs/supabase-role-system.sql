@@ -654,58 +654,6 @@ alter table public.posts
     add constraint posts_type_check
     check (type in ('tour', 'activity', 'guide'));
 
-do $$
-declare
-    constraint_name text;
-begin
-    for constraint_name in
-        select c.conname
-        from pg_constraint c
-        join pg_class t on t.oid = c.conrelid
-        join pg_namespace n on n.oid = t.relnamespace
-        where n.nspname = 'public'
-          and t.relname = 'posts'
-          and c.contype = 'c'
-          and (
-              pg_get_constraintdef(c.oid) ilike '%category%'
-              or pg_get_constraintdef(c.oid) ilike '%sub_category%'
-          )
-    loop
-        execute format('alter table public.posts drop constraint if exists %I', constraint_name);
-    end loop;
-end $$;
-
-alter table public.posts
-    drop constraint if exists posts_category_check;
-
-alter table public.posts
-    drop constraint if exists posts_sub_category_check;
-
-do $$
-declare
-    constraint_name text;
-begin
-    for constraint_name in
-        select c.conname
-        from pg_constraint c
-        join pg_class t on t.oid = c.conrelid
-        join pg_namespace n on n.oid = t.relnamespace
-        where n.nspname = 'public'
-          and t.relname = 'posts'
-          and c.contype = 'c'
-          and pg_get_constraintdef(c.oid) ilike '%status%'
-    loop
-        execute format('alter table public.posts drop constraint if exists %I', constraint_name);
-    end loop;
-end $$;
-
-alter table public.posts
-    drop constraint if exists posts_status_check;
-
-alter table public.posts
-    add constraint posts_status_check
-    check (status in ('pending', 'published', 'rejected', 'approved', 'resubmitted')) not valid;
-
 create or replace function public.is_admin_user(check_user_id uuid default auth.uid())
 returns boolean
 language sql
@@ -842,7 +790,7 @@ with check (
         provider_user_id = auth.uid()
         or user_id = auth.uid()
     )
-    and status = 'published'
+    and status in ('pending', 'published')
 );
 
 drop policy if exists "posts_update_owner_or_admin" on public.posts;
@@ -863,7 +811,7 @@ with check (
             provider_user_id = auth.uid()
             or user_id = auth.uid()
         )
-        and status = 'published'
+        and status in ('pending', 'published')
     )
 );
 

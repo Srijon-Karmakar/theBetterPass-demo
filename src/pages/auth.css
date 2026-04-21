@@ -1,0 +1,626 @@
+/* ── Auth Page ─────────────────────────────────────────────────── */
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+    position: relative;
+    overflow: hidden;
+    /* Photo is applied via inline style; this is the fallback */
+    background: #0a1a0c;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Subtle dark overlay so cards stay readable on any photo */
+.auth-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.22);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Outer centering wrapper ──────────────────────────────────── */
+.auth-outer {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* ── Signup layout: roles panel + card side-by-side on desktop ── */
+.auth-signup-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+/* ── Glass Card ────────────────────────────────────────────────── */
+.auth-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 28px;
+    padding: 36px 30px;
+    width: 100%;
+    max-width: 440px;
+    color: #fff;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        0 1px 0 rgba(255, 255, 255, 0.12) inset;
+    animation: cardIn 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(28px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── Brand mark ───────────────────────────────────────────────── */
+.auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.auth-brand-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), #c26930);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(162, 75, 24, 0.45);
+    margin-bottom: 2px;
+}
+
+.auth-brand-name {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #fff;
+    letter-spacing: -0.01em;
+}
+
+.auth-brand-tagline {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 0.04em;
+}
+
+/* ── Toggle Pill ──────────────────────────────────────────────── */
+.auth-toggle-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 28px;
+}
+
+.auth-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 5px;
+    gap: 2px;
+}
+
+.auth-toggle-btn {
+    padding: 9px 28px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-toggle-btn:hover:not(.is-active) {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.auth-toggle-btn.is-active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(162, 75, 24, 0.5);
+}
+
+/* ── Form heading ─────────────────────────────────────────────── */
+.auth-heading {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.auth-heading h2 {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.auth-heading p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.55;
+}
+
+/* ── Alerts ───────────────────────────────────────────────────── */
+.auth-alert {
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    line-height: 1.5;
+    animation: alertIn 0.3s ease both;
+}
+
+@keyframes alertIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-alert-error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.auth-alert-info {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #86efac;
+}
+
+/* ── Fields ───────────────────────────────────────────────────── */
+.auth-form {
+    display: grid;
+    gap: 14px;
+}
+
+.auth-field-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 7px;
+}
+
+.auth-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    min-height: 52px;
+    background: rgba(200, 215, 200, 0.1);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.auth-input-wrap:focus-within {
+    border-color: rgba(162, 75, 24, 0.7);
+    background: rgba(200, 215, 200, 0.13);
+    box-shadow: 0 0 0 4px rgba(162, 75, 24, 0.14);
+}
+
+.auth-input-wrap svg {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.35);
+    transition: color 0.2s;
+}
+
+.auth-input-wrap:focus-within svg {
+    color: rgba(162, 75, 24, 0.85);
+}
+
+.auth-input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #fff;
+    min-width: 0;
+}
+
+.auth-input-wrap input::placeholder {
+    color: rgba(255, 255, 255, 0.28);
+}
+
+/* Non-pill inputs for dense signup grids */
+.auth-input-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    min-height: 48px;
+    background: rgba(200, 215, 200, 0.08);
+    border: 1.5px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.auth-input-box:focus-within {
+    border-color: rgba(162, 75, 24, 0.6);
+    background: rgba(200, 215, 200, 0.11);
+    box-shadow: 0 0 0 3px rgba(162, 75, 24, 0.12);
+}
+
+.auth-input-box input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #fff;
+    min-width: 0;
+}
+
+.auth-input-box input::placeholder {
+    color: rgba(255, 255, 255, 0.28);
+}
+
+/* ── Submit Button ────────────────────────────────────────────── */
+.auth-submit {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px 24px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    background-image: linear-gradient(135deg, var(--accent) 0%, #c26930 100%);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 6px;
+    box-shadow: 0 6px 22px rgba(162, 75, 24, 0.45);
+    transition: opacity 0.18s, transform 0.15s, box-shadow 0.18s;
+    letter-spacing: 0.01em;
+}
+
+.auth-submit:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(162, 75, 24, 0.55);
+}
+
+.auth-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.auth-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ── Footer link ──────────────────────────────────────────────── */
+.auth-footer-link {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.auth-footer-link button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.auth-footer-link button:hover {
+    color: #fff;
+}
+
+/* ── Role Picker (Signup) ─────────────────────────────────────── */
+.auth-roles-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    width: 100%;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.auth-roles-row::-webkit-scrollbar {
+    display: none;
+}
+
+.auth-role-card {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 16px 14px;
+    width: 110px;
+    min-height: 100px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 20px;
+    cursor: pointer;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: roleCardIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-role-card:nth-child(1) { animation-delay: 0.08s; }
+.auth-role-card:nth-child(2) { animation-delay: 0.14s; }
+.auth-role-card:nth-child(3) { animation-delay: 0.20s; }
+.auth-role-card:nth-child(4) { animation-delay: 0.26s; }
+
+@keyframes roleCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.94);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.auth-role-card:hover:not(.is-active) {
+    border-color: rgba(255, 255, 255, 0.22);
+    color: rgba(255, 255, 255, 0.8);
+    transform: translateY(-2px);
+}
+
+.auth-role-card.is-active {
+    border-color: var(--accent);
+    background: rgba(162, 75, 24, 0.22);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(162, 75, 24, 0.35);
+    transform: translateY(-2px);
+}
+
+.auth-role-card svg {
+    transition: transform 0.2s;
+}
+
+.auth-role-card.is-active svg {
+    transform: scale(1.1);
+    color: var(--accent);
+}
+
+/* ── Role summary strip ───────────────────────────────────────── */
+.auth-role-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    border-radius: 14px;
+    background: rgba(162, 75, 24, 0.12);
+    border: 1px solid rgba(162, 75, 24, 0.25);
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.auth-role-summary strong {
+    color: #fff;
+}
+
+.auth-role-summary-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+}
+
+/* ── Signup form grid ─────────────────────────────────────────── */
+.auth-signup-form {
+    display: grid;
+    gap: 12px;
+}
+
+.auth-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.auth-full-col {
+    grid-column: 1 / -1;
+}
+
+/* Works-under toggle */
+.auth-toggle-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(200, 215, 200, 0.07);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+    grid-column: 1 / -1;
+}
+
+.auth-toggle-check:has(input:checked) {
+    border-color: rgba(162, 75, 24, 0.4);
+    background: rgba(162, 75, 24, 0.08);
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.auth-toggle-check input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    flex-shrink: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+/* ── Signup wide card ─────────────────────────────────────────── */
+.auth-card--wide {
+    max-width: 600px;
+}
+
+/* ── Section separator ────────────────────────────────────────── */
+.auth-section-sep {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+}
+
+.auth-section-sep::before,
+.auth-section-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-section-sep span {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
+}
+
+/* ── Verification badge ───────────────────────────────────────── */
+.auth-verify-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.auth-verify-badge--required {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+}
+
+.auth-verify-badge--instant {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: #86efac;
+}
+
+/* ── Form in animation (login ↔ signup) ───────────────────────── */
+.auth-form-enter {
+    animation: formSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes formSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (min-width: 680px) {
+    .auth-signup-wrapper {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: center;
+        max-width: 760px;
+    }
+
+    .auth-roles-row {
+        flex-direction: column;
+        overflow: visible;
+        width: auto;
+        flex-shrink: 0;
+    }
+
+    .auth-role-card {
+        width: 120px;
+        min-height: 108px;
+    }
+}
+
+@media (min-width: 680px) and (max-width: 860px) {
+    .auth-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .auth-card {
+        padding: 28px 20px;
+        border-radius: 22px;
+    }
+
+    .auth-role-card {
+        width: 98px;
+        padding: 14px 10px;
+    }
+
+    .auth-toggle-btn {
+        padding: 9px 20px;
+    }
+
+    .auth-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
