@@ -115,7 +115,7 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_company: {
-        summary: 'Manage a company profile and publish tours, activities, and events after approval.',
+        summary: 'Manage a company profile and publish tours, activities, and events after account verification.',
         requiresVerification: true,
         allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
@@ -130,7 +130,7 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_instructor: {
-        summary: 'Offer approved tours, activities, and events independently or under a company profile.',
+        summary: 'Offer tours, activities, and events independently or under a company profile after account verification.',
         requiresVerification: true,
         allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
@@ -145,7 +145,7 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_guide: {
-        summary: 'Lead approved tours, activities, and events, optionally under a company profile.',
+        summary: 'Lead tours, activities, and events, optionally under a company profile after account verification.',
         requiresVerification: true,
         allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [

@@ -8,6 +8,7 @@ import type {
     VerificationStatus,
 } from './platform';
 import {
+    PROVIDER_ROLES,
     ROLE_SIGNUP_CONFIG,
     canRolePublish,
     isProviderRole,
@@ -52,6 +53,8 @@ export interface Profile {
     government_id_ref?: string | null;
     years_experience?: number | null;
     languages?: string[] | string | null;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface EventRecord {
@@ -252,6 +255,21 @@ const extractMissingColumnName = (message: string | undefined): string | null =>
     return null;
 };
 
+const extractNotNullColumnName = (message: string | undefined): string | null => {
+    if (!message) return null;
+
+    const quoted = message.match(/null value in column "([a-zA-Z_][a-zA-Z0-9_]*)"/i);
+    if (quoted?.[1]) return quoted[1];
+
+    return null;
+};
+
+const extractCheckConstraintName = (message: string | undefined): string | null => {
+    if (!message) return null;
+    const match = message.match(/check constraint "([a-zA-Z_][a-zA-Z0-9_]*)"/i);
+    return match?.[1] || null;
+};
+
 const isMissingSpecificColumnError = (
     error: { code?: string; message?: string } | null | undefined,
     columnName: string
@@ -259,6 +277,37 @@ const isMissingSpecificColumnError = (
     if (!isMissingColumnError(error)) return false;
     const missing = extractMissingColumnName(error?.message);
     return missing === columnName;
+};
+
+const getPostFallbackValue = (columnName: string, payload: Record<string, unknown>) => {
+    switch (columnName) {
+        case 'id':
+            return payload.id || crypto.randomUUID();
+        case 'name':
+        case 'title':
+            return payload.title || payload.name || 'Untitled listing';
+        case 'category':
+        case 'sub_category':
+            return payload.sub_category || payload.category || payload.type || 'activity';
+        case 'description':
+            return payload.description || 'No description provided.';
+        case 'location':
+            return payload.location || 'Not specified';
+        case 'image_url':
+        case 'cover_image_url':
+        case 'thumbnail_url':
+            return payload.image_url || payload.cover_image_url || payload.thumbnail_url || '';
+        case 'price':
+            return typeof payload.price === 'number' ? payload.price : 0;
+        case 'status':
+            return 'published';
+        case 'type':
+            return payload.type || 'activity';
+        case 'created_at':
+            return new Date().toISOString();
+        default:
+            return undefined;
+    }
 };
 
 const PROFILE_UPDATE_KEYS: Array<keyof Profile> = [
@@ -292,6 +341,12 @@ const normalizeVerificationStatus = (profile: Partial<Profile> | null): Verifica
     if (profile.verification_status) return profile.verification_status;
     if (profile.role === 'tourist') return 'not_required';
     return profile.is_verified ? 'approved' : 'pending';
+};
+
+const splitLanguages = (value: string | string[] | null | undefined) => {
+    if (Array.isArray(value)) return value;
+    if (!value) return null;
+    return value.split(',').map((item) => item.trim()).filter(Boolean);
 };
 
 const mapProfile = (data: Record<string, unknown> | null): Profile | null => {
@@ -328,6 +383,8 @@ const mapProfile = (data: Record<string, unknown> | null): Profile | null => {
         government_id_ref: typeof data.government_id_ref === 'string' ? data.government_id_ref : null,
         years_experience: typeof data.years_experience === 'number' ? data.years_experience : null,
         languages: Array.isArray(languages) || typeof languages === 'string' ? languages as string[] | string : null,
+        created_at: typeof data.created_at === 'string' ? data.created_at : undefined,
+        updated_at: typeof data.updated_at === 'string' ? data.updated_at : undefined,
     };
 };
 
@@ -388,13 +445,6 @@ const mapLegacyEventToPost = (row: EventRecord): PostRecord => ({
     starts_at: row.starts_at,
     status: 'published',
 });
-
-const normalizeListingStatus = (value: ListingStatus | string | null | undefined): ListingStatus => {
-    if (value === 'draft' || value === 'pending' || value === 'published' || value === 'rejected') {
-        return value;
-    }
-    return 'published';
-};
 
 const dedupePostsById = (rows: PostRecord[]) => {
     const seen = new Set<string>();
@@ -559,35 +609,35 @@ export const getMyPosts = async (userId: string) => {
 };
 
 export const createOrUpdateListing = async (listing: ListingInput) => {
-    const normalizedStatus = normalizeListingStatus(listing.status);
+    const normalizedStatus: ListingStatus = 'published';
+    const normalizedTitle = listing.title?.trim() || 'Untitled listing';
+    const normalizedType = normalizeListingType(listing.type);
+    const normalizedCategory = listing.sub_category?.trim() || normalizedType;
+    const normalizedImage = listing.image_url?.trim() || '';
+    const normalizedPrice = typeof listing.price === 'number' ? listing.price : Number(listing.price || 0) || 0;
     const payload = {
         ...listing,
+        title: normalizedTitle,
+        name: normalizedTitle,
+        type: normalizedType,
+        category: normalizedCategory,
+        sub_category: normalizedCategory,
+        image_url: normalizedImage,
+        cover_image_url: normalizedImage,
+        thumbnail_url: normalizedImage,
+        price: normalizedPrice,
         status: normalizedStatus,
-        rejection_reason: normalizedStatus === 'rejected' ? listing.rejection_reason || null : null,
+        rejection_reason: null,
         reviewed_at: null,
         reviewed_by: null,
+        created_at: new Date().toISOString(),
     };
 
-    if (listing.id) {
-        const { data, error } = await supabase
-            .from('posts')
-            .update(payload)
-            .eq('id', listing.id)
-            .select()
-            .maybeSingle();
-
-        if (error) throw error;
-        return data as PostRecord | null;
+    if (!listing.id) {
+        delete payload.id;
     }
 
-    const { data, error } = await supabase
-        .from('posts')
-        .insert([payload])
-        .select()
-        .maybeSingle();
-
-    if (error) throw error;
-    return data as PostRecord | null;
+    return writePostWithSchemaFallback(payload, listing.id);
 };
 
 export const getContentModerationQueue = async (): Promise<PostRecord[]> => {
@@ -851,6 +901,15 @@ export const getProfile = async (userId: string) => {
             .maybeSingle();
     }
 
+    if (isMissingColumnError(verificationResult.error)) {
+        verificationResult = await supabase
+            .from('verification')
+            .select('role, status')
+            .eq('user_id', userId)
+            .limit(1)
+            .maybeSingle();
+    }
+
     const verificationData = verificationResult.data;
     const verificationError = verificationResult.error;
 
@@ -919,11 +978,191 @@ export const updateProfile = async (profile: Partial<Profile>) => {
     return upsertProfilePayload();
 };
 
+const upsertProfileWithSchemaFallback = async (payload: Record<string, unknown>) => {
+    const nextPayload = { ...payload };
+
+    while (Object.keys(nextPayload).length > 0) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .upsert([nextPayload], { onConflict: 'id' })
+            .select()
+            .maybeSingle();
+
+        if (!error) return mapProfile(data as Record<string, unknown> | null);
+        if (!isMissingColumnError(error)) throw error;
+
+        const missingColumn = extractMissingColumnName(error.message);
+        if (!missingColumn || !(missingColumn in nextPayload)) throw error;
+        delete nextPayload[missingColumn];
+    }
+
+    return null;
+};
+
+const updateProfileWithSchemaFallback = async (profileId: string, payload: Record<string, unknown>) => {
+    const nextPayload = { ...payload };
+
+    while (Object.keys(nextPayload).length > 0) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(nextPayload)
+            .eq('id', profileId)
+            .select()
+            .maybeSingle();
+
+        if (!error) return mapProfile(data as Record<string, unknown> | null);
+        if (!isMissingColumnError(error)) throw error;
+
+        const missingColumn = extractMissingColumnName(error.message);
+        if (!missingColumn || !(missingColumn in nextPayload)) throw error;
+        delete nextPayload[missingColumn];
+    }
+
+    return getProfile(profileId);
+};
+
+const insertVerificationWithSchemaFallback = async (payload: Record<string, unknown>) => {
+    const nextPayload = { ...payload };
+
+    while (Object.keys(nextPayload).length > 0) {
+        const { data, error } = await supabase
+            .from('verification')
+            .insert([nextPayload])
+            .select()
+            .maybeSingle();
+
+        if (!error) return data as VerificationRecord | null;
+        if (!isMissingColumnError(error)) throw error;
+
+        const missingColumn = extractMissingColumnName(error.message);
+        if (!missingColumn || !(missingColumn in nextPayload)) throw error;
+        delete nextPayload[missingColumn];
+    }
+
+    return null;
+};
+
+const writePostWithSchemaFallback = async (
+    payload: Record<string, unknown>,
+    listingId?: string
+) => {
+    const nextPayload = { ...payload };
+    let attemptCount = 0;
+    let idLikelyNumeric = false;
+    let numericIdSeed = Math.floor((Date.now() / 1000) % 2_000_000_000);
+
+    while (Object.keys(nextPayload).length > 0) {
+        attemptCount += 1;
+        if (attemptCount > 30) {
+            throw {
+                code: 'POST_WRITE_RETRY_LIMIT',
+                message: 'Could not write listing after multiple schema fallback attempts.',
+            };
+        }
+
+        const result = listingId
+            ? await supabase
+                .from('posts')
+                .update(nextPayload)
+                .eq('id', listingId)
+                .select()
+                .maybeSingle()
+            : await supabase
+                .from('posts')
+                .insert([nextPayload])
+                .select()
+                .maybeSingle();
+
+        if (!result.error) return result.data as PostRecord | null;
+
+        if (isMissingColumnError(result.error)) {
+            const missingColumn = extractMissingColumnName(result.error.message);
+            if (!missingColumn || !(missingColumn in nextPayload)) throw result.error;
+            if (missingColumn === 'id' && !listingId) {
+                nextPayload.id = nextPayload.id || crypto.randomUUID();
+                continue;
+            }
+            delete nextPayload[missingColumn];
+            continue;
+        }
+
+        if (result.error.code === '23502') {
+            const notNullColumn = extractNotNullColumnName(result.error.message);
+            if (!notNullColumn) throw result.error;
+
+            if (notNullColumn === 'id' && idLikelyNumeric && !listingId) {
+                numericIdSeed += 1;
+                nextPayload.id = numericIdSeed;
+                continue;
+            }
+
+            const fallback = getPostFallbackValue(notNullColumn, nextPayload);
+            if (fallback === undefined) throw result.error;
+            nextPayload[notNullColumn] = fallback;
+            continue;
+        }
+
+        if (
+            result.error.code === '22P02'
+            && typeof result.error.message === 'string'
+            && result.error.message.toLowerCase().includes('invalid input syntax')
+            && result.error.message.toLowerCase().includes('id')
+            && 'id' in nextPayload
+        ) {
+            const lowerMessage = result.error.message.toLowerCase();
+            if (
+                lowerMessage.includes('smallint')
+                || lowerMessage.includes('integer')
+                || lowerMessage.includes('bigint')
+            ) {
+                idLikelyNumeric = true;
+                numericIdSeed += 1;
+                nextPayload.id = numericIdSeed;
+                continue;
+            }
+
+            delete nextPayload.id;
+            continue;
+        }
+
+        if (
+            result.error.code === '23505'
+            && !listingId
+            && idLikelyNumeric
+            && typeof nextPayload.id === 'number'
+            && typeof result.error.message === 'string'
+            && result.error.message.toLowerCase().includes('posts_pkey')
+        ) {
+            numericIdSeed = Number(nextPayload.id) + 1;
+            nextPayload.id = numericIdSeed;
+            continue;
+        }
+
+        if (result.error.code === '23514') {
+            const constraintName = extractCheckConstraintName(result.error.message)?.toLowerCase() || '';
+            if (constraintName.includes('status')) {
+                nextPayload.status = 'published';
+                continue;
+            }
+            if (constraintName.includes('category')) {
+                const normalizedCategory = String(nextPayload.type || 'activity');
+                nextPayload.category = normalizedCategory;
+                nextPayload.sub_category = normalizedCategory;
+                continue;
+            }
+        }
+
+        throw result.error;
+    }
+
+    return null;
+};
+
 export const createOrUpdateProfileFromSignup = async (userId: string, input: SignupInput) => {
     const roleConfig = ROLE_SIGNUP_CONFIG[input.role];
     const verificationStatus: VerificationStatus = roleConfig.requiresVerification ? 'pending' : 'not_required';
 
-    const payload = {
+    const payload: Record<string, unknown> = {
         id: userId,
         email: input.email,
         full_name: input.fullName,
@@ -942,29 +1181,54 @@ export const createOrUpdateProfileFromSignup = async (userId: string, input: Sig
         certificate_id: input.certificateId || null,
         government_id_ref: input.governmentId || null,
         years_experience: input.yearsExperience ? Number(input.yearsExperience) : null,
-        languages: input.languages
-            ? input.languages.split(',').map((item) => item.trim()).filter(Boolean)
-            : null,
+        languages: splitLanguages(input.languages),
     };
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .upsert(payload)
-        .select()
-        .maybeSingle();
-
-    if (error) throw error;
-    return mapProfile(data as Record<string, unknown> | null);
+    return upsertProfileWithSchemaFallback(payload);
 };
 
 export const submitVerificationApplication = async (userId: string, input: SignupInput) => {
     if (!isProviderRole(input.role)) return null;
 
+    let existingResult = await supabase
+        .from('verification')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (isMissingSpecificColumnError(existingResult.error, 'updated_at')) {
+        existingResult = await supabase
+            .from('verification')
+            .select('*')
+            .eq('user_id', userId)
+            .order('submitted_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+    }
+
+    if (isMissingColumnError(existingResult.error)) {
+        existingResult = await supabase
+            .from('verification')
+            .select('*')
+            .eq('user_id', userId)
+            .limit(1)
+            .maybeSingle();
+    }
+
+    if (!existingResult.error && existingResult.data) {
+        return existingResult.data as VerificationRecord;
+    }
+
     const now = new Date().toISOString();
-    const payload = {
+    const payload: Record<string, unknown> = {
         id: crypto.randomUUID(),
         user_id: userId,
         role: input.role,
+        verification_type: 'account',
+        owner_name: input.fullName || input.email.split('@')[0] || 'Provider',
+        owner_id_card_url: input.governmentId || '',
         status: 'pending',
         submitted_at: now,
         updated_at: now,
@@ -974,9 +1238,7 @@ export const submitVerificationApplication = async (userId: string, input: Signu
         works_under_company: !!input.worksUnderCompany,
         specialties: input.specialties || null,
         license_number: input.licenseNumber || null,
-        languages: input.languages
-            ? input.languages.split(',').map((item) => item.trim()).filter(Boolean)
-            : null,
+        languages: splitLanguages(input.languages),
         years_experience: input.yearsExperience ? Number(input.yearsExperience) : null,
         certificate_id: input.certificateId || null,
         government_id_ref: input.governmentId || null,
@@ -986,14 +1248,7 @@ export const submitVerificationApplication = async (userId: string, input: Signu
         reviewed_by: null,
     };
 
-    const { data, error } = await supabase
-        .from('verification')
-        .insert([payload])
-        .select()
-        .maybeSingle();
-
-    if (error) throw error;
-    return data as VerificationRecord | null;
+    return insertVerificationWithSchemaFallback(payload);
 };
 
 export const ensureProviderVerificationRecord = async (
@@ -1010,37 +1265,35 @@ export const ensureProviderVerificationRecord = async (
         id: crypto.randomUUID(),
         user_id: userId,
         role: profile.role,
+        verification_type: 'account',
+        owner_name: profile.full_name || profile.email?.split('@')[0] || 'Provider',
+        owner_id_card_url: profile.government_id_ref || '',
         status: 'pending',
         submitted_at: now,
         updated_at: now,
+        company_name: profile.company_name || null,
+        website: profile.website || null,
+        works_under_company: !!profile.works_under_company,
+        specialties: profile.provider_specialties || null,
+        license_number: profile.guide_license_number || null,
+        languages: splitLanguages(profile.languages),
+        years_experience: profile.years_experience || null,
+        certificate_id: profile.certificate_id || null,
+        government_id_ref: profile.government_id_ref || null,
+        bio: profile.bio || null,
+        rejection_reason: null,
+        reviewed_at: null,
+        reviewed_by: null,
     };
 
-    while (Object.keys(payload).length > 0) {
-        const { data, error } = await supabase
-            .from('verification')
-            .insert([payload])
-            .select()
-            .maybeSingle();
+    const data = await insertVerificationWithSchemaFallback(payload);
 
-        if (!error) {
-            await supabase
-                .from('profiles')
-                .update({
-                    verification_status: 'pending',
-                    is_verified: false,
-                })
-                .eq('id', userId);
+    await updateProfileWithSchemaFallback(userId, {
+        verification_status: 'pending',
+        is_verified: false,
+    });
 
-            return data as VerificationRecord | null;
-        }
-
-        if (!isMissingColumnError(error)) throw error;
-        const missingColumn = extractMissingColumnName(error.message);
-        if (!missingColumn || !(missingColumn in payload)) throw error;
-        delete payload[missingColumn];
-    }
-
-    return null;
+    return data;
 };
 
 export const signUpWithRole = async (input: SignupInput) => {
@@ -1051,6 +1304,20 @@ export const signUpWithRole = async (input: SignupInput) => {
             data: {
                 full_name: input.fullName,
                 role: input.role,
+                phone: input.phone,
+                country: input.country,
+                city: input.city,
+                bio: input.bio || null,
+                company_name: input.companyName || null,
+                registration_number: input.registrationNumber || null,
+                website: input.website || null,
+                specialties: input.specialties || null,
+                license_number: input.licenseNumber || null,
+                languages: input.languages || null,
+                years_experience: input.yearsExperience ? Number(input.yearsExperience) : null,
+                government_id_ref: input.governmentId || null,
+                certificate_id: input.certificateId || null,
+                works_under_company: !!input.worksUnderCompany,
             },
         },
     });
@@ -1058,7 +1325,12 @@ export const signUpWithRole = async (input: SignupInput) => {
     if (error) throw error;
     if (!data.user) return data;
 
-    await createOrUpdateProfileFromSignup(data.user.id, input);
+    try {
+        await createOrUpdateProfileFromSignup(data.user.id, input);
+    } catch (profileErr) {
+        if (data.session) throw profileErr;
+        console.error('Failed to submit profile during signup (will retry on first login):', profileErr);
+    }
     try {
         await submitVerificationApplication(data.user.id, input);
     } catch (verificationErr) {
@@ -1280,6 +1552,15 @@ export const getLatestVerification = async (userId: string): Promise<Verificatio
             .maybeSingle();
     }
 
+    if (isMissingColumnError(result.error)) {
+        result = await supabase
+            .from('verification')
+            .select('*')
+            .eq('user_id', userId)
+            .limit(1)
+            .maybeSingle();
+    }
+
     const { data, error } = result;
 
     if (error) {
@@ -1341,17 +1622,10 @@ export const resubmitVerificationApplication = async (userId: string) => {
 
     if (verificationUpdate.error) throw verificationUpdate.error;
 
-    const profileUpdate = await supabase
-        .from('profiles')
-        .update({
-            verification_status: nextStatus,
-            is_verified: false,
-        })
-        .eq('id', userId)
-        .select()
-        .maybeSingle();
-
-    if (profileUpdate.error) throw profileUpdate.error;
+    const profileUpdate = await updateProfileWithSchemaFallback(userId, {
+        verification_status: nextStatus,
+        is_verified: false,
+    });
 
     await writeModerationAuditLog({
         entityType: 'verification',
@@ -1367,7 +1641,7 @@ export const resubmitVerificationApplication = async (userId: string) => {
 
     return {
         verification: verificationUpdate.data as VerificationRecord | null,
-        profile: mapProfile(profileUpdate.data as Record<string, unknown> | null),
+        profile: profileUpdate,
     };
 };
 
@@ -1438,21 +1712,12 @@ export const getVerificationQueue = async (): Promise<VerificationRecord[]> => {
     }));
 
     const coveredUserIds = new Set(normalizedFromVerification.map((item) => item.user_id));
-    let pendingProfilesResult = await supabase
+    const providerProfilesResult = await supabase
         .from('profiles')
         .select('*')
-        .in('role', ['tour_company', 'tour_instructor', 'tour_guide'])
-        .in('verification_status', ['pending', 'rejected', 'resubmitted']);
+        .in('role', Array.from(PROVIDER_ROLES));
 
-    if (pendingProfilesResult.error && isMissingColumnError(pendingProfilesResult.error)) {
-        pendingProfilesResult = await supabase
-            .from('profiles')
-            .select('*')
-            .in('role', ['tour_company', 'tour_instructor', 'tour_guide'])
-            .eq('is_verified', false);
-    }
-
-    const { data: pendingProfiles, error: pendingProfilesError } = pendingProfilesResult;
+    const { data: pendingProfiles, error: pendingProfilesError } = providerProfilesResult;
 
     if (pendingProfilesError) {
         console.error('Error fetching fallback provider profiles for verification queue:', pendingProfilesError);
@@ -1462,6 +1727,12 @@ export const getVerificationQueue = async (): Promise<VerificationRecord[]> => {
     const fallbackRows = safeArray(pendingProfiles as Record<string, unknown>[])
         .map((row) => mapProfile(row))
         .filter((profile): profile is Profile => Boolean(profile?.id && profile?.role && isProviderRole(profile.role)))
+        .filter((profile) => (
+            profile.verification_status === 'pending'
+            || profile.verification_status === 'rejected'
+            || profile.verification_status === 'resubmitted'
+            || profile.is_verified === false
+        ))
         .filter((profile) => !coveredUserIds.has(profile.id))
         .map((profile) => ({
             id: `profile-${profile.id}`,
@@ -1485,8 +1756,8 @@ export const getVerificationQueue = async (): Promise<VerificationRecord[]> => {
             rejection_reason: null,
             reviewed_at: null,
             reviewed_by: null,
-            submitted_at: undefined,
-            updated_at: undefined,
+            submitted_at: profile.created_at,
+            updated_at: profile.updated_at || profile.created_at,
             profiles: profile,
         } as VerificationRecord));
 
@@ -1502,28 +1773,21 @@ export const reviewVerificationApplication = async (
     const isProfileFallbackRow = typeof application.id === 'string' && application.id.startsWith('profile-');
 
     if (isProfileFallbackRow) {
-        const profileUpdate = await supabase
-            .from('profiles')
-            .update({
-                role: application.role,
-                is_verified: status === 'approved',
-                verification_status: status,
-                company_name: application.company_name || null,
-                website: application.website || null,
-                provider_specialties: application.specialties || null,
-                guide_license_number: application.license_number || null,
-                certificate_id: application.certificate_id || null,
-                government_id_ref: application.government_id_ref || null,
-                years_experience: application.years_experience || null,
-                languages: application.languages || null,
-                bio: application.bio || null,
-                works_under_company: application.works_under_company || false,
-            })
-            .eq('id', application.user_id)
-            .select()
-            .maybeSingle();
-
-        if (profileUpdate.error) throw profileUpdate.error;
+        const profileUpdate = await updateProfileWithSchemaFallback(application.user_id, {
+            role: application.role,
+            is_verified: status === 'approved',
+            verification_status: status,
+            company_name: application.company_name || null,
+            website: application.website || null,
+            provider_specialties: application.specialties || null,
+            guide_license_number: application.license_number || null,
+            certificate_id: application.certificate_id || null,
+            government_id_ref: application.government_id_ref || null,
+            years_experience: application.years_experience || null,
+            languages: application.languages || null,
+            bio: application.bio || null,
+            works_under_company: application.works_under_company || false,
+        });
 
         await writeModerationAuditLog({
             entityType: 'verification',
@@ -1542,7 +1806,7 @@ export const reviewVerificationApplication = async (
 
         return {
             verification: null,
-            profile: mapProfile(profileUpdate.data as Record<string, unknown> | null),
+            profile: profileUpdate,
         };
     }
 
@@ -1588,28 +1852,21 @@ export const reviewVerificationApplication = async (
 
     if (verificationUpdate.error) throw verificationUpdate.error;
 
-    const profileUpdate = await supabase
-        .from('profiles')
-        .update({
-            role: application.role,
-            is_verified: status === 'approved',
-            verification_status: status,
-            company_name: application.company_name || null,
-            website: application.website || null,
-            provider_specialties: application.specialties || null,
-            guide_license_number: application.license_number || null,
-            certificate_id: application.certificate_id || null,
-            government_id_ref: application.government_id_ref || null,
-            years_experience: application.years_experience || null,
-            languages: application.languages || null,
-            bio: application.bio || null,
-            works_under_company: application.works_under_company || false,
-        })
-        .eq('id', application.user_id)
-        .select()
-        .maybeSingle();
-
-    if (profileUpdate.error) throw profileUpdate.error;
+    const profileUpdate = await updateProfileWithSchemaFallback(application.user_id, {
+        role: application.role,
+        is_verified: status === 'approved',
+        verification_status: status,
+        company_name: application.company_name || null,
+        website: application.website || null,
+        provider_specialties: application.specialties || null,
+        guide_license_number: application.license_number || null,
+        certificate_id: application.certificate_id || null,
+        government_id_ref: application.government_id_ref || null,
+        years_experience: application.years_experience || null,
+        languages: application.languages || null,
+        bio: application.bio || null,
+        works_under_company: application.works_under_company || false,
+    });
 
     await writeModerationAuditLog({
         entityType: 'verification',
@@ -1627,7 +1884,7 @@ export const reviewVerificationApplication = async (
 
     return {
         verification: verificationUpdate.data as VerificationRecord | null,
-        profile: mapProfile(profileUpdate.data as Record<string, unknown> | null),
+        profile: profileUpdate,
     };
 };
 
@@ -1682,7 +1939,7 @@ export const getAllowedListingTypes = (role: UserRole | null | undefined): Listi
 export const getProviderCapabilitySummary = (role: UserRole | null | undefined) => {
     const listingTypes = getAllowedListingTypes(role);
     if (!role || listingTypes.length === 0) return 'Bookings, favorites, reviews, and provider chat';
-    return `Can publish ${listingTypes.map((type) => (type === 'guide' ? 'event' : type)).join(', ')} listings after approval`;
+    return `Can publish ${listingTypes.map((type) => (type === 'guide' ? 'event' : type)).join(', ')} listings after account verification`;
 };
 
 export const canCreateListing = (role: UserRole | null | undefined, type: ListingType) => canRolePublish(role, type);

@@ -1,0 +1,1 @@
+role = ANY (ARRAY['tourist'::text, 'tour_company'::text, 'tour_instructor'::text, 'tour_guide'::text, 'admin'::text, 'provider'::text])) NOT VALI

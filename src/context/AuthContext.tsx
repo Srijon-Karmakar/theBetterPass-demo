@@ -1,24 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { ensureProviderVerificationRecord, getProfile } from '../lib/destinations';
-import type { Profile } from '../lib/destinations';
+import { createOrUpdateProfileFromSignup, ensureProviderVerificationRecord, getProfile } from '../lib/destinations';
+import type { Profile, SignupInput } from '../lib/destinations';
 import { getRoleLabel, getVerificationLabel, isProviderRole, type UserRole } from '../lib/platform';
-
-interface AuthContextType {
-    user: User | null;
-    profile: Profile | null;
-    loading: boolean;
-    profileLoading: boolean;
-    roleLabel: string;
-    verificationLabel: string;
-    isProvider: boolean;
-    isAdmin: boolean;
-    refreshProfile: () => Promise<void>;
-    signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from './auth-context';
 
 const parseAuthRole = (value: unknown): UserRole | null => {
     if (
@@ -31,6 +17,44 @@ const parseAuthRole = (value: unknown): UserRole | null => {
         return value;
     }
     return null;
+};
+
+const metadataString = (metadata: User['user_metadata'], key: string) => {
+    const value = metadata?.[key];
+    return typeof value === 'string' && value.trim() ? value : null;
+};
+
+const metadataBoolean = (metadata: User['user_metadata'], key: string) => metadata?.[key] === true;
+
+const metadataNumberString = (metadata: User['user_metadata'], key: string) => {
+    const value = metadata?.[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+    return typeof value === 'string' ? value : '';
+};
+
+const signupInputFromAuthMetadata = (nextUser: User, role: UserRole, fallbackName?: string | null): SignupInput => {
+    const metadata = nextUser.user_metadata;
+
+    return {
+        fullName: metadataString(metadata, 'full_name') || fallbackName || nextUser.email?.split('@')[0] || 'Member',
+        email: nextUser.email || '',
+        password: '',
+        role,
+        phone: metadataString(metadata, 'phone') || '',
+        country: metadataString(metadata, 'country') || '',
+        city: metadataString(metadata, 'city') || '',
+        bio: metadataString(metadata, 'bio') || '',
+        companyName: metadataString(metadata, 'company_name') || '',
+        registrationNumber: metadataString(metadata, 'registration_number') || '',
+        website: metadataString(metadata, 'website') || '',
+        specialties: metadataString(metadata, 'specialties') || '',
+        licenseNumber: metadataString(metadata, 'license_number') || '',
+        languages: metadataString(metadata, 'languages') || '',
+        yearsExperience: metadataNumberString(metadata, 'years_experience'),
+        governmentId: metadataString(metadata, 'government_id_ref') || '',
+        certificateId: metadataString(metadata, 'certificate_id') || '',
+        worksUnderCompany: metadataBoolean(metadata, 'works_under_company'),
+    };
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -54,17 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const providerRoleFromAuth = isProviderRole(authRole) ? authRole : null;
 
             if (!profileData && authRole) {
-                const fallbackPayload: Record<string, unknown> = {
-                    id: nextUser.id,
-                    email: nextUser.email || null,
-                    full_name: (typeof nextUser.user_metadata?.full_name === 'string' && nextUser.user_metadata.full_name.trim()) || nextUser.email?.split('@')[0] || 'Member',
-                    role: authRole,
-                    is_verified: authRole === 'tourist',
-                    verification_status: isProviderRole(authRole) ? 'pending' : 'not_required',
-                };
-
                 try {
-                    await supabase.from('profiles').upsert([fallbackPayload], { onConflict: 'id' });
+                    await createOrUpdateProfileFromSignup(nextUser.id, signupInputFromAuthMetadata(nextUser, authRole));
                     profileData = await getProfile(nextUser.id);
                 } catch (error) {
                     console.error('Failed bootstrapping profile from auth metadata:', error);
@@ -78,16 +93,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (effectiveProviderRole) {
                 try {
                     if (!isProviderRole(profileData?.role)) {
-                        await supabase
-                            .from('profiles')
-                            .upsert([{
-                                id: nextUser.id,
-                                email: nextUser.email || null,
-                                full_name: profileData?.full_name || (typeof nextUser.user_metadata?.full_name === 'string' ? nextUser.user_metadata.full_name : null) || nextUser.email?.split('@')[0] || 'Provider',
-                                role: effectiveProviderRole,
-                                verification_status: 'pending',
-                                is_verified: false,
-                            }], { onConflict: 'id' });
+                        await createOrUpdateProfileFromSignup(
+                            nextUser.id,
+                            signupInputFromAuthMetadata(nextUser, effectiveProviderRole, profileData?.full_name || 'Provider')
+                        );
                         profileData = await getProfile(nextUser.id);
                     }
 
@@ -155,12 +164,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             {children}
         </AuthContext.Provider>
     );
-};
-
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
 };

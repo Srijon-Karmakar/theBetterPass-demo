@@ -5,10 +5,14 @@ create extension if not exists pgcrypto;
 
 alter table public.profiles
     add column if not exists email text,
+    add column if not exists full_name text,
+    add column if not exists bio text,
     add column if not exists phone text,
     add column if not exists country text,
     add column if not exists city text,
+    add column if not exists website text,
     add column if not exists role text default 'tourist',
+    add column if not exists is_verified boolean default false,
     add column if not exists verification_status text default 'not_required',
     add column if not exists company_name text,
     add column if not exists company_profile_id uuid,
@@ -19,6 +23,41 @@ alter table public.profiles
     add column if not exists government_id_ref text,
     add column if not exists years_experience integer,
     add column if not exists languages text[];
+
+do $$
+declare
+    constraint_name text;
+begin
+    for constraint_name in
+        select c.conname
+        from pg_constraint c
+        join pg_class t on t.oid = c.conrelid
+        join pg_namespace n on n.oid = t.relnamespace
+        where n.nspname = 'public'
+          and t.relname = 'profiles'
+          and c.contype = 'c'
+          and (
+              pg_get_constraintdef(c.oid) ilike '%role%'
+              or pg_get_constraintdef(c.oid) ilike '%verification_status%'
+          )
+    loop
+        execute format('alter table public.profiles drop constraint if exists %I', constraint_name);
+    end loop;
+end $$;
+
+alter table public.profiles
+    drop constraint if exists profiles_role_check;
+
+alter table public.profiles
+    add constraint profiles_role_check
+    check (role in ('tourist', 'tour_company', 'tour_instructor', 'tour_guide', 'admin', 'provider')) not valid;
+
+alter table public.profiles
+    drop constraint if exists profiles_verification_status_check;
+
+alter table public.profiles
+    add constraint profiles_verification_status_check
+    check (verification_status in ('not_required', 'pending', 'approved', 'rejected', 'resubmitted')) not valid;
 
 -- Optional internal admin access:
 -- set profiles.role = 'admin' for staff users.
@@ -37,6 +76,9 @@ create table if not exists public.verification (
     role text not null check (role in ('tour_company', 'tour_instructor', 'tour_guide')),
     status text not null default 'pending' check (status in ('pending', 'approved', 'rejected', 'resubmitted')),
     company_name text,
+    owner_name text default 'Provider',
+    owner_id_card_url text default '',
+    verification_type text default 'account',
     website text,
     registration_number text,
     works_under_company boolean default false,
@@ -54,8 +96,306 @@ create table if not exists public.verification (
     updated_at timestamptz not null default now()
 );
 
+alter table public.verification
+    add column if not exists company_name text,
+    add column if not exists owner_name text default 'Provider',
+    add column if not exists owner_id_card_url text default '',
+    add column if not exists verification_type text default 'account',
+    add column if not exists website text,
+    add column if not exists registration_number text,
+    add column if not exists works_under_company boolean default false,
+    add column if not exists specialties text,
+    add column if not exists license_number text,
+    add column if not exists languages text[],
+    add column if not exists years_experience integer,
+    add column if not exists certificate_id text,
+    add column if not exists government_id_ref text,
+    add column if not exists bio text,
+    add column if not exists rejection_reason text,
+    add column if not exists reviewed_at timestamptz,
+    add column if not exists reviewed_by uuid references auth.users(id) on delete set null,
+    add column if not exists submitted_at timestamptz default now(),
+    add column if not exists updated_at timestamptz default now();
+
+alter table public.verification
+    alter column owner_name set default 'Provider',
+    alter column owner_id_card_url set default '',
+    alter column verification_type set default 'account';
+
+update public.verification
+set
+    owner_name = coalesce(nullif(owner_name, ''), 'Provider'),
+    owner_id_card_url = coalesce(owner_id_card_url, ''),
+    verification_type = coalesce(verification_type, 'account'),
+    submitted_at = coalesce(submitted_at, now()),
+    updated_at = coalesce(updated_at, submitted_at, now())
+where owner_name is null
+   or owner_name = ''
+   or owner_id_card_url is null
+   or verification_type is null
+   or submitted_at is null
+   or updated_at is null;
+
+do $$
+declare
+    col record;
+begin
+    -- Compatibility with older verification schemas:
+    -- relax unexpected non-core NOT NULL columns so migration inserts cannot fail.
+    for col in
+        select column_name, data_type
+        from information_schema.columns
+        where table_schema = 'public'
+          and table_name = 'verification'
+          and is_nullable = 'NO'
+          and column_name not in ('id', 'user_id', 'role', 'status', 'submitted_at', 'updated_at')
+    loop
+        if col.data_type in ('text', 'character varying') then
+            execute format('alter table public.verification alter column %I set default ''''', col.column_name);
+            execute format('update public.verification set %I = coalesce(%I, '''')', col.column_name, col.column_name);
+            execute format('alter table public.verification alter column %I drop not null', col.column_name);
+        elsif col.data_type = 'boolean' then
+            execute format('alter table public.verification alter column %I set default false', col.column_name);
+            execute format('update public.verification set %I = coalesce(%I, false)', col.column_name, col.column_name);
+            execute format('alter table public.verification alter column %I drop not null', col.column_name);
+        elsif col.data_type in ('smallint', 'integer', 'bigint', 'numeric', 'real', 'double precision') then
+            execute format('alter table public.verification alter column %I set default 0', col.column_name);
+            execute format('update public.verification set %I = coalesce(%I, 0)', col.column_name, col.column_name);
+            execute format('alter table public.verification alter column %I drop not null', col.column_name);
+        elsif col.data_type in ('date', 'timestamp without time zone', 'timestamp with time zone') then
+            execute format('alter table public.verification alter column %I set default now()', col.column_name);
+            execute format('update public.verification set %I = coalesce(%I, now())', col.column_name, col.column_name);
+            execute format('alter table public.verification alter column %I drop not null', col.column_name);
+        end if;
+    end loop;
+end $$;
+
+do $$
+declare
+    constraint_name text;
+begin
+    for constraint_name in
+        select c.conname
+        from pg_constraint c
+        join pg_class t on t.oid = c.conrelid
+        join pg_namespace n on n.oid = t.relnamespace
+        where n.nspname = 'public'
+          and t.relname = 'verification'
+          and c.contype = 'c'
+          and (
+              pg_get_constraintdef(c.oid) ilike '%role%'
+              or pg_get_constraintdef(c.oid) ilike '%status%'
+              or pg_get_constraintdef(c.oid) ilike '%verification_type%'
+          )
+    loop
+        execute format('alter table public.verification drop constraint if exists %I', constraint_name);
+    end loop;
+end $$;
+
+alter table public.verification
+    drop constraint if exists verification_role_check;
+
+alter table public.verification
+    add constraint verification_role_check
+    check (role in ('tour_company', 'tour_instructor', 'tour_guide')) not valid;
+
+alter table public.verification
+    drop constraint if exists verification_status_check;
+
+alter table public.verification
+    add constraint verification_status_check
+    check (status in ('pending', 'approved', 'rejected', 'resubmitted')) not valid;
+
 create index if not exists verification_user_id_idx on public.verification(user_id);
 create index if not exists verification_status_idx on public.verification(status);
+
+create or replace function public.handle_new_auth_user_provider_signup()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    signup_role text := coalesce(new.raw_user_meta_data->>'role', 'tourist');
+    signup_languages text[];
+    signup_years_experience integer;
+begin
+    if signup_role not in ('tourist', 'tour_company', 'tour_instructor', 'tour_guide') then
+        signup_role := 'tourist';
+    end if;
+
+    select array_remove(array_agg(nullif(trim(language_item), '')), null)
+    into signup_languages
+    from unnest(string_to_array(coalesce(new.raw_user_meta_data->>'languages', ''), ',')) as language_item;
+
+    if nullif(new.raw_user_meta_data->>'years_experience', '') ~ '^[0-9]+$' then
+        signup_years_experience := (new.raw_user_meta_data->>'years_experience')::integer;
+    end if;
+
+    insert into public.profiles (
+        id,
+        email,
+        full_name,
+        phone,
+        country,
+        city,
+        bio,
+        role,
+        is_verified,
+        verification_status,
+        company_name,
+        works_under_company,
+        website,
+        provider_specialties,
+        guide_license_number,
+        certificate_id,
+        government_id_ref,
+        years_experience,
+        languages
+    )
+    values (
+        new.id,
+        new.email,
+        coalesce(nullif(new.raw_user_meta_data->>'full_name', ''), split_part(new.email, '@', 1), 'Member'),
+        nullif(new.raw_user_meta_data->>'phone', ''),
+        nullif(new.raw_user_meta_data->>'country', ''),
+        nullif(new.raw_user_meta_data->>'city', ''),
+        nullif(new.raw_user_meta_data->>'bio', ''),
+        signup_role,
+        signup_role = 'tourist',
+        case when signup_role = 'tourist' then 'not_required' else 'pending' end,
+        nullif(new.raw_user_meta_data->>'company_name', ''),
+        coalesce(nullif(new.raw_user_meta_data->>'works_under_company', '')::boolean, false),
+        nullif(new.raw_user_meta_data->>'website', ''),
+        nullif(new.raw_user_meta_data->>'specialties', ''),
+        nullif(new.raw_user_meta_data->>'license_number', ''),
+        nullif(new.raw_user_meta_data->>'certificate_id', ''),
+        nullif(new.raw_user_meta_data->>'government_id_ref', ''),
+        signup_years_experience,
+        signup_languages
+    )
+    on conflict (id) do update
+    set
+        email = excluded.email,
+        full_name = excluded.full_name,
+        phone = excluded.phone,
+        country = excluded.country,
+        city = excluded.city,
+        bio = excluded.bio,
+        role = excluded.role,
+        is_verified = excluded.is_verified,
+        verification_status = excluded.verification_status,
+        company_name = excluded.company_name,
+        works_under_company = excluded.works_under_company,
+        website = excluded.website,
+        provider_specialties = excluded.provider_specialties,
+        guide_license_number = excluded.guide_license_number,
+        certificate_id = excluded.certificate_id,
+        government_id_ref = excluded.government_id_ref,
+        years_experience = excluded.years_experience,
+        languages = excluded.languages;
+
+    if signup_role in ('tour_company', 'tour_instructor', 'tour_guide') then
+        insert into public.verification (
+            user_id,
+            role,
+            verification_type,
+            owner_name,
+            owner_id_card_url,
+            status,
+            company_name,
+            website,
+            registration_number,
+            works_under_company,
+            specialties,
+            license_number,
+            languages,
+            years_experience,
+            certificate_id,
+            government_id_ref,
+            bio
+        )
+        select
+            new.id,
+            signup_role,
+            'account',
+            coalesce(nullif(new.raw_user_meta_data->>'full_name', ''), split_part(new.email, '@', 1), 'Provider'),
+            coalesce(nullif(new.raw_user_meta_data->>'owner_id_card_url', ''), ''),
+            'pending',
+            nullif(new.raw_user_meta_data->>'company_name', ''),
+            nullif(new.raw_user_meta_data->>'website', ''),
+            nullif(new.raw_user_meta_data->>'registration_number', ''),
+            coalesce(nullif(new.raw_user_meta_data->>'works_under_company', '')::boolean, false),
+            nullif(new.raw_user_meta_data->>'specialties', ''),
+            nullif(new.raw_user_meta_data->>'license_number', ''),
+            signup_languages,
+            signup_years_experience,
+            nullif(new.raw_user_meta_data->>'certificate_id', ''),
+            nullif(new.raw_user_meta_data->>'government_id_ref', ''),
+            nullif(new.raw_user_meta_data->>'bio', '')
+        where not exists (
+            select 1
+            from public.verification existing
+            where existing.user_id = new.id
+        );
+    end if;
+
+    return new;
+exception
+    when others then
+        raise warning 'Provider signup bootstrap failed for auth user %: %', new.id, sqlerrm;
+        return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_provider_signup on auth.users;
+create trigger on_auth_user_provider_signup
+after insert on auth.users
+for each row execute function public.handle_new_auth_user_provider_signup();
+
+insert into public.verification (
+    user_id,
+    role,
+    verification_type,
+    owner_name,
+    owner_id_card_url,
+    status,
+    company_name,
+    website,
+    works_under_company,
+    specialties,
+    license_number,
+    languages,
+    years_experience,
+    certificate_id,
+    government_id_ref,
+    bio
+)
+select
+    profiles.id,
+    profiles.role,
+    'account',
+    coalesce(nullif(profiles.full_name, ''), split_part(profiles.email, '@', 1), 'Provider'),
+    coalesce(nullif(profiles.government_id_ref, ''), ''),
+    coalesce(profiles.verification_status, 'pending'),
+    profiles.company_name,
+    profiles.website,
+    coalesce(profiles.works_under_company, false),
+    profiles.provider_specialties,
+    profiles.guide_license_number,
+    profiles.languages,
+    profiles.years_experience,
+    profiles.certificate_id,
+    profiles.government_id_ref,
+    profiles.bio
+from public.profiles
+where profiles.role in ('tour_company', 'tour_instructor', 'tour_guide')
+  and coalesce(profiles.verification_status, 'pending') in ('pending', 'rejected', 'resubmitted')
+  and not exists (
+      select 1
+      from public.verification existing
+      where existing.user_id = profiles.id
+  );
 
 create table if not exists public.bookings (
     id uuid primary key default gen_random_uuid(),
@@ -142,11 +482,78 @@ create index if not exists conversation_messages_conversation_idx
 alter table public.posts
     add column if not exists provider_user_id uuid references auth.users(id) on delete set null,
     add column if not exists company_profile_id uuid references public.profiles(id) on delete set null,
+    add column if not exists title text,
+    add column if not exists name text,
+    add column if not exists description text,
+    add column if not exists location text,
+    add column if not exists image_url text,
+    add column if not exists cover_image_url text,
+    add column if not exists thumbnail_url text,
+    add column if not exists category text,
+    add column if not exists sub_category text,
+    add column if not exists type text,
+    add column if not exists price numeric(12,2) default 0,
     add column if not exists starts_at timestamptz,
     add column if not exists status text default 'published',
     add column if not exists rejection_reason text,
     add column if not exists reviewed_at timestamptz,
     add column if not exists reviewed_by uuid references auth.users(id) on delete set null;
+
+do $$
+declare
+    posts_id_type text;
+    posts_id_default text;
+begin
+    select data_type, column_default
+    into posts_id_type, posts_id_default
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'posts'
+      and column_name = 'id';
+
+    if posts_id_type = 'uuid' then
+        execute 'alter table public.posts alter column id set default gen_random_uuid()';
+        execute 'update public.posts set id = coalesce(id, gen_random_uuid())';
+    elsif posts_id_type in ('text', 'character varying', 'character') then
+        execute 'alter table public.posts alter column id set default gen_random_uuid()::text';
+        execute 'update public.posts set id = coalesce(id, gen_random_uuid()::text)';
+    elsif posts_id_type in ('smallint', 'integer', 'bigint') then
+        if posts_id_default is null or posts_id_default = '' then
+            execute 'create sequence if not exists public.posts_id_seq';
+            execute 'alter sequence public.posts_id_seq owned by public.posts.id';
+            execute 'alter table public.posts alter column id set default nextval(''public.posts_id_seq'')';
+        end if;
+        execute 'update public.posts set id = coalesce(id, nextval(''public.posts_id_seq''))';
+    end if;
+end $$;
+
+do $$
+declare
+    col record;
+begin
+    -- Compatibility with older posts schemas:
+    -- relax unexpected non-core NOT NULL columns so provider publishing cannot fail.
+    for col in
+        select column_name, data_type
+        from information_schema.columns
+        where table_schema = 'public'
+          and table_name = 'posts'
+          and is_nullable = 'NO'
+          and column_name not in ('id')
+    loop
+        if col.data_type in ('text', 'character varying') then
+            execute format('alter table public.posts alter column %I set default ''''', col.column_name);
+        elsif col.data_type = 'boolean' then
+            execute format('alter table public.posts alter column %I set default false', col.column_name);
+        elsif col.data_type in ('smallint', 'integer', 'bigint', 'numeric', 'real', 'double precision') then
+            execute format('alter table public.posts alter column %I set default 0', col.column_name);
+        elsif col.data_type in ('date', 'timestamp without time zone', 'timestamp with time zone') then
+            execute format('alter table public.posts alter column %I set default now()', col.column_name);
+        end if;
+
+        execute format('alter table public.posts alter column %I drop not null', col.column_name);
+    end loop;
+end $$;
 
 do $$
 declare
@@ -186,6 +593,38 @@ set status = coalesce(status, 'published')
 where status is null;
 
 update public.posts
+set
+    title = coalesce(nullif(title, ''), nullif(name, ''), 'Untitled listing'),
+    name = coalesce(nullif(name, ''), nullif(title, ''), 'Untitled listing'),
+    description = coalesce(nullif(description, ''), 'No description provided.'),
+    location = coalesce(nullif(location, ''), 'Not specified'),
+    image_url = coalesce(image_url, cover_image_url, thumbnail_url, ''),
+    cover_image_url = coalesce(cover_image_url, image_url, thumbnail_url, ''),
+    thumbnail_url = coalesce(thumbnail_url, image_url, cover_image_url, ''),
+    type = case when type in ('tour', 'activity', 'guide', 'event') then type else 'activity' end,
+    category = coalesce(nullif(category, ''), nullif(sub_category, ''), type, 'activity'),
+    sub_category = coalesce(nullif(sub_category, ''), nullif(category, ''), type, 'activity'),
+    price = coalesce(price, 0)
+where title is null
+   or title = ''
+   or name is null
+   or name = ''
+   or description is null
+   or description = ''
+   or location is null
+   or location = ''
+   or image_url is null
+   or cover_image_url is null
+   or thumbnail_url is null
+   or type is null
+   or type not in ('tour', 'activity', 'guide', 'event')
+   or category is null
+   or category = ''
+   or sub_category is null
+   or sub_category = ''
+   or price is null;
+
+update public.posts
 set type = 'guide'
 where type = 'event';
 
@@ -195,11 +634,77 @@ where type is not null
   and type not in ('tour', 'activity', 'guide');
 
 alter table public.posts
+    alter column title set default 'Untitled listing',
+    alter column name set default 'Untitled listing',
+    alter column description set default 'No description provided.',
+    alter column location set default 'Not specified',
+    alter column image_url set default '',
+    alter column cover_image_url set default '',
+    alter column thumbnail_url set default '',
+    alter column type set default 'activity',
+    alter column category set default 'activity',
+    alter column sub_category set default 'activity',
+    alter column price set default 0,
+    alter column status set default 'published';
+
+alter table public.posts
     drop constraint if exists posts_type_check;
 
 alter table public.posts
     add constraint posts_type_check
     check (type in ('tour', 'activity', 'guide'));
+
+do $$
+declare
+    constraint_name text;
+begin
+    for constraint_name in
+        select c.conname
+        from pg_constraint c
+        join pg_class t on t.oid = c.conrelid
+        join pg_namespace n on n.oid = t.relnamespace
+        where n.nspname = 'public'
+          and t.relname = 'posts'
+          and c.contype = 'c'
+          and (
+              pg_get_constraintdef(c.oid) ilike '%category%'
+              or pg_get_constraintdef(c.oid) ilike '%sub_category%'
+          )
+    loop
+        execute format('alter table public.posts drop constraint if exists %I', constraint_name);
+    end loop;
+end $$;
+
+alter table public.posts
+    drop constraint if exists posts_category_check;
+
+alter table public.posts
+    drop constraint if exists posts_sub_category_check;
+
+do $$
+declare
+    constraint_name text;
+begin
+    for constraint_name in
+        select c.conname
+        from pg_constraint c
+        join pg_class t on t.oid = c.conrelid
+        join pg_namespace n on n.oid = t.relnamespace
+        where n.nspname = 'public'
+          and t.relname = 'posts'
+          and c.contype = 'c'
+          and pg_get_constraintdef(c.oid) ilike '%status%'
+    loop
+        execute format('alter table public.posts drop constraint if exists %I', constraint_name);
+    end loop;
+end $$;
+
+alter table public.posts
+    drop constraint if exists posts_status_check;
+
+alter table public.posts
+    add constraint posts_status_check
+    check (status in ('pending', 'published', 'rejected', 'approved', 'resubmitted')) not valid;
 
 create or replace function public.is_admin_user(check_user_id uuid default auth.uid())
 returns boolean
@@ -337,7 +842,7 @@ with check (
         provider_user_id = auth.uid()
         or user_id = auth.uid()
     )
-    and status in ('pending', 'published')
+    and status = 'published'
 );
 
 drop policy if exists "posts_update_owner_or_admin" on public.posts;
@@ -358,7 +863,7 @@ with check (
             provider_user_id = auth.uid()
             or user_id = auth.uid()
         )
-        and status in ('pending', 'published')
+        and status = 'published'
     )
 );
 

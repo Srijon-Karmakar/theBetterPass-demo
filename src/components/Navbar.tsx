@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Moon, Sun, X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 
 type NavTab = 'home' | 'tours' | 'activities' | 'events' | 'messages' | 'bookings';

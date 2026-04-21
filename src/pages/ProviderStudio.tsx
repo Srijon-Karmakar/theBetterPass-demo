@@ -1,7 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Edit3, FilePlus2, Loader2, MapPin, ShieldAlert, Sparkles } from 'lucide-react';
+import {
+    Calendar,
+    CheckCircle2,
+    Clock,
+    Compass,
+    DollarSign,
+    Edit3,
+    FileText,
+    Image,
+    Loader2,
+    MapPin,
+    ShieldAlert,
+    Sparkles,
+    Tag,
+    Type,
+    Zap,
+} from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import {
     createOrUpdateListing,
     getMyPosts,
@@ -11,15 +27,10 @@ import {
 import { LISTING_LABELS, getRoleLabel, type ListingType, canRolePublish } from '../lib/platform';
 import './provider-studio.css';
 
-const INPUT_STYLE: React.CSSProperties = {
-    width: '100%',
-    border: '1px solid var(--border-light)',
-    borderRadius: 'var(--radius-md)',
-    padding: '14px 16px',
-    background: 'var(--bg-main)',
-    fontFamily: 'inherit',
-    fontSize: '0.95rem',
-    color: 'var(--text-main)',
+const TYPE_META: Record<ListingType, { icon: React.ReactNode; description: string }> = {
+    tour: { icon: <Compass size={22} />, description: 'Itinerary-led guided tour' },
+    activity: { icon: <Zap size={22} />, description: 'Hands-on guided activity' },
+    guide: { icon: <Calendar size={22} />, description: 'Date-based event listing' },
 };
 
 const EMPTY_FORM = (type: ListingType): ListingInput => ({
@@ -31,17 +42,22 @@ const EMPTY_FORM = (type: ListingType): ListingInput => ({
     sub_category: '',
     price: null,
     starts_at: '',
-    status: 'pending',
+    status: 'published',
 });
 
-const getListingTone = (status?: string | null) => {
+const getStatusDotClass = (status?: string | null) => {
     switch (status) {
-        case 'published':
-            return { bg: 'rgba(34, 197, 94, 0.1)', color: '#15803d' };
-        case 'rejected':
-            return { bg: 'rgba(239, 68, 68, 0.1)', color: '#b91c1c' };
-        default:
-            return { bg: 'rgba(37, 99, 235, 0.1)', color: '#1d4ed8' };
+        case 'published': return 'ps-status-dot ps-status-dot--published';
+        case 'rejected': return 'ps-status-dot ps-status-dot--rejected';
+        default: return 'ps-status-dot ps-status-dot--pending';
+    }
+};
+
+const getStatusPillClass = (verificationStatus?: string | null) => {
+    switch (verificationStatus) {
+        case 'approved': return 'ps-status-pill ps-status-pill--approved';
+        case 'rejected': return 'ps-status-pill ps-status-pill--rejected';
+        default: return 'ps-status-pill ps-status-pill--pending';
     }
 };
 
@@ -49,23 +65,9 @@ const getListingTitle = (listing: PostRecord) => listing.title || listing.name |
 
 const getPrimaryActionCopy = (type: ListingType) => {
     switch (type) {
-        case 'tour':
-            return 'Submit tour for review';
-        case 'activity':
-            return 'Submit activity for review';
-        case 'guide':
-            return 'Submit event for review';
-    }
-};
-
-const getSingularListingLabel = (type: ListingType) => {
-    switch (type) {
-        case 'tour':
-            return 'Tour';
-        case 'activity':
-            return 'Activity';
-        case 'guide':
-            return 'Event';
+        case 'tour': return 'Publish Tour';
+        case 'activity': return 'Publish Activity';
+        case 'guide': return 'Publish Event';
     }
 };
 
@@ -76,6 +78,7 @@ export const ProviderStudio: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [editingListingId, setEditingListingId] = useState<string | null>(null);
     const [form, setForm] = useState<ListingInput>(EMPTY_FORM('tour'));
+    const [imgError, setImgError] = useState(false);
 
     const allowedTypes = useMemo(
         () => (['tour', 'activity', 'guide'] as ListingType[]).filter((type) => canRolePublish(profile?.role, type)),
@@ -105,18 +108,18 @@ export const ProviderStudio: React.FC = () => {
         void loadListings();
     }, [allowedTypes, isProvider, user]);
 
-    if (!user || !isProvider) {
-        return <Navigate to="/dashboard" replace />;
-    }
+    if (!user || !isProvider) return <Navigate to="/dashboard" replace />;
 
     const resetForm = () => {
         setEditingListingId(null);
+        setImgError(false);
         setForm(EMPTY_FORM(allowedTypes[0] || 'tour'));
     };
 
     const beginEdit = (listing: PostRecord) => {
         const listingType = (listing.type === 'event' ? 'guide' : listing.type || allowedTypes[0] || 'tour') as ListingType;
         setEditingListingId(listing.id);
+        setImgError(false);
         setForm({
             id: listing.id,
             user_id: listing.user_id,
@@ -130,14 +133,13 @@ export const ProviderStudio: React.FC = () => {
             sub_category: listing.sub_category || '',
             price: typeof listing.price === 'number' ? listing.price : null,
             starts_at: listing.starts_at || '',
-            status: 'pending',
+            status: 'published',
         });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!canAccessStudio) return;
-
         setSaving(true);
         try {
             await createOrUpdateListing({
@@ -146,7 +148,7 @@ export const ProviderStudio: React.FC = () => {
                 provider_user_id: user.id,
                 user_id: user.id,
                 company_profile_id: profile?.company_profile_id || null,
-                status: 'pending',
+                status: 'published',
                 rejection_reason: null,
                 price: typeof form.price === 'number' ? form.price : Number(form.price || 0) || null,
                 starts_at: form.starts_at || null,
@@ -154,271 +156,324 @@ export const ProviderStudio: React.FC = () => {
             await loadListings();
             resetForm();
         } catch (error) {
-            console.error('Failed to submit listing:', error);
-            alert('Failed to submit listing. Please try again.');
+            const err = error as {
+                error?: { code?: string; message?: string; details?: string | null; hint?: string | null };
+                code?: string;
+                message?: string;
+                details?: string | null;
+                hint?: string | null;
+            };
+            const normalized = err?.error && typeof err.error === 'object' ? err.error : err;
+            const message = normalized?.message || 'Failed to submit listing. Please try again.';
+            console.error('Failed to submit listing:', normalized);
+            alert(message);
         } finally {
             setSaving(false);
         }
     };
 
+    const avatarInitial = (profile?.full_name || user.email || 'P')[0].toUpperCase();
+
     return (
-        <main className="provider-studio-page animate-fade">
-            <div className="container provider-studio-shell">
-                <section className="provider-studio-hero">
-                    <div className="provider-studio-hero-copy">
-                        <span className="provider-studio-kicker">Provider Studio</span>
-                        <h1>Role-based publishing for live tours, activities, and events.</h1>
-                        <p>
-                            Verified providers submit listings for admin review. Once approved by an admin, your listing goes live on the catalog.
-                        </p>
+        <main className="ps-page animate-fade">
+            <div className="container" style={{ maxWidth: '1160px' }}>
+
+                {/* Header */}
+                <div className="ps-header">
+                    <span className="ps-badge">
+                        <Sparkles size={12} />
+                        Provider Studio
+                    </span>
+                    <h1 className="ps-title">Your Posting Studio</h1>
+                    <p className="ps-subtitle">
+                        Publish tours, activities, and events directly to the live catalog — no queue, instant visibility.
+                    </p>
+                </div>
+
+                {/* Account Status Bar */}
+                <div className="ps-status-bar">
+                    <div className="ps-status-bar-avatar">{avatarInitial}</div>
+                    <div>
+                        <p className="ps-status-bar-name">{profile?.full_name || user.email}</p>
+                        <p className="ps-status-bar-role">{getRoleLabel(profile?.role)} account</p>
                     </div>
-                    <aside className="provider-studio-status-card">
-                        <span className="provider-studio-mini-label">Account Snapshot</span>
-                        <strong>{profile?.full_name || user.email}</strong>
-                        <p>{getRoleLabel(profile?.role)} account</p>
-                        <div className="provider-studio-status-grid">
-                            <div>
-                                <span>Status</span>
-                                <strong>{verificationLabel}</strong>
-                            </div>
-                            <div>
-                                <span>Company</span>
-                                <strong>{profile?.company_name || 'Independent'}</strong>
-                            </div>
-                        </div>
-                    </aside>
-                </section>
+                    <div className="ps-status-bar-divider" />
+                    <span className={getStatusPillClass(profile?.verification_status)}>
+                        {verificationLabel}
+                    </span>
+                    {profile?.company_name && (
+                        <>
+                            <div className="ps-status-bar-divider" />
+                            <span className="ps-status-bar-company">{profile.company_name}</span>
+                        </>
+                    )}
+                </div>
 
-                <section className="provider-studio-capabilities">
-                    {allowedTypes.map((type) => (
-                        <article key={type} className="provider-studio-capability-card">
-                            <span className="provider-studio-card-eyebrow">{LISTING_LABELS[type]}</span>
-                            <h2>{getPrimaryActionCopy(type)}</h2>
-                            <p>
-                                {type === 'tour'
-                                    ? 'Create itinerary-led tours with title, location, pricing, cover image, and launch timing.'
-                                    : type === 'activity'
-                                        ? 'Publish guided activities with immediate visibility after account verification.'
-                                        : 'Launch events with date-aware availability and instant public listing visibility.'}
-                            </p>
-                            <button
-                                type="button"
-                                className="btn btn-soft provider-studio-chip-button"
-                                disabled={!canAccessStudio}
-                                onClick={() => setForm({ ...EMPTY_FORM(type), type })}
-                            >
-                                <FilePlus2 size={16} />
-                                New {getSingularListingLabel(type)}
-                            </button>
-                        </article>
-                    ))}
-                </section>
-
+                {/* Lock Banner */}
                 {!canAccessStudio && (
-                    <section className="provider-studio-lock-card">
+                    <div className="ps-lock-banner">
                         <ShieldAlert size={20} />
                         <div>
                             <strong>Publishing unlocks after account approval</strong>
-                            <p>
-                                Your provider account can sign in and view its role setup now. Live posting opens only when
-                                account verification is marked approved by admin.
-                            </p>
+                            <p>Your account is set up. Live posting opens once verification is marked approved by admin.</p>
                         </div>
-                    </section>
+                    </div>
                 )}
 
-                <section className="provider-studio-grid">
-                    <article className="provider-studio-form-card">
-                        <div className="provider-studio-card-head">
+                {/* Quick-start capability chips */}
+                {allowedTypes.length > 0 && (
+                    <div className="ps-capability-strip">
+                        {allowedTypes.map((type) => (
+                            <button
+                                key={type}
+                                type="button"
+                                className="ps-capability-chip"
+                                disabled={!canAccessStudio}
+                                onClick={() => {
+                                    setEditingListingId(null);
+                                    setImgError(false);
+                                    setForm({ ...EMPTY_FORM(type), type });
+                                }}
+                            >
+                                {TYPE_META[type].icon}
+                                New {LISTING_LABELS[type]}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* Main Grid */}
+                <div className="ps-grid">
+
+                    {/* ── Form Card ── */}
+                    <article className="ps-card">
+                        <div className="ps-card-head">
                             <div>
-                                <span className="provider-studio-card-eyebrow">Create Live Listing</span>
-                                <h2>{editingListingId ? 'Edit live listing' : getPrimaryActionCopy(form.type)}</h2>
-                                <p>
-                                    This form publishes directly into the live catalog. It does not enter a listing moderation queue.
+                                <span className="ps-card-label">
+                                    <FileText size={11} />
+                                    {editingListingId ? 'Editing' : 'Create Listing'}
+                                </span>
+                                <h2 className="ps-card-title">
+                                    {editingListingId ? 'Edit live listing' : getPrimaryActionCopy(form.type)}
+                                </h2>
+                                <p className="ps-card-desc">
+                                    Publishes directly into the live catalog — no moderation queue.
                                 </p>
                             </div>
                             {editingListingId && (
-                                <button type="button" className="btn btn-soft provider-studio-chip-button" onClick={resetForm}>
+                                <button type="button" className="ps-cancel-btn" onClick={resetForm}>
                                     Cancel edit
                                 </button>
                             )}
                         </div>
 
-                        <form onSubmit={handleSubmit} className="provider-studio-form">
-                            <label className="provider-studio-field">
-                                <span>Listing Type</span>
-                                <select
-                                    value={form.type}
-                                    onChange={(e) => setForm((current) => ({ ...current, type: e.target.value as ListingType }))}
-                                    style={INPUT_STYLE}
-                                    disabled={!canAccessStudio}
-                                >
-                                    {allowedTypes.map((type) => (
-                                        <option key={type} value={type}>{LISTING_LABELS[type]}</option>
-                                    ))}
-                                </select>
-                            </label>
+                        {/* Type Picker */}
+                        {allowedTypes.length > 1 && (
+                            <div className="ps-type-picker">
+                                {allowedTypes.map((type) => (
+                                    <button
+                                        key={type}
+                                        type="button"
+                                        className={`ps-type-card${form.type === type ? ' ps-type-card--active' : ''}`}
+                                        disabled={!canAccessStudio}
+                                        onClick={() => setForm((f) => ({ ...f, type }))}
+                                    >
+                                        {TYPE_META[type].icon}
+                                        <span>{LISTING_LABELS[type]}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
-                            <label className="provider-studio-field">
-                                <span>Title</span>
+                        <form onSubmit={handleSubmit} className="ps-form">
+                            <label className="ps-field">
+                                <span className="ps-field-label"><Type size={13} /> Title</span>
                                 <input
+                                    className="ps-input"
                                     value={form.title}
-                                    onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))}
-                                    style={INPUT_STYLE}
+                                    onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                                    placeholder="e.g. Sunrise Hike through Margalla Hills"
                                     disabled={!canAccessStudio}
                                     required
                                 />
                             </label>
 
-                            <div className="provider-studio-two-up">
-                                <label className="provider-studio-field">
-                                    <span>Location</span>
+                            <div className="ps-two-up">
+                                <label className="ps-field">
+                                    <span className="ps-field-label"><MapPin size={13} /> Location</span>
                                     <input
+                                        className="ps-input"
                                         value={form.location}
-                                        onChange={(e) => setForm((current) => ({ ...current, location: e.target.value }))}
-                                        style={INPUT_STYLE}
+                                        onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                                        placeholder="City, Country"
                                         disabled={!canAccessStudio}
                                         required
                                     />
                                 </label>
-
-                                <label className="provider-studio-field">
-                                    <span>Subcategory</span>
+                                <label className="ps-field">
+                                    <span className="ps-field-label"><Tag size={13} /> Subcategory</span>
                                     <input
+                                        className="ps-input"
                                         value={form.sub_category || ''}
-                                        onChange={(e) => setForm((current) => ({ ...current, sub_category: e.target.value }))}
-                                        style={INPUT_STYLE}
+                                        onChange={(e) => setForm((f) => ({ ...f, sub_category: e.target.value }))}
+                                        placeholder="e.g. Hiking, Cooking class"
                                         disabled={!canAccessStudio}
                                     />
                                 </label>
                             </div>
 
-                            <label className="provider-studio-field">
-                                <span>Image URL</span>
+                            <label className="ps-field">
+                                <span className="ps-field-label"><Image size={13} /> Cover Image URL</span>
                                 <input
+                                    className="ps-input"
                                     value={form.image_url}
-                                    onChange={(e) => setForm((current) => ({ ...current, image_url: e.target.value }))}
-                                    style={INPUT_STYLE}
+                                    onChange={(e) => {
+                                        setImgError(false);
+                                        setForm((f) => ({ ...f, image_url: e.target.value }));
+                                    }}
+                                    placeholder="https://..."
                                     disabled={!canAccessStudio}
                                     required
                                 />
+                                <div className="ps-image-preview">
+                                    {form.image_url && !imgError ? (
+                                        <img
+                                            src={form.image_url}
+                                            alt="Cover preview"
+                                            onError={() => setImgError(true)}
+                                        />
+                                    ) : (
+                                        <div className="ps-image-placeholder">
+                                            <Image size={26} />
+                                            <span>{imgError ? 'Could not load image' : 'Preview will appear here'}</span>
+                                        </div>
+                                    )}
+                                </div>
                             </label>
 
-                            <div className="provider-studio-two-up">
-                                <label className="provider-studio-field">
-                                    <span>Price</span>
+                            <div className="ps-two-up">
+                                <label className="ps-field">
+                                    <span className="ps-field-label"><DollarSign size={13} /> Price (Rs)</span>
                                     <input
+                                        className="ps-input"
                                         type="number"
                                         min="0"
                                         value={typeof form.price === 'number' ? form.price : ''}
-                                        onChange={(e) => setForm((current) => ({ ...current, price: Number(e.target.value) || null }))}
-                                        style={INPUT_STYLE}
+                                        onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) || null }))}
+                                        placeholder="0"
                                         disabled={!canAccessStudio}
                                     />
                                 </label>
-
-                                <label className="provider-studio-field">
-                                    <span>Start Date</span>
+                                <label className="ps-field">
+                                    <span className="ps-field-label"><Clock size={13} /> Start Date</span>
                                     <input
+                                        className="ps-input"
                                         type="date"
                                         value={form.starts_at || ''}
-                                        onChange={(e) => setForm((current) => ({ ...current, starts_at: e.target.value }))}
-                                        style={INPUT_STYLE}
+                                        onChange={(e) => setForm((f) => ({ ...f, starts_at: e.target.value }))}
                                         disabled={!canAccessStudio}
                                     />
                                 </label>
                             </div>
 
-                            <label className="provider-studio-field">
-                                <span>Description</span>
+                            <label className="ps-field">
+                                <span className="ps-field-label">Description</span>
                                 <textarea
+                                    className="ps-textarea"
                                     value={form.description}
-                                    onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
-                                    style={{ ...INPUT_STYLE, minHeight: '160px', resize: 'vertical' }}
+                                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                                    placeholder="Describe the experience, what's included, meeting point..."
                                     disabled={!canAccessStudio}
                                     required
                                 />
                             </label>
 
-                            <button
-                                type="submit"
-                                className="btn btn-primary provider-studio-submit"
-                                disabled={!canAccessStudio || saving}
-                            >
+                            <button type="submit" className="ps-submit" disabled={!canAccessStudio || saving}>
                                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
-                                {editingListingId ? 'Update live listing' : getPrimaryActionCopy(form.type)}
+                                {editingListingId ? 'Update Listing' : getPrimaryActionCopy(form.type)}
                             </button>
                         </form>
                     </article>
 
-                    <article className="provider-studio-inventory-card">
-                        <div className="provider-studio-card-head">
+                    {/* ── Inventory Card ── */}
+                    <article className="ps-card">
+                        <div className="ps-card-head">
                             <div>
-                                <span className="provider-studio-card-eyebrow">Live Inventory</span>
-                                <h2>Your published listings</h2>
-                                <p>Everything here is already visible in the shared catalog once published.</p>
+                                <span className="ps-card-label">
+                                    <Sparkles size={11} />
+                                    Live Inventory
+                                </span>
+                                <h2 className="ps-card-title">Your listings</h2>
+                                <p className="ps-card-desc">
+                                    {listings.length > 0
+                                        ? `${listings.length} listing${listings.length === 1 ? '' : 's'} live in the catalog`
+                                        : 'Nothing published yet'}
+                                </p>
                             </div>
-                            <Link to="/dashboard" className="provider-studio-inline-link">
-                                View dashboard
+                            <Link to="/dashboard" className="ps-inventory-link">
+                                View dashboard →
                             </Link>
                         </div>
 
                         {loading ? (
-                            <div className="provider-studio-loading">
-                                <Loader2 className="animate-spin" size={30} />
+                            <div className="ps-loading">
+                                <Loader2 className="animate-spin" size={28} />
                             </div>
                         ) : listings.length > 0 ? (
-                            <div className="provider-studio-list">
-                                {listings.slice(0, 12).map((listing) => {
-                                    const tone = getListingTone(listing.status);
+                            <div className="ps-listing-grid">
+                                {listings.slice(0, 15).map((listing) => {
+                                    const listingType = ((listing.type === 'event' ? 'guide' : listing.type) as ListingType) || form.type;
+                                    const thumb = listing.image_url || listing.cover_image_url || listing.thumbnail_url;
                                     return (
-                                        <article key={listing.id} className="provider-studio-listing-card">
-                                            <div className="provider-studio-listing-head">
-                                                <div>
-                                                    <strong>{getListingTitle(listing)}</strong>
-                                                    <p>
-                                                        <MapPin size={14} />
-                                                        {listing.location || 'No location'}
-                                                    </p>
+                                        <div key={listing.id} className="ps-listing-card">
+                                            <div className="ps-listing-thumb">
+                                                {thumb ? (
+                                                    <img src={thumb} alt={getListingTitle(listing)} />
+                                                ) : (
+                                                    TYPE_META[listingType]?.icon ?? <Sparkles size={20} />
+                                                )}
+                                            </div>
+                                            <div className="ps-listing-body">
+                                                <div className="ps-listing-top">
+                                                    <span className="ps-listing-name">{getListingTitle(listing)}</span>
+                                                    <button
+                                                        type="button"
+                                                        className="ps-edit-btn"
+                                                        onClick={() => beginEdit(listing)}
+                                                        disabled={!canAccessStudio}
+                                                    >
+                                                        <Edit3 size={12} /> Edit
+                                                    </button>
                                                 </div>
-                                                <span
-                                                    className="provider-studio-status-pill"
-                                                    style={{ background: tone.bg, color: tone.color }}
-                                                >
-                                                    {listing.status || 'published'}
-                                                </span>
+                                                <p className="ps-listing-loc">
+                                                    <MapPin size={11} />
+                                                    {listing.location || 'No location'}
+                                                </p>
+                                                <div className="ps-listing-footer">
+                                                    <span className="ps-type-pill">{LISTING_LABELS[listingType] || 'Listing'}</span>
+                                                    <span className={getStatusDotClass(listing.status)}>
+                                                        {listing.status || 'published'}
+                                                    </span>
+                                                    {typeof listing.price === 'number' && (
+                                                        <span className="ps-price">Rs {listing.price.toLocaleString()}</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="provider-studio-listing-meta">
-                                                <span>{LISTING_LABELS[((listing.type === 'event' ? 'guide' : listing.type) as ListingType) || form.type] || 'Listing'}</span>
-                                                <span>{typeof listing.price === 'number' ? `Rs ${listing.price.toLocaleString()}` : 'Custom pricing'}</span>
-                                            </div>
-                                            <div className="provider-studio-listing-actions">
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-soft provider-studio-chip-button"
-                                                    onClick={() => beginEdit(listing)}
-                                                    disabled={!canAccessStudio}
-                                                >
-                                                    <Edit3 size={16} />
-                                                    Edit
-                                                </button>
-                                            </div>
-                                        </article>
+                                        </div>
                                     );
                                 })}
                             </div>
                         ) : (
-                            <div className="provider-studio-empty">
-                                <Sparkles size={22} />
-                                <strong>No live listings yet</strong>
+                            <div className="ps-empty">
+                                <Sparkles size={26} />
+                                <strong>No listings yet</strong>
                                 <p>
-                                    Start with a {allowedTypes[0] ? LISTING_LABELS[allowedTypes[0]].toLowerCase() : 'listing'} and it
-                                    will appear here as soon as you publish it.
+                                    Create your first {allowedTypes[0] ? LISTING_LABELS[allowedTypes[0]].toLowerCase() : 'listing'} — it appears here instantly after publishing.
                                 </p>
                             </div>
                         )}
                     </article>
-                </section>
+                </div>
             </div>
         </main>
     );

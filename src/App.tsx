@@ -10,7 +10,7 @@ import { ProviderStudio } from './pages/ProviderStudio';
 import { ListingDetail } from './pages/ListingDetail';
 import { UserProfile } from './pages/UserProfile';
 import { Messages } from './pages/Messages';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { getRoleLabel, getVerificationLabel, isProviderRole } from './lib/platform';
 

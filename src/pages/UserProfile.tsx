@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, MapPin, MessageCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getOrCreateConversation, getUserProfileById, type Profile } from '../lib/destinations';
 
 export const UserProfile: React.FC = () => {
@@ -110,4 +110,3 @@ export const UserProfile: React.FC = () => {
         </main>
     );
 };
-
