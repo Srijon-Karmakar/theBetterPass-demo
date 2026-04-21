@@ -105,7 +105,11 @@ export const AdminConsole: React.FC = () => {
         const q = verificationSearch.trim().toLowerCase();
         return queue
             .filter((item) => {
-                const matchStatus = verificationStatusFilter === 'all' || item.status === verificationStatusFilter;
+                // Default queue view should focus on actionable items.
+                // Approved records stay available via explicit "approved" filter.
+                const matchStatus = verificationStatusFilter === 'all'
+                    ? item.status !== 'approved'
+                    : item.status === verificationStatusFilter;
                 const matchRole = verificationRoleFilter === 'all' || item.role === verificationRoleFilter;
                 const hay = [item.profiles?.full_name, item.profiles?.email, item.profiles?.phone, item.company_name, item.role]
                     .filter(Boolean).join(' ').toLowerCase();

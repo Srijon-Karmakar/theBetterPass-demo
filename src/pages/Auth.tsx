@@ -3,6 +3,7 @@ import {
     Backpack,
     Building2,
     GraduationCap,
+    Home,
     Loader2,
     Lock,
     Mail,
@@ -161,6 +162,10 @@ export const Auth: React.FC = () => {
             className="auth-page"
             style={{ backgroundImage: `url(${bgImage})` }}
         >
+            <a href="/" className="auth-home-btn">
+                <Home size={15} />
+                <span>Home</span>
+            </a>
             <div className="auth-outer">
                 {/* ══════════════════════════════════
                     LOGIN

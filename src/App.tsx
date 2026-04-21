@@ -126,7 +126,7 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <Navbar />
+        <AppNavbar />
         <Routes>
           <Route path="/" element={<GuestOnlyRoute><Home3 /></GuestOnlyRoute>} />
           <Route path="/home2" element={<Navigate to="/" replace />} />
@@ -152,6 +152,14 @@ function App() {
     </Router>
   );
 }
+
+const HIDE_ON_AUTH = ['/auth'];
+
+const AppNavbar: React.FC = () => {
+  const { pathname } = useLocation();
+  if (HIDE_ON_AUTH.includes(pathname)) return null;
+  return <Navbar />;
+};
 
 const HIDE_FOOTER_PATHS = ['/auth'];
 
