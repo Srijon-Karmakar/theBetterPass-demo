@@ -374,6 +374,49 @@
     font-size: 0.82rem;
 }
 
+.ps-image-upload-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ps-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-light);
+    background: var(--surface-main);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.18s, color 0.18s;
+}
+
+.ps-upload-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ps-upload-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.ps-upload-hint {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+.ps-file-input {
+    display: none;
+}
+
 /* ── Submit Button ────────────────────────────────────────────── */
 .ps-submit {
     width: 100%;
@@ -629,6 +672,17 @@
 @media (min-width: 640px) {
     .ps-two-up {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .ps-image-upload-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ps-upload-hint {
+        text-align: left;
     }
 }
 

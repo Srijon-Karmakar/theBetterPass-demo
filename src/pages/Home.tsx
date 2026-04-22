@@ -54,6 +54,7 @@ export const Home: React.FC = () => {
                                     location={destination.location}
                                     price={destination.price}
                                     image_url={destination.image_url}
+                                    description={destination.description}
                                     category={destination.category}
                                     listingType="activity"
                                 />

@@ -172,11 +172,11 @@
 }
 
 .dh-greeting-title {
-  background-image: linear-gradient(120deg, #111111 12%, #c9b098 52%, #efe1d1 88%);
+  background-image: linear-gradient(120deg, #5e5145 12%, #8f7c69 52%, #b39a84 88%);
   background-size: 220% 220%;
   -webkit-background-clip: text;
   background-clip: text;
-  color: #111111;
+  color: #5e5145;
   font-family: 'SF Pro Display', 'Outfit', 'Inter', sans-serif;
   font-size: clamp(2.45rem, 11.5vw, 4.2rem);
   font-weight: 680;
@@ -185,6 +185,11 @@
   margin: 0;
   -webkit-text-fill-color: transparent;
   animation: dhGreetingGradientShift 9s ease-in-out infinite alternate;
+}
+
+:root[data-theme='dark'] .dh-greeting-title {
+  background-image: linear-gradient(120deg, #b49e89 12%, #cfb89f 52%, #ead6c1 88%);
+  color: #b49e89;
 }
 
 .dh-greeting-name {
@@ -517,6 +522,21 @@
   display: none;
 }
 
+.dh-listing-row--expanded {
+  display: grid;
+  gap: 12px;
+  grid-auto-columns: initial;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: visible;
+  padding: 2px 0 0;
+  scroll-snap-type: none;
+}
+
+.dh-listing-row--expanded > .dh-reveal {
+  scroll-snap-align: none;
+}
+
 .listing-card {
   background: #ffffff;
   border: 1px solid color-mix(in srgb, var(--border-light) 92%, transparent);
@@ -749,6 +769,12 @@
 }
 
 @media (max-width: 768px) {
+  .dh-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
   .dh-search-wrap {
     margin-bottom: 4px;
   }
@@ -879,6 +905,11 @@
     grid-auto-columns: clamp(168px, 31vw, 236px);
   }
 
+  .dh-listing-row--expanded {
+    gap: 14px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .listing-card-body {
     gap: 10px;
     padding: 14px;
@@ -902,10 +933,26 @@
   }
 
   .dh-top-panel {
-    align-items: flex-end;
+    align-items: start;
     display: grid;
     gap: 16px 20px;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr);
+  }
+
+  .dh-greeting {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .dh-search-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+  }
+
+  .dh-kpi-row {
+    grid-column: 1;
+    grid-row: 2;
   }
 
   .dh-provider-cta-row {
@@ -928,6 +975,11 @@
     scroll-snap-type: none;
   }
 
+  .dh-listing-row--expanded {
+    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .listing-card-body {
     padding: 15px;
   }
@@ -939,6 +991,10 @@
   }
 
   .dh-listing-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .dh-listing-row--expanded {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

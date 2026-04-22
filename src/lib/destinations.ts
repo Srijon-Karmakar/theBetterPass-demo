@@ -145,6 +145,34 @@ export interface ConversationMessageRecord {
     created_at?: string;
 }
 
+export type AppNotificationType =
+    | 'message_new'
+    | 'booking_created'
+    | 'booking_confirmed'
+    | 'booking_cancelled'
+    | 'booking_completed'
+    | 'payment_paid'
+    | 'payment_refunded'
+    | 'payment_failed'
+    | 'verification_submitted'
+    | 'verification_resubmitted'
+    | 'verification_approved'
+    | 'verification_rejected'
+    | 'listing_approved'
+    | 'listing_rejected';
+
+export interface AppNotificationRecord {
+    id: string;
+    user_id: string;
+    type: AppNotificationType | string;
+    title: string;
+    body?: string | null;
+    metadata?: Record<string, unknown> | null;
+    is_read: boolean;
+    read_at?: string | null;
+    created_at?: string;
+}
+
 export interface ModerationAuditLogRecord {
     id: string;
     entity_type: 'verification' | 'listing';
@@ -244,6 +272,33 @@ const safeArray = <T,>(value: T[] | null | undefined): T[] => (Array.isArray(val
 const isMissingRelationError = (error: { code?: string; message?: string } | null | undefined) => (
     error?.code === 'PGRST205' || error?.message?.toLowerCase().includes('moderation_audit_logs')
 );
+
+const isMissingNotificationsError = (error: { code?: string; message?: string } | null | undefined) => {
+    const message = error?.message?.toLowerCase() || '';
+    return (
+        error?.code === 'PGRST205'
+        || message.includes('notifications')
+        || message.includes('relation') && message.includes('does not exist')
+    );
+};
+
+const mapNotificationRecord = (row: Record<string, unknown> | null): AppNotificationRecord | null => {
+    if (!row || typeof row.id !== 'string' || typeof row.user_id !== 'string') return null;
+
+    return {
+        id: row.id,
+        user_id: row.user_id,
+        type: typeof row.type === 'string' ? row.type : 'message_new',
+        title: typeof row.title === 'string' ? row.title : 'Notification',
+        body: typeof row.body === 'string' ? row.body : null,
+        metadata: row.metadata && typeof row.metadata === 'object'
+            ? row.metadata as Record<string, unknown>
+            : null,
+        is_read: row.is_read === true || Boolean(row.read_at),
+        read_at: typeof row.read_at === 'string' ? row.read_at : null,
+        created_at: typeof row.created_at === 'string' ? row.created_at : undefined,
+    };
+};
 
 const isMissingColumnError = (error: { code?: string; message?: string } | null | undefined) => {
     const message = error?.message?.toLowerCase() || '';
@@ -813,6 +868,31 @@ export const reviewListing = async (
         },
     });
 
+    const targetProviderId = typeof data?.provider_user_id === 'string'
+        ? data.provider_user_id
+        : typeof data?.user_id === 'string'
+            ? data.user_id
+            : null;
+
+    if (targetProviderId) {
+        const listingTitle = typeof data?.title === 'string'
+            ? data.title
+            : typeof data?.name === 'string'
+                ? data.name
+                : 'your listing';
+        const isRejected = status === 'rejected';
+        await createNotification({
+            userId: targetProviderId,
+            actorUserId: options?.reviewerId || targetProviderId,
+            type: isRejected ? 'listing_rejected' : 'listing_approved',
+            title: isRejected ? 'Listing rejected' : 'Listing approved',
+            body: isRejected
+                ? `${listingTitle} needs updates before going live.${options?.reason ? ` Reason: ${options.reason}` : ''}`
+                : `${listingTitle} is approved and live.`,
+            metadata: { listing_id: listingId, route: '/provider/studio' },
+        });
+    }
+
     return data as PostRecord | null;
 };
 
@@ -972,7 +1052,149 @@ export const createBooking = async (booking: {
     };
 
     const unifiedInsert = await supabase.from('bookings').insert([unifiedPayload]).select();
-    if (!unifiedInsert.error) return unifiedInsert.data;
+    if (!unifiedInsert.error) {
+        const inserted = safeArray(unifiedInsert.data as Array<Record<string, unknown>>)[0] || null;
+        const bookingId = typeof inserted?.id === 'string' ? inserted.id : undefined;
+        const listingTitle = (booking.listing_title || 'Listing').trim();
+        const providerId = booking.provider_user_id
+            || (typeof inserted?.provider_user_id === 'string' ? inserted.provider_user_id : null);
+        const status = String(unifiedPayload.status || 'pending').toLowerCase();
+        const paymentStatus = String(unifiedPayload.payment_status || 'pending').toLowerCase();
+        const route = '/profile';
+
+        const notifications: CreateNotificationInput[] = [
+            {
+                userId: booking.user_id,
+                actorUserId: booking.user_id,
+                type: 'booking_created',
+                title: 'Booking created',
+                body: `Your booking for ${listingTitle} is now in the system.`,
+                metadata: { booking_id: bookingId || null, listing_id: unifiedPayload.listing_id || null, route },
+            },
+        ];
+
+        if (providerId && providerId !== booking.user_id) {
+            notifications.push({
+                userId: providerId,
+                actorUserId: booking.user_id,
+                type: 'booking_created',
+                title: 'New booking received',
+                body: `${booking.number_of_people} traveler(s) booked ${listingTitle}.`,
+                metadata: { booking_id: bookingId || null, listing_id: unifiedPayload.listing_id || null, route },
+            });
+        }
+
+        if (status === 'confirmed') {
+            notifications.push({
+                userId: booking.user_id,
+                actorUserId: booking.user_id,
+                type: 'booking_confirmed',
+                title: 'Booking confirmed',
+                body: `${listingTitle} is confirmed.`,
+                metadata: { booking_id: bookingId || null, route },
+            });
+            if (providerId && providerId !== booking.user_id) {
+                notifications.push({
+                    userId: providerId,
+                    actorUserId: booking.user_id,
+                    type: 'booking_confirmed',
+                    title: 'Booking confirmed',
+                    body: `Booking for ${listingTitle} is confirmed.`,
+                    metadata: { booking_id: bookingId || null, route },
+                });
+            }
+        } else if (status === 'cancelled' || status === 'canceled') {
+            notifications.push({
+                userId: booking.user_id,
+                actorUserId: booking.user_id,
+                type: 'booking_cancelled',
+                title: 'Booking cancelled',
+                body: `${listingTitle} booking was cancelled.`,
+                metadata: { booking_id: bookingId || null, route },
+            });
+            if (providerId && providerId !== booking.user_id) {
+                notifications.push({
+                    userId: providerId,
+                    actorUserId: booking.user_id,
+                    type: 'booking_cancelled',
+                    title: 'Booking cancelled',
+                    body: `Booking for ${listingTitle} was cancelled.`,
+                    metadata: { booking_id: bookingId || null, route },
+                });
+            }
+        } else if (status === 'completed') {
+            notifications.push({
+                userId: booking.user_id,
+                actorUserId: booking.user_id,
+                type: 'booking_completed',
+                title: 'Trip completed',
+                body: `${listingTitle} has been marked completed.`,
+                metadata: { booking_id: bookingId || null, route },
+            });
+            if (providerId && providerId !== booking.user_id) {
+                notifications.push({
+                    userId: providerId,
+                    actorUserId: booking.user_id,
+                    type: 'booking_completed',
+                    title: 'Trip completed',
+                    body: `${listingTitle} booking has been marked completed.`,
+                    metadata: { booking_id: bookingId || null, route },
+                });
+            }
+        }
+
+        if (paymentStatus === 'paid') {
+            notifications.push({
+                userId: booking.user_id,
+                actorUserId: booking.user_id,
+                type: 'payment_paid',
+                title: 'Payment successful',
+                body: `Payment received for ${listingTitle}.`,
+                metadata: { booking_id: bookingId || null, route },
+            });
+            if (providerId && providerId !== booking.user_id) {
+                notifications.push({
+                    userId: providerId,
+                    actorUserId: booking.user_id,
+                    type: 'payment_paid',
+                    title: 'Payment received',
+                    body: `Payment was completed for ${listingTitle}.`,
+                    metadata: { booking_id: bookingId || null, route },
+                });
+            }
+        } else if (paymentStatus === 'refunded') {
+            notifications.push({
+                userId: booking.user_id,
+                actorUserId: booking.user_id,
+                type: 'payment_refunded',
+                title: 'Payment refunded',
+                body: `Refund processed for ${listingTitle}.`,
+                metadata: { booking_id: bookingId || null, route },
+            });
+            if (providerId && providerId !== booking.user_id) {
+                notifications.push({
+                    userId: providerId,
+                    actorUserId: booking.user_id,
+                    type: 'payment_refunded',
+                    title: 'Payment refunded',
+                    body: `A refund was processed for ${listingTitle}.`,
+                    metadata: { booking_id: bookingId || null, route },
+                });
+            }
+        } else if (paymentStatus === 'failed') {
+            notifications.push({
+                userId: booking.user_id,
+                actorUserId: booking.user_id,
+                type: 'payment_failed',
+                title: 'Payment failed',
+                body: `Payment failed for ${listingTitle}. Retry to complete booking.`,
+                metadata: { booking_id: bookingId || null, route },
+            });
+        }
+
+        await createNotifications(notifications);
+        return unifiedInsert.data;
+    }
 
     const legacyPayload = {
         user_id: booking.user_id,
@@ -985,6 +1207,14 @@ export const createBooking = async (booking: {
 
     const legacyInsert = await supabase.from('bookings_acts').insert([legacyPayload]).select();
     if (legacyInsert.error) throw legacyInsert.error;
+    await createNotification({
+        userId: booking.user_id,
+        actorUserId: booking.user_id,
+        type: 'booking_created',
+        title: 'Booking created',
+        body: `Your booking for ${(booking.listing_title || 'Listing').trim()} is now in the system.`,
+        metadata: { route: '/profile' },
+    });
     return legacyInsert.data;
 };
 
@@ -1372,7 +1602,26 @@ export const submitVerificationApplication = async (userId: string, input: Signu
         reviewed_by: null,
     };
 
-    return insertVerificationWithSchemaFallback(payload);
+    const createdVerification = await insertVerificationWithSchemaFallback(payload);
+    if (createdVerification) {
+        await createNotification({
+            userId,
+            actorUserId: userId,
+            type: 'verification_submitted',
+            title: 'Verification submitted',
+            body: 'Your verification request is in review.',
+            metadata: { verification_id: createdVerification.id, route: '/profile' },
+        });
+        await notifyAdmins({
+            actorUserId: userId,
+            type: 'verification_submitted',
+            title: 'New verification request',
+            body: `${input.fullName || input.email.split('@')[0] || 'Provider'} submitted account verification.`,
+            metadata: { verification_id: createdVerification.id, target_user_id: userId, route: '/admin' },
+        });
+    }
+
+    return createdVerification;
 };
 
 export const ensureProviderVerificationRecord = async (
@@ -1416,6 +1665,24 @@ export const ensureProviderVerificationRecord = async (
         verification_status: 'pending',
         is_verified: false,
     });
+
+    if (data) {
+        await createNotification({
+            userId,
+            actorUserId: userId,
+            type: 'verification_submitted',
+            title: 'Verification submitted',
+            body: 'Your verification request is in review.',
+            metadata: { verification_id: data.id, route: '/profile' },
+        });
+        await notifyAdmins({
+            actorUserId: userId,
+            type: 'verification_submitted',
+            title: 'New verification request',
+            body: `${profile.full_name || profile.email || 'Provider'} submitted account verification.`,
+            metadata: { verification_id: data.id, target_user_id: userId, route: '/admin' },
+        });
+    }
 
     return data;
 };
@@ -1744,6 +2011,173 @@ export const getConversations = async (userId: string): Promise<ConversationReco
     return safeArray(data) as ConversationRecord[];
 };
 
+export interface CreateNotificationInput {
+    userId: string;
+    type: AppNotificationType;
+    title: string;
+    body?: string | null;
+    metadata?: Record<string, unknown> | null;
+    actorUserId?: string | null;
+}
+
+const getAdminUserIds = async (): Promise<string[]> => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin');
+
+    if (error) {
+        console.error('Error fetching admin profiles for notifications:', error);
+        return [];
+    }
+
+    return safeArray(data as Array<{ id?: unknown }>).flatMap((row) => (
+        typeof row.id === 'string' && row.id ? [row.id] : []
+    ));
+};
+
+export const createNotifications = async (
+    inputs: CreateNotificationInput[]
+): Promise<AppNotificationRecord[]> => {
+    const dedupedRows = Array.from(
+        new Map(
+            inputs
+                .filter((item) => Boolean(item.userId && item.title))
+                .map((item) => [`${item.userId}:${item.type}:${item.title}`, item])
+        ).values()
+    ).map((item) => ({
+        user_id: item.userId,
+        actor_user_id: item.actorUserId || item.userId,
+        type: item.type,
+        title: item.title,
+        body: item.body || null,
+        metadata: item.metadata || null,
+        is_read: false,
+        read_at: null,
+    }));
+
+    if (dedupedRows.length === 0) return [];
+
+    const { data, error } = await supabase
+        .from('notifications')
+        .insert(dedupedRows)
+        .select('*');
+
+    if (error) {
+        if (isMissingNotificationsError(error) || isMissingColumnError(error)) {
+            console.warn('Notifications table/policies are not ready yet. Apply docs/supabase-role-system.sql.');
+            return [];
+        }
+        console.error('Failed to insert notifications:', error);
+        return [];
+    }
+
+    return safeArray(data as Array<Record<string, unknown>>)
+        .map((row) => mapNotificationRecord(row))
+        .filter((row): row is AppNotificationRecord => Boolean(row));
+};
+
+export const createNotification = async (
+    input: CreateNotificationInput
+): Promise<AppNotificationRecord | null> => {
+    const rows = await createNotifications([input]);
+    return rows[0] || null;
+};
+
+export const notifyAdmins = async (
+    input: Omit<CreateNotificationInput, 'userId'>
+) => {
+    const adminIds = await getAdminUserIds();
+    if (!adminIds.length) return [];
+    return createNotifications(adminIds.map((adminId) => ({ ...input, userId: adminId })));
+};
+
+export const getNotifications = async (
+    userId: string,
+    limit = 120
+): Promise<AppNotificationRecord[]> => {
+    if (!userId) return [];
+
+    const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        if (isMissingNotificationsError(error) || isMissingColumnError(error)) {
+            return [];
+        }
+        console.error('Failed to fetch notifications:', error);
+        return [];
+    }
+
+    return safeArray(data as Array<Record<string, unknown>>)
+        .map((row) => mapNotificationRecord(row))
+        .filter((row): row is AppNotificationRecord => Boolean(row));
+};
+
+export const getUnreadNotificationsCount = async (userId: string): Promise<number> => {
+    if (!userId) return 0;
+    const { count, error } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+
+    if (error) {
+        if (isMissingNotificationsError(error) || isMissingColumnError(error)) {
+            return 0;
+        }
+        console.error('Failed to fetch unread notification count:', error);
+        return 0;
+    }
+
+    return count || 0;
+};
+
+export const markNotificationRead = async (userId: string, notificationId: string) => {
+    if (!userId || !notificationId) return;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: now })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+    if (error && !isMissingNotificationsError(error) && !isMissingColumnError(error)) {
+        throw error;
+    }
+};
+
+export const markNotificationUnread = async (userId: string, notificationId: string) => {
+    if (!userId || !notificationId) return;
+    const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: false, read_at: null })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+    if (error && !isMissingNotificationsError(error) && !isMissingColumnError(error)) {
+        throw error;
+    }
+};
+
+export const markAllNotificationsRead = async (userId: string) => {
+    if (!userId) return;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: now })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+
+    if (error && !isMissingNotificationsError(error) && !isMissingColumnError(error)) {
+        throw error;
+    }
+};
+
 export const getConversationByUsers = async (
     currentUserId: string,
     otherUserId: string
@@ -1826,7 +2260,39 @@ export const sendConversationMessage = async (input: {
         .maybeSingle();
 
     if (error) throw error;
-    return (data as ConversationMessageRecord | null) || null;
+
+    const message = (data as ConversationMessageRecord | null) || null;
+    if (message) {
+        const { data: conversationData, error: conversationError } = await supabase
+            .from('conversations')
+            .select('id, traveler_id, provider_id')
+            .eq('id', input.conversation_id)
+            .maybeSingle();
+
+        if (!conversationError && conversationData) {
+            const receiverUserId = conversationData.traveler_id === input.sender_user_id
+                ? conversationData.provider_id
+                : conversationData.traveler_id;
+            if (receiverUserId && receiverUserId !== input.sender_user_id) {
+                const senderProfile = await getUserProfileById(input.sender_user_id);
+                const senderName = senderProfile?.full_name || senderProfile?.email || 'A user';
+                await createNotification({
+                    userId: receiverUserId,
+                    actorUserId: input.sender_user_id,
+                    type: 'message_new',
+                    title: `New message from ${senderName}`,
+                    body: input.body.trim().slice(0, 140),
+                    metadata: {
+                        conversation_id: input.conversation_id,
+                        sender_user_id: input.sender_user_id,
+                        route: `/messages?conversation=${input.conversation_id}`,
+                    },
+                });
+            }
+        }
+    }
+
+    return message;
 };
 
 export const getUserProfileById = async (userId: string): Promise<Profile | null> => {
@@ -1948,6 +2414,22 @@ export const resubmitVerificationApplication = async (userId: string) => {
             role: latest.role,
             companyName: latest.company_name || null,
         },
+    });
+
+    await createNotification({
+        userId,
+        actorUserId: userId,
+        type: 'verification_resubmitted',
+        title: 'Verification resubmitted',
+        body: 'Your verification request was sent back to admin review.',
+        metadata: { verification_id: latest.id, route: '/profile' },
+    });
+    await notifyAdmins({
+        actorUserId: userId,
+        type: 'verification_resubmitted',
+        title: 'Verification resubmitted',
+        body: `${latest.company_name || 'Provider'} resubmitted verification.`,
+        metadata: { verification_id: latest.id, target_user_id: userId, route: '/admin' },
     });
 
     return {
@@ -2115,6 +2597,17 @@ export const reviewVerificationApplication = async (
             },
         });
 
+        await createNotification({
+            userId: application.user_id,
+            actorUserId: options?.reviewerId || application.user_id,
+            type: status === 'approved' ? 'verification_approved' : 'verification_rejected',
+            title: status === 'approved' ? 'Verification approved' : 'Verification rejected',
+            body: status === 'approved'
+                ? 'Your account is verified and fully active.'
+                : `Admin requested updates before approval.${options?.reason ? ` Reason: ${options.reason}` : ''}`,
+            metadata: { verification_id: application.id, route: '/profile' },
+        });
+
         return {
             verification: null,
             profile: profileUpdate,
@@ -2191,6 +2684,17 @@ export const reviewVerificationApplication = async (
             companyName: application.company_name || null,
             reviewedAt: now,
         },
+    });
+
+    await createNotification({
+        userId: application.user_id,
+        actorUserId: options?.reviewerId || application.user_id,
+        type: status === 'approved' ? 'verification_approved' : 'verification_rejected',
+        title: status === 'approved' ? 'Verification approved' : 'Verification rejected',
+        body: status === 'approved'
+            ? 'Your account is verified and fully active.'
+            : `Admin requested updates before approval.${options?.reason ? ` Reason: ${options.reason}` : ''}`,
+        metadata: { verification_id: application.id, route: '/profile' },
     });
 
     return {

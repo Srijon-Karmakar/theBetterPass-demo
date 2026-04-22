@@ -95,6 +95,8 @@ export const Activities: React.FC = () => {
                                 location={activity.location}
                                 price={activity.price}
                                 image_url={activity.image_url}
+                                description={activity.description}
+                                category={activity.category}
                                 listingType="activity"
                             />
                         ))}

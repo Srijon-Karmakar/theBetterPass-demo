@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Moon, Sun, X } from 'lucide-react';
+import { Bell, Menu, Moon, Sun, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
+import { useNotifications } from '../hooks/useNotifications';
 
-type NavTab = 'home' | 'tours' | 'activities' | 'events' | 'messages' | 'bookings';
+type NavTab = 'home' | 'tours' | 'activities' | 'events' | 'messages' | 'notifications' | 'bookings';
 
 export const Navbar: React.FC = () => {
     const { user, profile, signOut, isAdmin, isProvider, roleLabel } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { unreadCount, notifications } = useNotifications();
     const [showMenu, setShowMenu] = useState(false);
     const location = useLocation();
 
@@ -28,6 +30,7 @@ export const Navbar: React.FC = () => {
 
     const activeTab: NavTab = (() => {
         if (location.pathname === '/profile') return 'bookings';
+        if (location.pathname === '/notifications') return 'notifications';
         if (location.pathname === '/messages') return 'messages';
         if (location.pathname === '/events' || location.pathname === '/guides' || location.search.includes('tab=events') || location.search.includes('tab=guides')) return 'events';
         if (location.pathname !== '/dashboard') return 'home';
@@ -44,8 +47,15 @@ export const Navbar: React.FC = () => {
         { key: 'activities', label: 'Activities', to: '/dashboard?tab=activities' },
         { key: 'events', label: 'Events', to: '/dashboard?tab=events' },
         { key: 'messages', label: 'Messages', to: '/messages' },
+        { key: 'notifications', label: 'Notifications', to: '/notifications' },
         { key: 'bookings', label: 'Bookings', to: '/profile' },
     ];
+
+    const unreadMessageCount = user
+        ? notifications.filter((item) => !item.is_read && item.type === 'message_new').length
+        : 0;
+    const unreadLabel = unreadCount > 99 ? '99+' : String(unreadCount);
+    const unreadMessageLabel = unreadMessageCount > 99 ? '99+' : String(unreadMessageCount);
 
     const shortName = (() => {
         const name = profile?.full_name?.trim();
@@ -80,7 +90,19 @@ export const Navbar: React.FC = () => {
                                     to={item.to}
                                     className={`nbr-link${activeTab === item.key ? ' nbr-link--active' : ''}`}
                                 >
-                                    {item.label}
+                                    <span className="nbr-link-inner">
+                                        {item.label}
+                                        {item.key === 'messages' && unreadMessageCount > 0 && (
+                                            <span className="nbr-link-dot" aria-label={`${unreadMessageCount} unread messages`}>
+                                                {unreadMessageLabel}
+                                            </span>
+                                        )}
+                                        {item.key === 'notifications' && unreadCount > 0 && (
+                                            <span className="nbr-link-dot" aria-label={`${unreadCount} unread notifications`}>
+                                                {unreadLabel}
+                                            </span>
+                                        )}
+                                    </span>
                                 </Link>
                             ))}
                             {isAdmin && (
@@ -121,6 +143,12 @@ export const Navbar: React.FC = () => {
                     </Link>
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {user && (
+                            <Link to="/notifications" className="nbr-bell-mobile" aria-label="Notifications">
+                                <Bell size={16} />
+                                {unreadCount > 0 && <span>{unreadLabel}</span>}
+                            </Link>
+                        )}
+                        {user && (
                             <Link to="/profile" className="nbr-avatar-sm-wrap">
                                 <img src={avatarSrc} alt={shortName} className="nbr-avatar-sm" />
                             </Link>
@@ -147,6 +175,12 @@ export const Navbar: React.FC = () => {
                         {user && navLinks.map((item) => (
                             <Link key={item.key} to={item.to} className="nbr-drop-item" onClick={() => setShowMenu(false)}>
                                 {item.label}
+                                {item.key === 'messages' && unreadMessageCount > 0 && (
+                                    <span className="nbr-drop-dot">{unreadMessageLabel}</span>
+                                )}
+                                {item.key === 'notifications' && unreadCount > 0 && (
+                                    <span className="nbr-drop-dot">{unreadLabel}</span>
+                                )}
                             </Link>
                         ))}
                         {user && isAdmin && (
@@ -250,6 +284,25 @@ export const Navbar: React.FC = () => {
                     transition: color 0.18s, background 0.18s;
                     white-space: nowrap;
                 }
+                .nbr-link-inner {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .nbr-link-dot {
+                    min-width: 18px;
+                    height: 18px;
+                    padding: 0 5px;
+                    border-radius: 999px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.66rem;
+                    font-weight: 800;
+                    background: #ef4444;
+                    color: #fff;
+                    letter-spacing: 0;
+                }
                 .nbr-link:hover { color: ${navTextStrong}; }
                 .nbr-link--active {
                     background: ${navActiveBg};
@@ -336,6 +389,36 @@ export const Navbar: React.FC = () => {
                 }
                 .nbr-avatar-sm { height: 100%; object-fit: cover; width: 100%; }
 
+                .nbr-bell-mobile {
+                    position: relative;
+                    align-items: center;
+                    justify-content: center;
+                    display: inline-flex;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 999px;
+                    border: 1px solid var(--border-light);
+                    background: ${navHover};
+                    color: var(--text-main);
+                    text-decoration: none;
+                }
+                .nbr-bell-mobile span {
+                    position: absolute;
+                    top: -6px;
+                    right: -6px;
+                    min-width: 17px;
+                    height: 17px;
+                    padding: 0 5px;
+                    border-radius: 999px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.62rem;
+                    font-weight: 800;
+                    background: #ef4444;
+                    color: #fff;
+                }
+
                 .nbr-hamburger {
                     align-items: center;
                     backdrop-filter: blur(12px);
@@ -375,11 +458,27 @@ export const Navbar: React.FC = () => {
                 .nbr-drop-item {
                     border-radius: 12px;
                     color: ${navTextStrong};
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
                     font-size: 0.9rem;
                     font-weight: 600;
                     padding: 10px 14px;
                     text-decoration: none;
                     transition: background 0.14s;
+                }
+                .nbr-drop-dot {
+                    min-width: 18px;
+                    height: 18px;
+                    padding: 0 5px;
+                    border-radius: 999px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.64rem;
+                    font-weight: 800;
+                    background: #ef4444;
+                    color: #fff;
                 }
                 .nbr-drop-item:hover { background: ${navHover}; }
                 .nbr-drop-item--accent { color: var(--accent); font-weight: 800; }

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, ArrowRight, Heart, Loader2 } from 'lucide-react';
+import { Heart, Loader2, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { addListingFavorite, isListingFavorited, removeListingFavorite } from '../lib/destinations';
 import type { ListingType } from '../lib/platform';
+import './listing-card.css';
 
 interface DestinationProps {
     id: string;
@@ -12,9 +13,22 @@ interface DestinationProps {
     price: number;
     rating?: number;
     image_url: string;
+    description?: string;
     category?: string;
     listingType?: ListingType;
 }
+
+const formatPrice = (price: number | null | undefined): string => {
+    if (typeof price !== 'number' || Number.isNaN(price) || price <= 0) {
+        return 'Price on request';
+    }
+
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+    }).format(price);
+};
 
 export const DestinationCard: React.FC<DestinationProps> = ({
     id,
@@ -22,6 +36,7 @@ export const DestinationCard: React.FC<DestinationProps> = ({
     location,
     price,
     image_url,
+    description,
     category,
     listingType = 'activity',
 }) => {
@@ -31,6 +46,10 @@ export const DestinationCard: React.FC<DestinationProps> = ({
     const [isFavorite, setIsFavorite] = useState(false);
     const [favoriteLoading, setFavoriteLoading] = useState(false);
     const listingPathType = listingType === 'guide' ? 'event' : listingType;
+    const subtitle = description?.trim() || 'Curated listing with complete details available on open.';
+    const locationLabel = location?.split(',')[0]?.trim() || 'Location available after booking';
+    const chipLabel = category?.trim() || listingPathType.toUpperCase();
+    const priceLabel = formatPrice(price);
 
     useEffect(() => {
         if (!user || !id || !canFavorite) {
@@ -54,6 +73,7 @@ export const DestinationCard: React.FC<DestinationProps> = ({
             navigate('/auth');
             return;
         }
+
         if (!canFavorite) {
             alert('Only tourist accounts can save favorites.');
             return;
@@ -76,65 +96,96 @@ export const DestinationCard: React.FC<DestinationProps> = ({
         }
     };
 
+    const openListing = () => navigate(`/listings/${listingPathType}/${id}`);
+    const handleCardKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openListing();
+        }
+    };
+    const mediaStyle = image_url ? { backgroundImage: `url(${image_url})` } : undefined;
+
     return (
-        <div className="card-clean" style={{ border: 'none', background: 'transparent' }}>
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1.2', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-                <img src={image_url} alt={title} className="img-cover" />
-                <button
-                    type="button"
-                    onClick={handleFavoriteToggle}
-                    disabled={favoriteLoading || !canFavorite}
-                    title={canFavorite ? undefined : 'Only tourist accounts can save favorites'}
-                    style={{
-                        alignItems: 'center',
-                        background: isFavorite ? 'var(--accent)' : 'rgba(0,0,0,0.38)',
-                        border: '1px solid rgba(255,255,255,0.35)',
-                        borderRadius: '999px',
-                        color: '#fff',
-                        cursor: favoriteLoading || !canFavorite ? 'not-allowed' : 'pointer',
-                        display: 'inline-flex',
-                        height: '34px',
-                        justifyContent: 'center',
-                        opacity: favoriteLoading || !canFavorite ? 0.6 : 1,
-                        position: 'absolute',
-                        right: '14px',
-                        top: '14px',
-                        width: '34px',
-                        zIndex: 3,
-                    }}
-                >
-                    {favoriteLoading ? (
-                        <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                        <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
-                    )}
-                </button>
-                <div style={{ position: 'absolute', bottom: '24px', left: '24px', right: '24px' }}>
-                    <div className="flex justify-between items-end" style={{ color: 'white', textShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                        <div style={{ flex: 1, paddingRight: '1rem' }}>
-                            <div className="flex flex-col gap-1" style={{ marginBottom: '0.5rem' }}>
-                                <span style={{ fontWeight: 800, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.9 }}>{category}</span>
-                                <div className="flex items-center gap-2" style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.8 }}>
-                                    <MapPin size={12} />
-                                    {location?.split(',')[0]}
-                                </div>
-                            </div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>{title}</h3>
-                        </div>
-                        <Link to={`/listings/${listingPathType}/${id}`} className="btn-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <ArrowRight size={18} />
+        <article
+            className="listing-card"
+            role="link"
+            tabIndex={0}
+            onClick={openListing}
+            onKeyDown={handleCardKeyDown}
+            aria-label={`Open ${title}`}
+        >
+            <div className={`listing-card-media${image_url ? '' : ' is-fallback'}`} style={mediaStyle}>
+                <div className="listing-card-media-overlay" />
+
+                <div className="listing-card-media-top">
+                    <span className="listing-card-chip">{chipLabel}</span>
+                    <button
+                        type="button"
+                        className={`listing-card-fav-btn${isFavorite ? ' is-active' : ''}`}
+                        onClick={handleFavoriteToggle}
+                        disabled={favoriteLoading || !canFavorite}
+                        title={canFavorite ? undefined : 'Only tourist accounts can save favorites'}
+                    >
+                        {favoriteLoading ? (
+                            <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                            <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />
+                        )}
+                    </button>
+                </div>
+
+                {!image_url && (
+                    <div className="listing-card-fallback-text" aria-hidden="true">
+                        {title.charAt(0).toUpperCase()}
+                    </div>
+                )}
+
+                <div className="listing-card-title-static-wrap">
+                    <h3 className="listing-card-title-static">{title}</h3>
+                </div>
+
+                <div className="listing-card-reveal-panel">
+                    <h3 className="listing-card-title">{title}</h3>
+                    <p className="listing-card-sub">{subtitle}</p>
+
+                    <div className="listing-card-meta">
+                        <span className="listing-card-meta-item">
+                            <MapPin size={14} />
+                            <span>{locationLabel}</span>
+                        </span>
+                    </div>
+
+                    <div className="listing-card-actions">
+                        <span className="listing-card-price">{priceLabel}</span>
+                        <Link
+                            to={`/listings/${listingPathType}/${id}`}
+                            className="listing-btn-book"
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            Book Now
                         </Link>
                     </div>
                 </div>
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 60%)', zIndex: -1 }}></div>
             </div>
 
-            <div style={{ padding: '1.5rem 0.5rem 0' }}>
-                <div className="flex justify-between items-center" style={{ fontWeight: 800 }}>
-                    <span style={{ fontSize: '1rem', color: 'var(--primary)' }}>₹{price?.toLocaleString()}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>Per Experience</span>
+            <div className="listing-card-mobile-content">
+                <h3 className="listing-card-title">{title}</h3>
+                <p className="listing-card-sub">{subtitle}</p>
+
+                <div className="listing-card-meta">
+                    <span className="listing-card-meta-item">
+                        <MapPin size={14} />
+                        <span>{locationLabel}</span>
+                    </span>
+                </div>
+
+                <div className="listing-card-actions">
+                    <span className="listing-card-price">{priceLabel}</span>
+                    <Link to={`/listings/${listingPathType}/${id}`} className="listing-btn-book" onClick={(event) => event.stopPropagation()}>
+                        Book Now
+                    </Link>
                 </div>
             </div>
-        </div>
+        </article>
     );
 };

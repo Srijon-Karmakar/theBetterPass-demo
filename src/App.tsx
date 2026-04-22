@@ -10,6 +10,7 @@ import { ProviderStudio } from './pages/ProviderStudio';
 import { ListingDetail } from './pages/ListingDetail';
 import { UserProfile } from './pages/UserProfile';
 import { Messages } from './pages/Messages';
+import { Notifications } from './pages/Notifications';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { getRoleLabel, getVerificationLabel, isProviderRole } from './lib/platform';
@@ -143,6 +144,7 @@ function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users/:id" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminConsole /></AdminRoute>} />
           <Route path="/provider/studio" element={<ProviderRoute><ProviderStudio /></ProviderRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

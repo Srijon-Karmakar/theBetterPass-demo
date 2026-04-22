@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Calendar,
     CheckCircle2,
@@ -14,10 +14,12 @@ import {
     Sparkles,
     Tag,
     Type,
+    Upload,
     Zap,
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import {
     createOrUpdateListing,
     getMyPosts,
@@ -26,6 +28,9 @@ import {
 } from '../lib/destinations';
 import { LISTING_LABELS, getRoleLabel, type ListingType, canRolePublish } from '../lib/platform';
 import './provider-studio.css';
+
+const LISTING_IMAGE_BUCKET = 'avatars';
+const MAX_LISTING_IMAGE_MB = 8;
 
 const TYPE_META: Record<ListingType, { icon: React.ReactNode; description: string }> = {
     tour: { icon: <Compass size={22} />, description: 'Itinerary-led guided tour' },
@@ -76,9 +81,11 @@ export const ProviderStudio: React.FC = () => {
     const [listings, setListings] = useState<PostRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [editingListingId, setEditingListingId] = useState<string | null>(null);
     const [form, setForm] = useState<ListingInput>(EMPTY_FORM('tour'));
     const [imgError, setImgError] = useState(false);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const allowedTypes = useMemo(
         () => (['tour', 'activity', 'guide'] as ListingType[]).filter((type) => canRolePublish(profile?.role, type)),
@@ -139,7 +146,7 @@ export const ProviderStudio: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!canAccessStudio) return;
+        if (!canAccessStudio || uploadingImage) return;
         setSaving(true);
         try {
             await createOrUpdateListing({
@@ -169,6 +176,49 @@ export const ProviderStudio: React.FC = () => {
             alert(message);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const uploadListingImage = async (file: File): Promise<string> => {
+        if (!user) throw new Error('You must be logged in to upload an image.');
+        const ext = file.name.split('.').pop() || 'jpg';
+        const safeType = form.type || 'tour';
+        const path = `${user.id}/listing-${safeType}-${Date.now()}.${ext}`;
+        const { error } = await supabase.storage
+            .from(LISTING_IMAGE_BUCKET)
+            .upload(path, file, { upsert: true, contentType: file.type });
+        if (error) throw error;
+        const { data } = supabase.storage.from(LISTING_IMAGE_BUCKET).getPublicUrl(path);
+        return `${data.publicUrl}?t=${Date.now()}`;
+    };
+
+    const handleListingImageUpload = async (file: File) => {
+        if (!canAccessStudio || !user) return;
+        if (!file.type.startsWith('image/')) {
+            alert('Please select a valid image file.');
+            return;
+        }
+        if (file.size > MAX_LISTING_IMAGE_MB * 1024 * 1024) {
+            alert(`Image is too large. Max allowed size is ${MAX_LISTING_IMAGE_MB}MB.`);
+            return;
+        }
+        setUploadingImage(true);
+        try {
+            const uploadedUrl = await uploadListingImage(file);
+            setImgError(false);
+            setForm((current) => ({ ...current, image_url: uploadedUrl }));
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error || '');
+            console.error('Failed to upload listing image:', error);
+            if (message.toLowerCase().includes('bucket')) {
+                alert('Image upload failed: storage bucket is missing. Please run docs/supabase-role-system.sql.');
+            } else if (message.toLowerCase().includes('row-level security') || message.toLowerCase().includes('policy')) {
+                alert('Image upload blocked by Supabase policy. Please run docs/supabase-role-system.sql.');
+            } else {
+                alert(message || 'Failed to upload image. Please try again.');
+            }
+        } finally {
+            setUploadingImage(false);
         }
     };
 
@@ -324,6 +374,39 @@ export const ProviderStudio: React.FC = () => {
 
                             <label className="ps-field">
                                 <span className="ps-field-label"><Image size={13} /> Cover Image URL</span>
+                                <div className="ps-image-upload-row">
+                                    <button
+                                        type="button"
+                                        className="ps-upload-btn"
+                                        disabled={!canAccessStudio || uploadingImage}
+                                        onClick={() => imageInputRef.current?.click()}
+                                    >
+                                        {uploadingImage ? (
+                                            <>
+                                                <Loader2 className="animate-spin" size={14} />
+                                                Uploading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload size={14} />
+                                                Upload from device
+                                            </>
+                                        )}
+                                    </button>
+                                    <span className="ps-upload-hint">JPG, PNG, WEBP (max {MAX_LISTING_IMAGE_MB}MB)</span>
+                                </div>
+                                <input
+                                    ref={imageInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="ps-file-input"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) void handleListingImageUpload(file);
+                                        e.target.value = '';
+                                    }}
+                                    disabled={!canAccessStudio || uploadingImage}
+                                />
                                 <input
                                     className="ps-input"
                                     value={form.image_url}

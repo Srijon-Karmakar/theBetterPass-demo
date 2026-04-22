@@ -937,6 +937,128 @@ with check (
     )
 );
 
+create table if not exists public.notifications (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references auth.users(id) on delete cascade,
+    actor_user_id uuid references auth.users(id) on delete set null,
+    type text not null,
+    title text not null,
+    body text,
+    metadata jsonb not null default '{}'::jsonb,
+    is_read boolean not null default false,
+    read_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
+alter table public.notifications
+    add column if not exists actor_user_id uuid references auth.users(id) on delete set null,
+    add column if not exists type text,
+    add column if not exists title text,
+    add column if not exists body text,
+    add column if not exists metadata jsonb default '{}'::jsonb,
+    add column if not exists is_read boolean default false,
+    add column if not exists read_at timestamptz,
+    add column if not exists created_at timestamptz default now(),
+    add column if not exists updated_at timestamptz default now();
+
+update public.notifications
+set
+    metadata = coalesce(metadata, '{}'::jsonb),
+    is_read = coalesce(is_read, false),
+    title = coalesce(nullif(title, ''), 'Notification'),
+    type = coalesce(nullif(type, ''), 'message_new'),
+    created_at = coalesce(created_at, now()),
+    updated_at = coalesce(updated_at, created_at, now())
+where metadata is null
+   or is_read is null
+   or title is null
+   or title = ''
+   or type is null
+   or type = ''
+   or created_at is null
+   or updated_at is null;
+
+alter table public.notifications
+    alter column type set not null,
+    alter column title set not null,
+    alter column metadata set not null,
+    alter column metadata set default '{}'::jsonb,
+    alter column is_read set not null,
+    alter column is_read set default false,
+    alter column created_at set default now(),
+    alter column updated_at set default now();
+
+create index if not exists notifications_user_created_idx on public.notifications(user_id, created_at desc);
+create index if not exists notifications_user_unread_idx on public.notifications(user_id, is_read);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "notifications_select_owner_or_admin" on public.notifications;
+create policy "notifications_select_owner_or_admin"
+on public.notifications
+for select
+to authenticated
+using (
+    user_id = auth.uid()
+    or public.is_admin_user()
+);
+
+drop policy if exists "notifications_insert_actor_or_owner_or_admin" on public.notifications;
+create policy "notifications_insert_actor_or_owner_or_admin"
+on public.notifications
+for insert
+to authenticated
+with check (
+    actor_user_id = auth.uid()
+    or user_id = auth.uid()
+    or public.is_admin_user()
+);
+
+drop policy if exists "notifications_update_owner_or_admin" on public.notifications;
+create policy "notifications_update_owner_or_admin"
+on public.notifications
+for update
+to authenticated
+using (
+    user_id = auth.uid()
+    or public.is_admin_user()
+)
+with check (
+    user_id = auth.uid()
+    or public.is_admin_user()
+);
+
+drop policy if exists "notifications_delete_owner_or_admin" on public.notifications;
+create policy "notifications_delete_owner_or_admin"
+on public.notifications
+for delete
+to authenticated
+using (
+    user_id = auth.uid()
+    or public.is_admin_user()
+);
+
+do $$
+begin
+    if exists (
+        select 1
+        from pg_publication
+        where pubname = 'supabase_realtime'
+    ) and not exists (
+        select 1
+        from pg_publication_tables
+        where pubname = 'supabase_realtime'
+          and schemaname = 'public'
+          and tablename = 'notifications'
+    ) then
+        alter publication supabase_realtime add table public.notifications;
+    end if;
+exception
+    when undefined_table then null;
+    when undefined_object then null;
+end $$;
+
 drop policy if exists "moderation_audit_logs_select_admin_only" on public.moderation_audit_logs;
 create policy "moderation_audit_logs_select_admin_only"
 on public.moderation_audit_logs
@@ -1008,3 +1130,4 @@ using (
 -- 4. Legacy events are now treated as guides in product UX. Optional migration:
 --    update public.posts set type = 'guide' where type = 'event';
 -- 5. If you still have public data in legacy tours / activities / events tables, run docs/legacy-content-to-posts.sql and then remove the temporary client-side fallback merge.
+-- 6. Notifications module change log + rollback snapshots are documented in docs/notifications-db-change-log.md.

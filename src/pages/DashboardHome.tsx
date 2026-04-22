@@ -22,6 +22,7 @@ import {
 import type { ListingType } from '../lib/platform';
 import { isProviderRole } from '../lib/platform';
 import './dashboard-home.css';
+import '../components/listing-card.css';
 
 type RevealProps = { children: React.ReactNode; className?: string; delay?: number };
 
@@ -237,7 +238,10 @@ const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
         void loadFavorite();
     }, [canFavorite, listingTypeValue, post.id, user]);
 
-    const handleFavoriteToggle = async () => {
+    const handleFavoriteToggle = async (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
         if (!user) {
             navigate('/auth');
             return;
@@ -265,8 +269,24 @@ const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
         }
     };
 
+    const openListing = () => navigate(`/listings/${listingTypePath}/${post.id}`);
+
+    const handleCardKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openListing();
+        }
+    };
+
     return (
-        <article className="listing-card">
+        <article
+            className="listing-card"
+            role="link"
+            tabIndex={0}
+            onClick={openListing}
+            onKeyDown={handleCardKeyDown}
+            aria-label={`Open ${title}`}
+        >
             <div
                 className={`listing-card-media${image ? '' : ' is-fallback'}`}
                 style={image ? { backgroundImage: `url(${image})` } : undefined}
@@ -295,18 +315,42 @@ const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
                     </div>
                 )}
 
-                <button
-                    type="button"
-                    className="listing-card-ghost-hit"
-                    onClick={() => navigate(`/listings/${listingTypePath}/${post.id}`)}
-                    aria-label={`Open ${title}`}
-                />
-            </div>
-            <div className="listing-card-body">
-                <div>
+                <div className="listing-card-title-static-wrap">
+                    <h3 className="listing-card-title-static">{title}</h3>
+                </div>
+
+                <div className="listing-card-reveal-panel">
                     <h3 className="listing-card-title">{title}</h3>
                     <p className="listing-card-sub">{subtitle}</p>
+
+                    <div className="listing-card-meta">
+                        <span className="listing-card-meta-item">
+                            <MapPin size={14} />
+                            <span>{location}</span>
+                        </span>
+                        {startsAt && (
+                            <span className="listing-card-meta-item">
+                                <CalendarDays size={14} />
+                                <span>{startsAt}</span>
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="listing-card-actions">
+                        <span className="listing-card-price">{priceLabel}</span>
+                        <Link
+                            to={`/listings/${listingTypePath}/${post.id}`}
+                            className="listing-btn-book"
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            Book Now
+                        </Link>
+                    </div>
                 </div>
+            </div>
+            <div className="listing-card-mobile-content">
+                <h3 className="listing-card-title">{title}</h3>
+                <p className="listing-card-sub">{subtitle}</p>
 
                 <div className="listing-card-meta">
                     <span className="listing-card-meta-item">
@@ -323,8 +367,9 @@ const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
 
                 <div className="listing-card-actions">
                     <span className="listing-card-price">{priceLabel}</span>
-                    <Link to={`/listings/${listingTypePath}/${post.id}`} className="listing-btn-book">Book Now</Link>
-                    <Link to={`/listings/${listingTypePath}/${post.id}`} className="listing-btn-details">Details</Link>
+                    <Link to={`/listings/${listingTypePath}/${post.id}`} className="listing-btn-book" onClick={(event) => event.stopPropagation()}>
+                        Book Now
+                    </Link>
                 </div>
             </div>
         </article>
@@ -337,7 +382,11 @@ const Section: React.FC<{
     posts: PostRecord[];
     moreHref: string;
     indexOffset: number;
-}> = ({ section, title, posts, moreHref, indexOffset }) => (
+    expanded: boolean;
+}> = ({ section, title, posts, moreHref, indexOffset, expanded }) => {
+    const postsToRender = expanded ? posts : posts.slice(0, 4);
+
+    return (
     <section className={`dh-listing-section ${getToneClass(section)}`}>
         <Reveal delay={indexOffset * 100}>
             <div className="dh-section-header">
@@ -346,14 +395,16 @@ const Section: React.FC<{
                     <p className="dh-listing-section-sub">{getSectionHelper(section)}</p>
                 </div>
                 {posts.length > 0 && (
-                    <Link to={moreHref} className="dh-more-link">More</Link>
+                    <Link to={expanded ? '/dashboard' : moreHref} className="dh-more-link">
+                        {expanded ? 'Less' : 'More'}
+                    </Link>
                 )}
             </div>
         </Reveal>
 
         {posts.length > 0 ? (
-            <div className="dh-listing-row">
-                {posts.slice(0, 4).map((post, i) => (
+            <div className={`dh-listing-row${expanded ? ' dh-listing-row--expanded' : ''}`}>
+                {postsToRender.map((post, i) => (
                     <Reveal key={post.id} delay={indexOffset * 100 + (i + 1) * 80}>
                         <ListingCard post={post} />
                     </Reveal>
@@ -365,7 +416,8 @@ const Section: React.FC<{
             </Reveal>
         )}
     </section>
-);
+    );
+};
 
 export const DashboardHome: React.FC = () => {
     const { user, profile } = useAuth();
@@ -574,6 +626,7 @@ export const DashboardHome: React.FC = () => {
                                 posts={filteredTourPosts}
                                 moreHref="/dashboard?tab=tours"
                                 indexOffset={sectionIndexOffset++}
+                                expanded={activeTab === 'tours'}
                             />
                         )}
 
@@ -584,6 +637,7 @@ export const DashboardHome: React.FC = () => {
                                 posts={filteredActivityPosts}
                                 moreHref="/dashboard?tab=activities"
                                 indexOffset={sectionIndexOffset++}
+                                expanded={activeTab === 'activities'}
                             />
                         )}
 
@@ -594,6 +648,7 @@ export const DashboardHome: React.FC = () => {
                                 posts={filteredEventPosts}
                                 moreHref="/dashboard?tab=events"
                                 indexOffset={sectionIndexOffset++}
+                                expanded={activeTab === 'events'}
                             />
                         )}
                     </div>
