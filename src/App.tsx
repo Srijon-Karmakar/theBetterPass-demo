@@ -13,6 +13,7 @@ import { Messages } from './pages/Messages';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { getRoleLabel, getVerificationLabel, isProviderRole } from './lib/platform';
+import { SupportChatbot } from './components/SupportChatbot';
 
 const APP_HOME_PATH = '/dashboard';
 const DASHBOARD_TOURS_PATH = '/dashboard?tab=tours';
@@ -148,6 +149,7 @@ function App() {
         </Routes>
 
         <AppFooter homePath={homePath} footerLogoSrc={footerLogoSrc} user={user} />
+        <SupportChatbot />
       </div>
     </Router>
   );

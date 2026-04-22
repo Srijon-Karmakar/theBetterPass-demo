@@ -71,3 +71,19 @@ export default defineConfig([
   },
 ])
 ```
+
+## Chatbot Configuration
+
+The project includes an in-app assistant with two modes:
+
+- `AI + Database` when an OpenAI key is present
+- `Rule-Based Database` fallback when no key is available
+
+Set these optional variables in your Vite environment file:
+
+```bash
+VITE_OPENAI_API_KEY=your_openai_key
+VITE_OPENAI_MODEL=gpt-4.1-mini
+```
+
+If `VITE_OPENAI_API_KEY` is missing, the chatbot automatically switches to rule-based answers generated from current Supabase data.
