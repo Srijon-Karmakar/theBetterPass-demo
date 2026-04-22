@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Database, Loader2, MessageCircle, SendHorizontal, Sparkles, X } from 'lucide-react';
+import { Bot, Database, Loader2, SendHorizontal, Sparkles, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -115,8 +115,7 @@ export const SupportChatbot: React.FC = () => {
                 aria-expanded={open}
                 aria-controls="tbp-chatbot-panel"
             >
-                {open ? <X size={18} /> : <MessageCircle size={18} />}
-                <span>Ask Assistant</span>
+                {open ? <X size={22} /> : <span className="tbp-chatbot-fab-label">AI</span>}
             </button>
 
             <section id="tbp-chatbot-panel" className="tbp-chatbot-panel glass" aria-hidden={!open}>

@@ -7,6 +7,7 @@ import {
     Heart,
     Loader2,
     MapPin,
+    Search,
     Sparkles,
     Ticket,
 } from 'lucide-react';
@@ -369,6 +370,7 @@ const Section: React.FC<{
 export const DashboardHome: React.FC = () => {
     const { user, profile } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [tourPosts, setTourPosts] = useState<PostRecord[]>([]);
     const [activityPosts, setActivityPosts] = useState<PostRecord[]>([]);
@@ -390,17 +392,39 @@ export const DashboardHome: React.FC = () => {
         [greetingAudience, greetingPhase],
     );
     const name = profile?.full_name || user?.email?.split('@')[0] || 'Explorer';
+    const searchQueryNormalized = searchQuery.trim().toLowerCase();
 
-    const totalListings = tourPosts.length + activityPosts.length + eventPosts.length;
+    const filterPosts = (posts: PostRecord[]): PostRecord[] => {
+        if (!searchQueryNormalized) return posts;
+        return posts.filter((post) => {
+            const title = getPostTitle(post).toLowerCase();
+            const subtitle = getPostSubtitle(post).toLowerCase();
+            const location = typeof post.location === 'string' ? post.location.toLowerCase() : '';
+            return title.includes(searchQueryNormalized)
+                || subtitle.includes(searchQueryNormalized)
+                || location.includes(searchQueryNormalized);
+        });
+    };
+
+    const filteredTourPosts = useMemo(() => filterPosts(tourPosts), [tourPosts, searchQueryNormalized]);
+    const filteredActivityPosts = useMemo(() => filterPosts(activityPosts), [activityPosts, searchQueryNormalized]);
+    const filteredEventPosts = useMemo(() => filterPosts(eventPosts), [eventPosts, searchQueryNormalized]);
+
+    const totalListings = filteredTourPosts.length + filteredActivityPosts.length + filteredEventPosts.length;
     const activeTabText = activeTab ? `Showing ${activeTab}. Tap again to reset.` : 'Showing all categories.';
     const primaryTabCount = activeTab
         ? activeTab === 'tours'
-            ? tourPosts.length
+            ? filteredTourPosts.length
             : activeTab === 'activities'
-                ? activityPosts.length
-                : eventPosts.length
+                ? filteredActivityPosts.length
+                : filteredEventPosts.length
         : totalListings;
     const tabSummary = `${primaryTabCount} option${primaryTabCount === 1 ? '' : 's'} live`;
+    const searchPlaceholder = activeTab === 'events'
+        ? 'Search Events'
+        : activeTab === 'activities'
+            ? 'Search Activities'
+            : 'Search Tours';
 
     useEffect(() => {
         if (!user) return;
@@ -449,6 +473,20 @@ export const DashboardHome: React.FC = () => {
             <div className="container dh-shell">
                 <Reveal delay={0}>
                     <section className="dh-top-panel">
+                        <div className="dh-search-wrap">
+                            <label className="dh-search" aria-label="Search listings">
+                                <input
+                                    type="search"
+                                    value={searchQuery}
+                                    onChange={(event) => setSearchQuery(event.target.value)}
+                                    placeholder={searchPlaceholder}
+                                />
+                                <button type="button" aria-label="Search">
+                                    <Search size={20} />
+                                </button>
+                            </label>
+                        </div>
+
                         <div className="dh-greeting">
                             <p className="dh-greeting-kicker">Travel Workspace</p>
                             <h1 className="dh-greeting-title">{greeting}</h1>
@@ -459,10 +497,10 @@ export const DashboardHome: React.FC = () => {
                         <div className="dh-kpi-row">
                             {TAB_CONFIG.map((tab) => {
                                 const count = tab.id === 'tours'
-                                    ? tourPosts.length
+                                    ? filteredTourPosts.length
                                     : tab.id === 'activities'
-                                        ? activityPosts.length
-                                        : eventPosts.length;
+                                        ? filteredActivityPosts.length
+                                        : filteredEventPosts.length;
                                 const Icon = tab.icon;
 
                                 return (
@@ -533,7 +571,7 @@ export const DashboardHome: React.FC = () => {
                             <Section
                                 section="tours"
                                 title="Tours"
-                                posts={tourPosts}
+                                posts={filteredTourPosts}
                                 moreHref="/dashboard?tab=tours"
                                 indexOffset={sectionIndexOffset++}
                             />
@@ -543,7 +581,7 @@ export const DashboardHome: React.FC = () => {
                             <Section
                                 section="activities"
                                 title="Activities"
-                                posts={activityPosts}
+                                posts={filteredActivityPosts}
                                 moreHref="/dashboard?tab=activities"
                                 indexOffset={sectionIndexOffset++}
                             />
@@ -553,7 +591,7 @@ export const DashboardHome: React.FC = () => {
                             <Section
                                 section="events"
                                 title="Events"
-                                posts={eventPosts}
+                                posts={filteredEventPosts}
                                 moreHref="/dashboard?tab=events"
                                 indexOffset={sectionIndexOffset++}
                             />
