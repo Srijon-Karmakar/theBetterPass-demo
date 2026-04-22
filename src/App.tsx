@@ -163,11 +163,10 @@ const AppNavbar: React.FC = () => {
   return <Navbar />;
 };
 
-const HIDE_FOOTER_PATHS = ['/auth'];
-
 const AppFooter: React.FC<{ homePath: string; footerLogoSrc: string; user: unknown }> = ({ homePath, footerLogoSrc, user }) => {
   const { pathname } = useLocation();
-  if (HIDE_FOOTER_PATHS.includes(pathname)) return null;
+  const isGuestLanding = !user && pathname === '/';
+  if (!isGuestLanding) return null;
 
   return (
         <footer style={{ padding: '88px 0 40px', borderTop: '1px solid var(--border-light)', marginTop: '120px', background: 'var(--surface-main)' }}>

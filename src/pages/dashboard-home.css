@@ -108,19 +108,26 @@
 }
 
 .dh-greeting-title {
-  color: var(--text-main);
+  background-image: linear-gradient(120deg, #111111 12%, #c9b098 52%, #efe1d1 88%);
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: #111111;
   font-family: 'SF Pro Display', 'Outfit', 'Inter', sans-serif;
-  font-size: clamp(2.05rem, 10.4vw, 3.5rem);
+  font-size: clamp(2.45rem, 11.5vw, 4.2rem);
   font-weight: 680;
   letter-spacing: -0.045em;
   line-height: 1.02;
   margin: 0;
+  -webkit-text-fill-color: transparent;
+  animation: dhGreetingGradientShift 9s ease-in-out infinite alternate;
 }
 
 .dh-greeting-name {
   color: var(--text-main);
-  font-size: 1rem;
-  font-weight: 640;
+  font-size: clamp(1.25rem, 4.8vw, 1.95rem);
+  font-weight: 660;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
@@ -335,6 +342,20 @@
 .dh-tab-pill:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--dh-tone-text, var(--text-main)) 40%, transparent);
   outline-offset: 2px;
+}
+
+@keyframes dhGreetingGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .dh-sections {
@@ -663,6 +684,96 @@
   min-height: 220px;
 }
 
+@media (max-width: 768px) {
+  .dh-kpi-row {
+    display: none;
+  }
+
+  .dh-tab-strip-wrapper {
+    background: transparent;
+    padding: 0;
+  }
+
+  .dh-tab-strip-head {
+    padding: 0 2px;
+  }
+
+  .dh-tab-strip {
+    align-items: stretch;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-light) 92%, transparent);
+    display: flex;
+    gap: 0;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .dh-tab-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dh-tab-pill {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0;
+    color: var(--text-muted);
+    min-height: auto;
+    opacity: 1;
+    padding: 10px 14px 12px;
+    white-space: nowrap;
+  }
+
+  .dh-tab-pill.dh-tone-tours {
+    order: 1;
+  }
+
+  .dh-tab-pill.dh-tone-events {
+    order: 2;
+  }
+
+  .dh-tab-pill.dh-tone-activities {
+    order: 3;
+  }
+
+  .dh-tab-pill:not(.is-active) {
+    opacity: 0.75;
+  }
+
+  .dh-tab-pill:hover {
+    opacity: 1;
+    transform: none;
+  }
+
+  .dh-tab-pill-top {
+    align-items: center;
+    font-size: 0.92rem;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .dh-tab-pill-helper {
+    display: none;
+  }
+
+  .dh-tab-pill.is-active {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-main);
+    transform: none;
+  }
+
+  .dh-tab-pill.is-active::after {
+    background: currentColor;
+    border-radius: 999px;
+    bottom: 0;
+    content: '';
+    height: 2px;
+    left: 12px;
+    position: absolute;
+    right: 12px;
+  }
+}
+
 @media (min-width: 640px) {
   .dh-page {
     padding: 122px 0 86px;
@@ -676,6 +787,14 @@
     border-radius: 32px;
     gap: 20px;
     padding: 24px;
+  }
+
+  .dh-greeting-title {
+    font-size: clamp(2.85rem, 8.8vw, 4.7rem);
+  }
+
+  .dh-greeting-name {
+    font-size: clamp(1.35rem, 2.8vw, 2.1rem);
   }
 
   .dh-tab-strip {
@@ -765,5 +884,9 @@
 
   .dh-reveal {
     opacity: 1;
+  }
+
+  .dh-greeting-title {
+    animation: none;
   }
 }

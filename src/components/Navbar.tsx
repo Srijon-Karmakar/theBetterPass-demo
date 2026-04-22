@@ -15,6 +15,16 @@ export const Navbar: React.FC = () => {
     const isDark = theme === 'dark';
     const homePath = user ? '/dashboard' : '/';
     const logoSrc = isDark ? '/logo/logo-white.png' : '/logo/logo.png';
+    const navSurface = isDark ? 'rgba(0,0,0,0.74)' : 'rgba(242,138,36,0.46)';
+    const navSurfaceSoft = isDark ? 'rgba(10,10,10,0.80)' : 'rgba(242,138,36,0.58)';
+    const navBorder = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(138,73,8,0.28)';
+    const navInset = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,242,224,0.30)';
+    const navText = isDark ? 'rgba(248,250,252,0.82)' : 'rgba(31,18,7,0.86)';
+    const navTextStrong = isDark ? '#f8fafc' : '#1f1308';
+    const navHover = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)';
+    const navDivider = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(63,34,8,0.28)';
+    const navActiveBg = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.86)';
+    const navActiveText = '#ffffff';
 
     const activeTab: NavTab = (() => {
         if (location.pathname === '/profile') return 'bookings';
@@ -129,6 +139,11 @@ export const Navbar: React.FC = () => {
                 {/* Mobile dropdown */}
                 {showMenu && (
                     <div className="nbr-dropdown">
+                        {user && (
+                            <Link to="/profile" className="nbr-drop-item" onClick={() => setShowMenu(false)}>
+                                Profile
+                            </Link>
+                        )}
                         {user && navLinks.map((item) => (
                             <Link key={item.key} to={item.to} className="nbr-drop-item" onClick={() => setShowMenu(false)}>
                                 {item.label}
@@ -186,16 +201,12 @@ export const Navbar: React.FC = () => {
                     animation: fadeInDown 0.5s cubic-bezier(0.23,1,0.32,1) both;
                     backdrop-filter: blur(20px) saturate(200%);
                     -webkit-backdrop-filter: blur(20px) saturate(200%);
-                    background: ${isDark
-                        ? 'rgba(12,12,12,0.72)'
-                        : 'rgba(255,255,255,0.78)'};
-                    border: 1px solid ${isDark
-                        ? 'rgba(255,255,255,0.10)'
-                        : 'rgba(255,255,255,0.70)'};
+                    background: ${navSurface};
+                    border: 1px solid ${navBorder};
                     border-radius: 999px;
                     box-shadow:
                         0 4px 24px rgba(15,23,42,0.10),
-                        inset 0 1px 0 ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)'};
+                        inset 0 1px 0 ${navInset};
                     display: inline-flex;
                     gap: 2px;
                     padding: 7px 10px;
@@ -219,7 +230,7 @@ export const Navbar: React.FC = () => {
 
                 /* Divider between logo and links */
                 .nbr-sep {
-                    background: ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'};
+                    background: ${navDivider};
                     border-radius: 1px;
                     flex-shrink: 0;
                     height: 20px;
@@ -230,7 +241,7 @@ export const Navbar: React.FC = () => {
                 /* Nav links */
                 .nbr-link {
                     border-radius: 999px;
-                    color: var(--text-muted);
+                    color: ${navText};
                     font-family: 'Outfit', sans-serif;
                     font-size: 0.875rem;
                     font-weight: 600;
@@ -239,10 +250,10 @@ export const Navbar: React.FC = () => {
                     transition: color 0.18s, background 0.18s;
                     white-space: nowrap;
                 }
-                .nbr-link:hover { color: var(--text-main); }
+                .nbr-link:hover { color: ${navTextStrong}; }
                 .nbr-link--active {
-                    background: var(--primary);
-                    color: var(--text-inverse);
+                    background: ${navActiveBg};
+                    color: ${navActiveText};
                 }
 
                 /* Join (guest) */
@@ -263,10 +274,10 @@ export const Navbar: React.FC = () => {
                     animation-delay: 0.06s;
                     backdrop-filter: blur(20px) saturate(200%);
                     -webkit-backdrop-filter: blur(20px) saturate(200%);
-                    background: ${isDark ? 'rgba(12,12,12,0.72)' : 'rgba(255,255,255,0.78)'};
-                    border: 1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.70)'};
+                    background: ${navSurface};
+                    border: 1px solid ${navBorder};
                     border-radius: 999px;
-                    box-shadow: 0 4px 24px rgba(15,23,42,0.10), inset 0 1px 0 ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)'};
+                    box-shadow: 0 4px 24px rgba(15,23,42,0.10), inset 0 1px 0 ${navInset};
                     display: inline-flex;
                     gap: 8px;
                     padding: 5px 5px 5px 12px;
@@ -286,12 +297,12 @@ export const Navbar: React.FC = () => {
                     line-height: 1.25;
                 }
                 .nbr-user-name {
-                    color: var(--text-main);
+                    color: ${isDark ? '#f8fafc' : '#1d1207'};
                     font-size: 0.82rem;
                     font-weight: 700;
                 }
                 .nbr-user-role {
-                    color: var(--text-muted);
+                    color: ${navText};
                     font-size: 0.68rem;
                     font-weight: 500;
                 }
@@ -329,7 +340,7 @@ export const Navbar: React.FC = () => {
                     align-items: center;
                     backdrop-filter: blur(12px);
                     -webkit-backdrop-filter: blur(12px);
-                    background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
+                    background: ${navHover};
                     border: 1px solid var(--border-light);
                     border-radius: 999px;
                     color: var(--text-main);
@@ -341,15 +352,15 @@ export const Navbar: React.FC = () => {
                     transition: background 0.18s;
                     width: 32px;
                 }
-                .nbr-hamburger:hover { background: ${isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.1)'}; }
+                .nbr-hamburger:hover { background: ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.16)'}; }
 
                 /* ── Dropdown ───────────────────────────────────────── */
                 .nbr-dropdown {
                     animation: fadeInDown 0.18s ease-out;
                     backdrop-filter: blur(22px) saturate(190%);
                     -webkit-backdrop-filter: blur(22px) saturate(190%);
-                    background: ${isDark ? 'rgba(14,14,14,0.88)' : 'rgba(255,255,255,0.92)'};
-                    border: 1px solid var(--border-light);
+                    background: ${navSurfaceSoft};
+                    border: 1px solid ${navBorder};
                     border-radius: 20px;
                     box-shadow: 0 16px 48px rgba(15,23,42,0.18);
                     display: flex;
@@ -363,14 +374,14 @@ export const Navbar: React.FC = () => {
 
                 .nbr-drop-item {
                     border-radius: 12px;
-                    color: var(--text-main);
+                    color: ${navTextStrong};
                     font-size: 0.9rem;
                     font-weight: 600;
                     padding: 10px 14px;
                     text-decoration: none;
                     transition: background 0.14s;
                 }
-                .nbr-drop-item:hover { background: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}; }
+                .nbr-drop-item:hover { background: ${navHover}; }
                 .nbr-drop-item--accent { color: var(--accent); font-weight: 800; }
                 .nbr-drop-item--danger { color: var(--danger-text, #e53e3e); }
 
@@ -396,7 +407,7 @@ export const Navbar: React.FC = () => {
                     .nbr-desktop { display: none !important; }
                     .nbr-mobile  { display: flex !important; flex-direction: column; align-items: stretch; padding: 0 16px; top: 16px; }
 
-                    /* Mobile-only: remove glass pill shell, keep only logo + hamburger */
+                    /* Mobile-only: no navbar shell background */
                     .nbr-mobile-pill {
                         backdrop-filter: none !important;
                         -webkit-backdrop-filter: none !important;
