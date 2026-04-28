@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
 
-type NavTab = 'home' | 'tours' | 'activities' | 'events' | 'messages' | 'notifications' | 'bookings';
+type NavTab = 'home' | 'explore' | 'messages' | 'notifications' | 'bookings';
 
 export const Navbar: React.FC = () => {
     const { user, profile, signOut, isAdmin, isProvider, roleLabel } = useAuth();
@@ -29,23 +29,27 @@ export const Navbar: React.FC = () => {
     const navActiveText = '#ffffff';
 
     const activeTab: NavTab = (() => {
+        const tab = new URLSearchParams(location.search).get('tab');
         if (location.pathname === '/profile') return 'bookings';
         if (location.pathname === '/notifications') return 'notifications';
         if (location.pathname === '/messages') return 'messages';
-        if (location.pathname === '/events' || location.pathname === '/guides' || location.search.includes('tab=events') || location.search.includes('tab=guides')) return 'events';
+        if (
+            location.pathname === '/events'
+            || location.pathname === '/guides'
+            || tab === 'tours'
+            || tab === 'activities'
+            || tab === 'events'
+            || tab === 'guides'
+        ) {
+            return 'explore';
+        }
         if (location.pathname !== '/dashboard') return 'home';
-        const tab = new URLSearchParams(location.search).get('tab');
-        if (tab === 'tours') return 'tours';
-        if (tab === 'activities') return 'activities';
-        if (tab === 'events' || tab === 'guides') return 'events';
         return 'home';
     })();
 
     const navLinks: Array<{ key: NavTab; label: string; to: string }> = [
         { key: 'home', label: 'Home', to: '/dashboard' },
-        { key: 'tours', label: 'Tours', to: '/dashboard?tab=tours' },
-        { key: 'activities', label: 'Activities', to: '/dashboard?tab=activities' },
-        { key: 'events', label: 'Events', to: '/dashboard?tab=events' },
+        { key: 'explore', label: 'Explore', to: '/dashboard?tab=tours' },
         { key: 'messages', label: 'Messages', to: '/messages' },
         { key: 'notifications', label: 'Notifications', to: '/notifications' },
         { key: 'bookings', label: 'Bookings', to: '/profile' },

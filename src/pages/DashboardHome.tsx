@@ -546,27 +546,6 @@ export const DashboardHome: React.FC = () => {
                             <p className="dh-greeting-sub">{greetingSub}</p>
                         </div>
 
-                        <div className="dh-kpi-row">
-                            {TAB_CONFIG.map((tab) => {
-                                const count = tab.id === 'tours'
-                                    ? filteredTourPosts.length
-                                    : tab.id === 'activities'
-                                        ? filteredActivityPosts.length
-                                        : filteredEventPosts.length;
-                                const Icon = tab.icon;
-
-                                return (
-                                    <div key={tab.id} className={`dh-kpi-card ${getToneClass(tab.id)}`}>
-                                        <span className="dh-kpi-icon"><Icon size={16} /></span>
-                                        <div>
-                                            <p className="dh-kpi-value">{count}</p>
-                                            <p className="dh-kpi-label">{tab.label}</p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
                         {isProvider && (
                             <div className="dh-provider-cta-row">
                                 <Link to="/provider/studio" className="dh-provider-cta-primary">
