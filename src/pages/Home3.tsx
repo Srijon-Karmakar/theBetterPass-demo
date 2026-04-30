@@ -134,47 +134,60 @@ const stats = [
 
 const horizontalCategories = [
     {
-        title: 'Desert Aura',
+        title: 'India',
         label: 'Desert',
         video: '/video/horizontal-sect/desert.mp4',
-        kicker: 'Golden silence',
-        description: 'Discover vast dunes, slow-burning sunsets, and long cinematic horizons where every trail feels mythic.',
+        kicker: 'The Better Pass',
+        description: 'Discover vast dunes, warm sunsets, and cinematic desert routes across India.',
+        verticalText: 'Desert India',
+        themeColor: '#a55a16',
+        accentColor: '#f2d6b0',
     },
     {
-        title: 'Ocean Drift',
-        label: 'Ocean',
+        title: 'India',
+        label: 'Coasts',
         video: '/video/horizontal-sect/ocean.mp4',
-        kicker: 'Salt and motion',
-        description: 'Follow deep blue coastlines, shifting light, and open water experiences designed for calm and immersion.',
+        kicker: 'The Better Pass',
+        description: 'Follow shoreline escapes, sea breeze towns, and island-style stays on India’s coasts.',
+        verticalText: 'Coastal India',
+        themeColor: '#042b53',
+        accentColor: '#fb4f68',
     },
     {
-        title: 'Mountain Pulse',
+        title: 'India',
         label: 'Mountains',
         video: '/video/horizontal-sect/mountain.mp4',
-        kicker: 'Thin air, high drama',
-        description: 'Move through elevated landscapes, crisp ridgelines, and alpine routes that feel expansive at every step.',
+        kicker: 'The Better Pass',
+        description: 'Move through high-altitude valleys, snow lines, and mountain trails across India.',
+        verticalText: 'Mountain India',
+        themeColor: '#0b4b2d',
+        accentColor: '#90f6b8',
     },
     {
-        title: 'Cityscapes',
-        label: 'Cityscapes',
+        title: 'India',
+        label: 'Cities',
         video: '/video/horizontal-sect/cityscape.mp4',
-        kicker: 'Electric nights',
-        description: 'Step into layered skylines, fast streets, and urban energy curated for travelers who like rhythm and contrast.',
+        kicker: 'The Better Pass',
+        description: 'Explore skylines, food streets, culture hubs, and non-stop city energy in India.',
+        verticalText: 'City India',
+        themeColor: '#d0e685',
+        accentColor: '#3f45d9',
     },
     {
-        title: 'Forest Hush',
-        label: 'Forest',
+        title: 'India',
+        label: 'Forests',
         video: '/video/horizontal-sect/forrest.mp4',
-        kicker: 'Canopy and stillness',
-        description: 'Drift through layered greens, filtered sunlight, and deep woodland trails designed for slower, quieter immersion.',
+        kicker: 'The Better Pass',
+        description: 'Drift through rainforest trails, wildlife zones, and slow nature retreats in India.',
+        verticalText: 'Forest India',
+        themeColor: '#e52e34',
+        accentColor: '#f7f6f3',
     },
 ];
 
 /* ─── Component ─────────────────────────────────────────────────────── */
 export const Home3: React.FC = () => {
     const heroSceneRef = useRef<HTMLElement>(null);
-    const horizontalSceneRef = useRef<HTMLElement>(null);
-    const horizontalViewportRef = useRef<HTMLDivElement>(null);
     const heroBgRef = useRef<HTMLDivElement>(null);
     const heroContentRef = useRef<HTMLDivElement>(null);
     const cloud1Ref = useRef<HTMLImageElement>(null);
@@ -192,13 +205,14 @@ export const Home3: React.FC = () => {
     const rafRef = useRef<number | null>(null);
     const mouse = useRef({ x: 0, y: 0, lx: 0, ly: 0 });
     const [activeHorizontalIndex, setActiveHorizontalIndex] = useState(0);
-    const horizontalTargetProgressRef = useRef(0);
-    const horizontalVisualProgressRef = useRef(0);
-    const horizontalLockedRef = useRef(false);
-    const horizontalTouchYRef = useRef<number | null>(null);
-    const horizontalWarmupRef = useRef(0);
+    const [hoveredHorizontalIndex, setHoveredHorizontalIndex] = useState<number | null>(null);
+    const [isHoverDevice, setIsHoverDevice] = useState(false);
     const horizontalVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-    const horizontalPanelRefs = useRef<(HTMLElement | null)[]>([]);
+    const moodTouchStartXRef = useRef<number | null>(null);
+    const moodTouchStartYRef = useRef<number | null>(null);
+    const visibleHorizontalIndex = isHoverDevice ? hoveredHorizontalIndex : activeHorizontalIndex;
+    const moodThemeIndex = visibleHorizontalIndex ?? activeHorizontalIndex;
+    const activeMood = horizontalCategories[moodThemeIndex] ?? horizontalCategories[0];
 
     useEffect(() => {
         const scene = heroSceneRef.current;
@@ -214,8 +228,6 @@ export const Home3: React.FC = () => {
         const c8 = cloud8Ref.current;
         const c9 = cloud9Ref.current;
         const c10 = cloud10Ref.current;
-        const horizontalScene = horizontalSceneRef.current;
-        const horizontalViewport = horizontalViewportRef.current;
         const stripBg = stripBgRef.current;
         const ctaBg = ctaBgRef.current;
 
@@ -265,55 +277,6 @@ export const Home3: React.FC = () => {
             if (c9) c9.style.transform = `translate3d(0, ${-ph * 0.22 * cloudScale}px, 0)`;
             if (c10) c10.style.transform = `translate3d(0, ${-ph * 0.18 * cloudScale}px, 0)`;
 
-            if (horizontalScene && horizontalViewport) {
-                const target = horizontalTargetProgressRef.current;
-                let visual = horizontalVisualProgressRef.current;
-                // slightly stronger lerp for snappier, yet smooth visual follow
-                visual += (target - visual) * 0.16;
-                if (Math.abs(target - visual) < 0.0004) visual = target;
-                horizontalVisualProgressRef.current = visual;
-
-                const horizontalShift = visual * (horizontalCategories.length - 1) * -100;
-                const horizontalRect = horizontalScene.getBoundingClientRect();
-                const entryFade = Math.min(Math.max((window.innerHeight - horizontalRect.top) / (window.innerHeight * 0.24), 0), 1);
-                const exitFade = Math.min(Math.max(horizontalRect.bottom / (window.innerHeight * 0.34), 0), 1);
-                const sectionPresence = Math.min(entryFade, exitFade);
-                const sectionLift = (1 - sectionPresence) * 36;
-
-                horizontalViewport.style.setProperty('--h3-horizontal-progress', visual.toFixed(4));
-                horizontalViewport.style.setProperty('--h3-horizontal-shift', `${horizontalShift.toFixed(4)}vw`);
-                horizontalViewport.style.setProperty('--h3-horizontal-presence', sectionPresence.toFixed(4));
-                horizontalViewport.style.setProperty('--h3-horizontal-lift', `${sectionLift.toFixed(2)}px`);
-                horizontalViewport.classList.toggle('is-scroll-locked', horizontalLockedRef.current);
-
-                const slideProgress = visual * (horizontalCategories.length - 1);
-                horizontalPanelRefs.current.forEach((panel, index) => {
-                    if (!panel) return;
-
-                    const distance = Math.abs(slideProgress - index);
-                    const boundedDistance = Math.min(distance, 1.25);
-                    const panelOpacity = Math.max(1 - boundedDistance * 0.82, 0.12);
-                    const mediaScale = 1 + Math.max(0.06 - boundedDistance * 0.035, 0);
-                    const mediaBrightness = 0.58 + Math.max(0.34 - boundedDistance * 0.16, 0);
-                    const contentOpacity = Math.max(1 - boundedDistance * 1.18, 0);
-                    const contentShift = Math.min(boundedDistance * 92, 92);
-                    const blur = Math.min(boundedDistance * 3.5, 3.5);
-
-                    panel.style.setProperty('--h3-panel-opacity', panelOpacity.toFixed(4));
-                    panel.style.setProperty('--h3-panel-scale', mediaScale.toFixed(4));
-                    panel.style.setProperty('--h3-panel-brightness', mediaBrightness.toFixed(4));
-                    panel.style.setProperty('--h3-content-opacity', contentOpacity.toFixed(4));
-                    panel.style.setProperty('--h3-content-shift', `${contentShift.toFixed(2)}px`);
-                    panel.style.setProperty('--h3-panel-blur', `${blur.toFixed(2)}px`);
-                });
-
-                const nextIndex = Math.min(
-                    horizontalCategories.length - 1,
-                    Math.round(visual * (horizontalCategories.length - 1)),
-                );
-                setActiveHorizontalIndex((prev) => (prev === nextIndex ? prev : nextIndex));
-            }
-
             // Strip parallax
             if (stripBg) {
                 const r = stripBg.parentElement?.getBoundingClientRect();
@@ -339,200 +302,78 @@ export const Home3: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        const horizontalScene = horizontalSceneRef.current;
-        const horizontalViewport = horizontalViewportRef.current;
-        if (!horizontalScene || !horizontalViewport) return;
-
-        const wheelFactor = window.innerWidth < 768 ? 0.00052 : 0.00042;
-        const keyStep = 0.12;
-        const targetBoundaryTolerance = 0.002;
-        const visualBoundaryTolerance = 0.02;
-        const horizontalWarmupThreshold = window.innerWidth < 768 ? 0.11 : 0.08;
-        const previousHtmlOverscroll = document.documentElement.style.overscrollBehavior;
-        const previousBodyOverscroll = document.body.style.overscrollBehavior;
-
-        const setLockedState = (locked: boolean) => {
-            horizontalLockedRef.current = locked;
-            horizontalViewport.classList.toggle('is-scroll-locked', locked);
-            document.documentElement.style.overscrollBehavior = locked ? 'none' : previousHtmlOverscroll;
-            document.body.style.overscrollBehavior = locked ? 'none' : previousBodyOverscroll;
+        const media = window.matchMedia('(hover: hover) and (pointer: fine)');
+        const updateMode = () => {
+            setIsHoverDevice(media.matches);
         };
 
-        const getSceneTop = () => window.scrollY + horizontalScene.getBoundingClientRect().top;
-
-        const alignSceneToViewport = () => {
-            const absoluteTop = getSceneTop();
-            if (Math.abs(horizontalScene.getBoundingClientRect().top) > 18) {
-                window.scrollTo({ top: absoluteTop, behavior: 'auto' });
-            }
-        };
-
-        const isCaptureZone = (direction: number) => {
-            if (horizontalLockedRef.current) return true;
-
-            const rect = horizontalScene.getBoundingClientRect();
-            const enterLine = window.innerHeight * (window.innerWidth < 768 ? 0.72 : 0.64);
-            const reverseLine = window.innerHeight * (window.innerWidth < 768 ? 0.28 : 0.36);
-
-            if (direction > 0) {
-                return rect.top <= enterLine && rect.bottom > enterLine;
-            }
-
-            return rect.top < reverseLine && rect.bottom >= reverseLine;
-        };
-
-        const releaseScene = (direction: number) => {
-            const absoluteTop = getSceneTop();
-            const releaseTarget = direction > 0
-                ? absoluteTop + horizontalScene.offsetHeight + window.innerHeight * 0.03
-                : Math.max(absoluteTop - window.innerHeight * 0.32, 0);
-            window.scrollTo({ top: releaseTarget, behavior: 'auto' });
-        };
-
-        const applyProgressDelta = (deltaProgress: number) => {
-            const nextProgress = Math.min(
-                Math.max(horizontalTargetProgressRef.current + deltaProgress, 0),
-                1,
-            );
-            horizontalTargetProgressRef.current = nextProgress;
-            return nextProgress;
-        };
-
-        const shouldRelease = (direction: number) => {
-            const target = horizontalTargetProgressRef.current;
-            // Use the target progress as the authoritative release condition.
-            // Visual is smoothed and can lag — relying on it can prevent timely release.
-            const atStart = target <= targetBoundaryTolerance;
-            const atEnd = target >= 1 - targetBoundaryTolerance;
-            return (direction < 0 && atStart) || (direction > 0 && atEnd);
-        };
-
-        const handleDirectionalInput = (deltaProgress: number) => {
-            const direction = Math.sign(deltaProgress);
-            if (direction === 0) return false;
-
-            if (!isCaptureZone(direction)) {
-                horizontalWarmupRef.current = 0;
-                setLockedState(false);
-                return false;
-            }
-
-            // Only snap the scene into view on first capture, not on every event
-            if (!horizontalLockedRef.current) {
-                alignSceneToViewport();
-            }
-
-            if (shouldRelease(direction)) {
-                horizontalWarmupRef.current = 0;
-                setLockedState(false);
-                releaseScene(direction);
-                return true;
-            }
-
-            setLockedState(true);
-
-            const atHorizontalStart =
-                horizontalTargetProgressRef.current <= targetBoundaryTolerance &&
-                horizontalVisualProgressRef.current <= visualBoundaryTolerance;
-
-            if (direction > 0 && atHorizontalStart) {
-                const nextWarmup = horizontalWarmupRef.current + Math.abs(deltaProgress);
-                if (nextWarmup < horizontalWarmupThreshold) {
-                    horizontalWarmupRef.current = nextWarmup;
-                    return true;
-                }
-
-                const overflow = nextWarmup - horizontalWarmupThreshold;
-                horizontalWarmupRef.current = horizontalWarmupThreshold;
-                if (overflow > 0) {
-                    applyProgressDelta(overflow);
-                }
-                return true;
-            }
-
-            if (direction < 0) {
-                horizontalWarmupRef.current = 0;
-            }
-
-            applyProgressDelta(deltaProgress);
-            return true;
-        };
-
-        const onWheel = (e: WheelEvent) => {
-            if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-            if (!handleDirectionalInput(e.deltaY * wheelFactor)) return;
-            e.preventDefault();
-        };
-
-        const onKeyDown = (e: KeyboardEvent) => {
-            const keyMap: Record<string, number> = {
-                ArrowDown: keyStep,
-                PageDown: keyStep * 1.75,
-                ' ': e.shiftKey ? -keyStep * 1.75 : keyStep * 1.75,
-                ArrowUp: -keyStep,
-                PageUp: -keyStep * 1.75,
-            };
-
-            if (!(e.key in keyMap)) return;
-            if (!handleDirectionalInput(keyMap[e.key])) return;
-            e.preventDefault();
-        };
-
-        const onTouchStart = (e: TouchEvent) => {
-            horizontalTouchYRef.current = e.touches[0]?.clientY ?? null;
-        };
-
-        const onTouchMove = (e: TouchEvent) => {
-            const currentY = e.touches[0]?.clientY;
-            if (currentY == null || horizontalTouchYRef.current == null) return;
-
-            const deltaY = horizontalTouchYRef.current - currentY;
-            if (Math.abs(deltaY) < 3) return;
-            if (!handleDirectionalInput(deltaY * wheelFactor * 1.6)) return;
-
-            horizontalTouchYRef.current = currentY;
-            e.preventDefault();
-        };
-
-        const onTouchEnd = () => {
-            horizontalTouchYRef.current = null;
-        };
-
-        horizontalTargetProgressRef.current = 0;
-        horizontalVisualProgressRef.current = 0;
-        horizontalWarmupRef.current = 0;
-        setLockedState(false);
-        horizontalViewport.style.setProperty('--h3-horizontal-progress', '0');
-        horizontalViewport.style.setProperty('--h3-horizontal-shift', '0vw');
-
-        window.addEventListener('wheel', onWheel, { passive: false });
-        window.addEventListener('keydown', onKeyDown);
-        window.addEventListener('touchstart', onTouchStart, { passive: true });
-        window.addEventListener('touchmove', onTouchMove, { passive: false });
-        window.addEventListener('touchend', onTouchEnd);
-        window.addEventListener('touchcancel', onTouchEnd);
+        updateMode();
+        media.addEventListener('change', updateMode);
+        window.addEventListener('resize', updateMode);
 
         return () => {
-            window.removeEventListener('wheel', onWheel);
-            window.removeEventListener('keydown', onKeyDown);
-            window.removeEventListener('touchstart', onTouchStart);
-            window.removeEventListener('touchmove', onTouchMove);
-            window.removeEventListener('touchend', onTouchEnd);
-            window.removeEventListener('touchcancel', onTouchEnd);
-            setLockedState(false);
+            media.removeEventListener('change', updateMode);
+            window.removeEventListener('resize', updateMode);
         };
     }, []);
 
     useEffect(() => {
-        horizontalVideoRefs.current.forEach((video, index) => {
+        setActiveHorizontalIndex(0);
+        setHoveredHorizontalIndex(null);
+    }, []);
+
+    useEffect(() => {
+        horizontalVideoRefs.current.forEach((video) => {
             if (!video) return;
-            if (index === activeHorizontalIndex) {
-                video.play().catch(() => {});
-            } else {
-                video.pause();
-            }
+            video.play().catch(() => {});
         });
     }, [activeHorizontalIndex]);
+
+    const laneWidth = 100 / horizontalCategories.length;
+    const activePanelRatio = isHoverDevice ? 0.84 : 0.88;
+    const panelInsetRatio = isHoverDevice ? 0.0 : 0.02;
+    const getPanelStyle = (index: number) => {
+        const isActive = visibleHorizontalIndex != null && index === visibleHorizontalIndex;
+        const laneStart = laneWidth * index;
+        const panelWidth = laneWidth * activePanelRatio;
+        const left = laneStart + laneWidth * panelInsetRatio;
+        const hiddenLeft = laneStart + laneWidth * 0.5;
+        const reveal = isActive ? 1 : 0;
+        const opacity = isActive ? 1 : 0;
+
+        return {
+            '--h3-panel-left': `${(isActive ? left : hiddenLeft).toFixed(4)}%`,
+            '--h3-panel-width': `${(isActive ? panelWidth : 0.0001).toFixed(4)}%`,
+            '--h3-panel-reveal': String(reveal),
+            '--h3-panel-opacity': String(opacity),
+        } as React.CSSProperties;
+    };
+
+    const onMoodTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
+        const touch = e.touches[0];
+        if (!touch) return;
+        moodTouchStartXRef.current = touch.clientX;
+        moodTouchStartYRef.current = touch.clientY;
+    };
+
+    const onMoodTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
+        const startX = moodTouchStartXRef.current;
+        const startY = moodTouchStartYRef.current;
+        const touch = e.changedTouches[0];
+
+        moodTouchStartXRef.current = null;
+        moodTouchStartYRef.current = null;
+
+        if (!touch || startX == null || startY == null) return;
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
+        if (Math.abs(deltaX) < 36 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+        setActiveHorizontalIndex((prev) => {
+            if (deltaX < 0) return Math.min(prev + 1, horizontalCategories.length - 1);
+            return Math.max(prev - 1, 0);
+        });
+    };
 
     return (
         <main className="h3-page">
@@ -718,55 +559,93 @@ export const Home3: React.FC = () => {
             </section>
 
             {/* ── DESTINATIONS ──────────────────────────────────────── */}
-            <section ref={horizontalSceneRef} className="h3-horizontal-scene">
+            <section
+                className="h3-mood-scene"
+                style={{
+                    '--h3-mood-bg': activeMood.themeColor,
+                    '--h3-mood-ink': activeMood.accentColor,
+                } as React.CSSProperties}
+            >
                 <div
-                    ref={horizontalViewportRef}
-                    className="h3-horizontal-sticky"
-                    style={{ '--h3-horizontal-slides': horizontalCategories.length } as React.CSSProperties}
+                    className="h3-mood-sticky"
+                    onTouchStart={onMoodTouchStart}
+                    onTouchEnd={onMoodTouchEnd}
+                    onMouseLeave={() => { if (isHoverDevice) setHoveredHorizontalIndex(null); }}
                 >
-                    <div className="h3-horizontal-track">
+                    <div className="h3-mood-grid">
+                        {horizontalCategories.map((item, index) => (
+                            <div
+                                key={item.label}
+                                className={`h3-mood-lane ${visibleHorizontalIndex === index ? 'is-active' : ''}`}
+                                onMouseEnter={() => { if (isHoverDevice) setHoveredHorizontalIndex(index); }}
+                                onClick={() => {
+                                    setActiveHorizontalIndex(index);
+                                    if (isHoverDevice) setHoveredHorizontalIndex(index);
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setActiveHorizontalIndex(index);
+                                        if (isHoverDevice) setHoveredHorizontalIndex(index);
+                                    }
+                                }}
+                            >
+                                <span>{item.label}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="h3-mood-panels">
                         {horizontalCategories.map((item, index) => (
                             <article
-                                key={item.label}
-                                ref={(el) => { horizontalPanelRefs.current[index] = el; }}
-                                className={`h3-horizontal-panel ${index === activeHorizontalIndex ? 'is-active' : ''}`}
-                                aria-hidden={index === activeHorizontalIndex ? undefined : true}
+                                key={`panel-${item.label}`}
+                                className={`h3-mood-panel ${visibleHorizontalIndex === index ? 'is-active' : ''}`}
+                                aria-hidden={visibleHorizontalIndex === index ? undefined : true}
+                                style={getPanelStyle(index)}
                             >
                                 <video
                                     ref={(el) => { horizontalVideoRefs.current[index] = el; }}
-                                    className="h3-horizontal-video"
+                                    className="h3-mood-video"
                                     src={item.video}
                                     loop
                                     muted
                                     playsInline
                                     preload="auto"
                                 />
-                                <div className="h3-horizontal-overlay" />
-                                <div className="h3-horizontal-panel-content">
-                                    <div className="h3-horizontal-identity">
-                                        <span className="h3-horizontal-kicker">{item.kicker}</span>
-                                        <h2 className="h3-horizontal-title">{item.title}</h2>
-                                        <p className="h3-horizontal-desc">{item.description}</p>
-                                        <Link to="/auth" className="h3-btn-hero-primary h3-horizontal-cta">
-                                            Explore {item.label} <ArrowRight size={16} />
-                                        </Link>
-                                    </div>
+                                <div className="h3-mood-panel-overlay" />
+                                <div className="h3-mood-vertical">{item.verticalText}</div>
+                                <div className="h3-mood-panel-body">
+                                    <h3>{item.label} <ArrowRight size={16} /></h3>
+                                    <p>{item.description}</p>
+                                    <Link to="/auth" className="h3-btn-hero-primary h3-mood-cta">
+                                        Explore {item.label}
+                                    </Link>
                                 </div>
                             </article>
                         ))}
                     </div>
 
-                    <div className="h3-horizontal-content">
-                        <div className="h3-horizontal-top-bar">
-                            <div className="h3-horizontal-intro">
-                                <span className="h3-section-eyebrow h3-horizontal-eyebrow">Curated Moods</span>
-                                <p>Vertical scroll locks here. Keep scrolling to travel sideways through five cinematic worlds.</p>
-                                <span className="h3-horizontal-hint">A short hold eases the section into motion.</span>
-                            </div>
-                            <div className="h3-horizontal-count">
-                                <span>{String(activeHorizontalIndex + 1).padStart(2, '0')}</span>
-                                <small>/{String(horizontalCategories.length).padStart(2, '0')}</small>
-                            </div>
+                    <div className="h3-mood-headline">
+                        <h2>
+                            Your Gateway
+                            <br />
+                            to {activeMood.title}
+                        </h2>
+                    </div>
+
+                        <div className="h3-mood-topbar">
+                        <div className="h3-mood-brand">
+                            <span>The Better</span>
+                            <span>Pass</span>
+                        </div>
+                        <div className="h3-mood-flag" aria-hidden>
+                            <span />
+                        </div>
+                        <div className="h3-mood-count" aria-label="Current panel">
+                            <span>{String(moodThemeIndex + 1).padStart(2, '0')}</span>
+                            <small>/{String(horizontalCategories.length).padStart(2, '0')}</small>
                         </div>
                     </div>
                 </div>
@@ -890,3 +769,4 @@ export const Home3: React.FC = () => {
         </main>
     );
 };
+
