@@ -87,3 +87,43 @@ VITE_OPENAI_MODEL=gpt-4.1-mini
 ```
 
 If `VITE_OPENAI_API_KEY` is missing, the chatbot automatically switches to rule-based answers generated from current Supabase data.
+
+## Razorpay Booking Setup
+
+Payment is now required before booking for all listing types (tour, activity, event/guide).
+
+### 1) Run database migration
+
+Apply:
+
+```sql
+-- run in Supabase SQL editor
+\i docs/razorpay-booking-migration.sql
+```
+
+If your SQL editor does not support `\i`, copy and run the content from `docs/razorpay-booking-migration.sql`.
+
+### 2) Deploy Supabase Edge Functions
+
+Functions added:
+
+- `create-razorpay-order`
+- `confirm-razorpay-booking`
+
+Deploy:
+
+```bash
+supabase functions deploy create-razorpay-order
+supabase functions deploy confirm-razorpay-booking
+```
+
+### 3) Configure Supabase function secrets
+
+Use placeholders first if needed:
+
+```bash
+supabase secrets set RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
+supabase secrets set RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxx
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` is required by `confirm-razorpay-booking` and is normally available in Supabase function runtime.

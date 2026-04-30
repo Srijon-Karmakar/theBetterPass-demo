@@ -247,6 +247,11 @@ export interface UnifiedBooking {
     total_price: number;
     status: BookingStatus;
     payment_status?: PaymentStatus;
+    payment_order_id?: string | null;
+    payment_id?: string | null;
+    payment_signature?: string | null;
+    payment_currency?: string | null;
+    paid_at?: string | null;
     booking_date?: string | null;
     created_at: string;
 }
@@ -593,6 +598,11 @@ const mapUnifiedBooking = (row: Record<string, unknown>): UnifiedBooking => ({
     total_price: typeof row.total_price === 'number' ? row.total_price : 0,
     status: normalizeBookingStatus(typeof row.status === 'string' ? row.status : undefined),
     payment_status: typeof row.payment_status === 'string' ? row.payment_status as PaymentStatus : undefined,
+    payment_order_id: typeof row.payment_order_id === 'string' ? row.payment_order_id : null,
+    payment_id: typeof row.payment_id === 'string' ? row.payment_id : null,
+    payment_signature: typeof row.payment_signature === 'string' ? row.payment_signature : null,
+    payment_currency: typeof row.payment_currency === 'string' ? row.payment_currency : null,
+    paid_at: typeof row.paid_at === 'string' ? row.paid_at : null,
     booking_date: typeof row.booking_date === 'string' ? row.booking_date : null,
     created_at: typeof row.created_at === 'string' ? row.created_at : new Date().toISOString(),
 });
@@ -1023,6 +1033,11 @@ export const createBooking = async (booking: {
     total_price: number;
     status?: BookingStatus;
     payment_status?: PaymentStatus;
+    payment_order_id?: string | null;
+    payment_id?: string | null;
+    payment_signature?: string | null;
+    payment_currency?: string | null;
+    paid_at?: string | null;
     booking_date?: string | null;
 }) => {
     const { data: travelerProfile, error: travelerProfileError } = await supabase
@@ -1048,18 +1063,56 @@ export const createBooking = async (booking: {
         total_price: booking.total_price,
         status: booking.status || 'pending',
         payment_status: booking.payment_status || 'pending',
+        payment_order_id: booking.payment_order_id || null,
+        payment_id: booking.payment_id || null,
+        payment_signature: booking.payment_signature || null,
+        payment_currency: booking.payment_currency || 'INR',
+        paid_at: booking.paid_at || null,
         booking_date: booking.booking_date || null,
     };
 
-    const unifiedInsert = await supabase.from('bookings').insert([unifiedPayload]).select();
+    const unifiedPayloadWithFallback: Record<string, unknown> = { ...unifiedPayload };
+    let unifiedInsert: {
+        data: unknown[] | null;
+        error: { code?: string; message?: string } | null;
+    } = { data: null, error: null };
+
+    while (Object.keys(unifiedPayloadWithFallback).length > 0) {
+        const result = await supabase
+            .from('bookings')
+            .insert([unifiedPayloadWithFallback])
+            .select();
+
+        if (!result.error) {
+            unifiedInsert = {
+                data: result.data as unknown[] | null,
+                error: null,
+            };
+            break;
+        }
+
+        if (!isMissingColumnError(result.error)) {
+            unifiedInsert = { data: null, error: result.error };
+            break;
+        }
+
+        const missingColumn = extractMissingColumnName(result.error.message);
+        if (!missingColumn || !(missingColumn in unifiedPayloadWithFallback)) {
+            unifiedInsert = { data: null, error: result.error };
+            break;
+        }
+
+        delete unifiedPayloadWithFallback[missingColumn];
+    }
+
     if (!unifiedInsert.error) {
         const inserted = safeArray(unifiedInsert.data as Array<Record<string, unknown>>)[0] || null;
         const bookingId = typeof inserted?.id === 'string' ? inserted.id : undefined;
         const listingTitle = (booking.listing_title || 'Listing').trim();
         const providerId = booking.provider_user_id
             || (typeof inserted?.provider_user_id === 'string' ? inserted.provider_user_id : null);
-        const status = String(unifiedPayload.status || 'pending').toLowerCase();
-        const paymentStatus = String(unifiedPayload.payment_status || 'pending').toLowerCase();
+        const status = String(unifiedPayloadWithFallback.status || 'pending').toLowerCase();
+        const paymentStatus = String(unifiedPayloadWithFallback.payment_status || 'pending').toLowerCase();
         const route = '/profile';
 
         const notifications: CreateNotificationInput[] = [
@@ -1069,7 +1122,7 @@ export const createBooking = async (booking: {
                 type: 'booking_created',
                 title: 'Booking created',
                 body: `Your booking for ${listingTitle} is now in the system.`,
-                metadata: { booking_id: bookingId || null, listing_id: unifiedPayload.listing_id || null, route },
+                metadata: { booking_id: bookingId || null, listing_id: unifiedPayloadWithFallback.listing_id || null, route },
             },
         ];
 
@@ -1080,7 +1133,7 @@ export const createBooking = async (booking: {
                 type: 'booking_created',
                 title: 'New booking received',
                 body: `${booking.number_of_people} traveler(s) booked ${listingTitle}.`,
-                metadata: { booking_id: bookingId || null, listing_id: unifiedPayload.listing_id || null, route },
+                metadata: { booking_id: bookingId || null, listing_id: unifiedPayloadWithFallback.listing_id || null, route },
             });
         }
 

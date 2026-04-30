@@ -184,6 +184,8 @@ const horizontalCategories = [
         accentColor: '#f7f6f3',
     },
 ];
+const testimonialUpperRow = testimonials;
+const testimonialLowerRow = [...testimonials].reverse();
 
 /* ─── Component ─────────────────────────────────────────────────────── */
 export const Home3: React.FC = () => {
@@ -208,6 +210,7 @@ export const Home3: React.FC = () => {
     const [hoveredHorizontalIndex, setHoveredHorizontalIndex] = useState<number | null>(null);
     const [isHoverDevice, setIsHoverDevice] = useState(false);
     const horizontalVideoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+    const moodPanelRefs = useRef<(HTMLElement | null)[]>([]);
     const moodTouchStartXRef = useRef<number | null>(null);
     const moodTouchStartYRef = useRef<number | null>(null);
     const visibleHorizontalIndex = isHoverDevice ? hoveredHorizontalIndex : activeHorizontalIndex;
@@ -329,6 +332,42 @@ export const Home3: React.FC = () => {
         });
     }, [activeHorizontalIndex]);
 
+    useEffect(() => {
+        if (isHoverDevice) return;
+        const panels = moodPanelRefs.current.filter((panel): panel is HTMLElement => Boolean(panel));
+        if (!panels.length) return;
+
+        let activeIndex = activeHorizontalIndex;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                let bestIndex = activeIndex;
+                let bestRatio = 0;
+
+                entries.forEach((entry) => {
+                    const target = entry.target as HTMLElement;
+                    const idx = Number(target.dataset.panelIndex ?? -1);
+                    if (!Number.isFinite(idx) || idx < 0) return;
+                    if (entry.intersectionRatio > bestRatio) {
+                        bestRatio = entry.intersectionRatio;
+                        bestIndex = idx;
+                    }
+                });
+
+                if (bestIndex !== activeIndex && bestRatio > 0.35) {
+                    activeIndex = bestIndex;
+                    setActiveHorizontalIndex(bestIndex);
+                }
+            },
+            {
+                threshold: [0.25, 0.35, 0.5, 0.65, 0.8],
+                rootMargin: '-64px 0px -20% 0px',
+            },
+        );
+
+        panels.forEach((panel) => observer.observe(panel));
+        return () => observer.disconnect();
+    }, [isHoverDevice, activeHorizontalIndex]);
+
     const laneWidth = 100 / horizontalCategories.length;
     const activePanelRatio = isHoverDevice ? 0.84 : 0.88;
     const panelInsetRatio = isHoverDevice ? 0.0 : 0.02;
@@ -346,6 +385,7 @@ export const Home3: React.FC = () => {
             '--h3-panel-width': `${(isActive ? panelWidth : 0.0001).toFixed(4)}%`,
             '--h3-panel-reveal': String(reveal),
             '--h3-panel-opacity': String(opacity),
+            '--h3-stack-order': String(index + 1),
         } as React.CSSProperties;
     };
 
@@ -603,6 +643,8 @@ export const Home3: React.FC = () => {
                                 key={`panel-${item.label}`}
                                 className={`h3-mood-panel ${visibleHorizontalIndex === index ? 'is-active' : ''}`}
                                 aria-hidden={visibleHorizontalIndex === index ? undefined : true}
+                                data-panel-index={index}
+                                ref={(el) => { moodPanelRefs.current[index] = el; }}
                                 style={getPanelStyle(index)}
                             >
                                 <video
@@ -639,9 +681,6 @@ export const Home3: React.FC = () => {
                         <div className="h3-mood-brand">
                             <span>The Better</span>
                             <span>Pass</span>
-                        </div>
-                        <div className="h3-mood-flag" aria-hidden>
-                            <span />
                         </div>
                         <div className="h3-mood-count" aria-label="Current panel">
                             <span>{String(moodThemeIndex + 1).padStart(2, '0')}</span>
@@ -715,26 +754,62 @@ export const Home3: React.FC = () => {
                         <h2>What our wanderers say.</h2>
                     </Reveal>
 
-                    <div className="h3-testimonials-grid">
-                        {testimonials.map((t, i) => (
-                            <Reveal key={t.name} delay={i * 100}>
-                                <article className="h3-testimonial-card">
-                                    <div className="h3-stars">
-                                        {Array.from({ length: t.rating }).map((_, si) => (
-                                            <Star key={si} size={13} fill="currentColor" />
-                                        ))}
-                                    </div>
-                                    <p className="h3-testimonial-quote">"{t.text}"</p>
-                                    <div className="h3-testimonial-author">
-                                        <div className="h3-avatar">{t.avatar}</div>
-                                        <div>
-                                            <strong>{t.name}</strong>
-                                            <span>{t.location}</span>
-                                        </div>
-                                    </div>
-                                </article>
-                            </Reveal>
-                        ))}
+                    <div className="h3-review-rails">
+                        <Reveal>
+                            <div className="h3-review-rail" role="region" aria-label="Traveler reviews moving left to right">
+                                <div className="h3-review-track h3-review-track-upper">
+                                    {[...testimonialUpperRow, ...testimonialUpperRow].map((t, i) => (
+                                        <article
+                                            key={`upper-${t.name}-${i}`}
+                                            className="h3-testimonial-card"
+                                            aria-hidden={i >= testimonialUpperRow.length || undefined}
+                                        >
+                                            <div className="h3-stars">
+                                                {Array.from({ length: t.rating }).map((_, si) => (
+                                                    <Star key={si} size={13} fill="currentColor" />
+                                                ))}
+                                            </div>
+                                            <p className="h3-testimonial-quote">"{t.text}"</p>
+                                            <div className="h3-testimonial-author">
+                                                <div className="h3-avatar">{t.avatar}</div>
+                                                <div>
+                                                    <strong>{t.name}</strong>
+                                                    <span>{t.location}</span>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            </div>
+                        </Reveal>
+
+                        <Reveal delay={90}>
+                            <div className="h3-review-rail" role="region" aria-label="Traveler reviews moving right to left">
+                                <div className="h3-review-track h3-review-track-lower">
+                                    {[...testimonialLowerRow, ...testimonialLowerRow].map((t, i) => (
+                                        <article
+                                            key={`lower-${t.name}-${i}`}
+                                            className="h3-testimonial-card"
+                                            aria-hidden={i >= testimonialLowerRow.length || undefined}
+                                        >
+                                            <div className="h3-stars">
+                                                {Array.from({ length: t.rating }).map((_, si) => (
+                                                    <Star key={si} size={13} fill="currentColor" />
+                                                ))}
+                                            </div>
+                                            <p className="h3-testimonial-quote">"{t.text}"</p>
+                                            <div className="h3-testimonial-author">
+                                                <div className="h3-avatar">{t.avatar}</div>
+                                                <div>
+                                                    <strong>{t.name}</strong>
+                                                    <span>{t.location}</span>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            </div>
+                        </Reveal>
                     </div>
                 </div>
             </section>

@@ -4,7 +4,6 @@ import { ArrowLeft, Calendar, Heart, Loader2, MapPin, MessageCircle, ShieldCheck
 import { useAuth } from '../hooks/useAuth';
 import {
     addListingFavorite,
-    createBooking,
     getListingById,
     getOrCreateConversation,
     isListingFavorited,
@@ -12,6 +11,7 @@ import {
     type PostRecord,
 } from '../lib/destinations';
 import type { ListingType } from '../lib/platform';
+import { confirmRazorpayBooking, createRazorpayOrder, openRazorpayCheckout } from '../lib/payments';
 import './listing-detail.css';
 
 const toInternalListingType = (value: string | undefined): ListingType | undefined => {
@@ -43,6 +43,7 @@ export const ListingDetail: React.FC = () => {
     const [favoriteLoading, setFavoriteLoading] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
     const [bookingSuccess, setBookingSuccess] = useState(false);
+    const [bookingError, setBookingError] = useState<string | null>(null);
     const [checkIn, setCheckIn] = useState('');
     const [guests, setGuests] = useState(1);
     const [listing, setListing] = useState<PostRecord | null>(null);
@@ -108,9 +109,9 @@ export const ListingDetail: React.FC = () => {
         }
 
         setBookingLoading(true);
+        setBookingError(null);
         try {
-            await createBooking({
-                user_id: user.id,
+            const bookingDraft = {
                 listing_id: listing.id,
                 listing_type: effectiveType,
                 provider_user_id: ownerUserId,
@@ -119,13 +120,29 @@ export const ListingDetail: React.FC = () => {
                 number_of_people: guests,
                 unit_price: unitPrice,
                 total_price: total,
-                status: 'confirmed',
                 booking_date: checkIn || null,
+            };
+
+            const order = await createRazorpayOrder(bookingDraft);
+            const payment = await openRazorpayCheckout({
+                order,
+                booking: bookingDraft,
+                prefill: {
+                    name: profile?.full_name || undefined,
+                    email: user.email || undefined,
+                    contact: profile?.phone || undefined,
+                },
+            });
+
+            await confirmRazorpayBooking({
+                booking: bookingDraft,
+                payment,
             });
             setBookingSuccess(true);
         } catch (error) {
             console.error('Booking failed:', error);
-            alert('Booking failed. Please try again.');
+            const message = error instanceof Error ? error.message : 'Booking failed. Please try again.';
+            setBookingError(message);
         } finally {
             setBookingLoading(false);
         }
@@ -284,8 +301,14 @@ export const ListingDetail: React.FC = () => {
                                     </p>
                                 )}
 
+                                {bookingError && (
+                                    <p className="listing-book-warning">
+                                        {bookingError}
+                                    </p>
+                                )}
+
                                 <button className="btn btn-primary listing-detail-pill-btn listing-detail-center-btn" type="submit" disabled={bookingLoading || !canBook}>
-                                    {bookingLoading ? <Loader2 className="animate-spin" size={18} /> : 'Book Now'}
+                                    {bookingLoading ? <Loader2 className="animate-spin" size={18} /> : 'Pay & Book'}
                                 </button>
 
                                 <p className="listing-book-security">

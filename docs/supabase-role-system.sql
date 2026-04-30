@@ -411,6 +411,11 @@ create table if not exists public.bookings (
     total_price numeric(12,2) not null default 0,
     status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled', 'completed')),
     payment_status text not null default 'pending' check (payment_status in ('pending', 'paid', 'refunded')),
+    payment_order_id text,
+    payment_id text,
+    payment_signature text,
+    payment_currency text not null default 'INR',
+    paid_at timestamptz,
     booking_date date,
     created_at timestamptz not null default now()
 );
@@ -424,6 +429,11 @@ alter table public.bookings
     add column if not exists listing_image text,
     add column if not exists unit_price numeric(12,2) default 0,
     add column if not exists payment_status text default 'pending',
+    add column if not exists payment_order_id text,
+    add column if not exists payment_id text,
+    add column if not exists payment_signature text,
+    add column if not exists payment_currency text default 'INR',
+    add column if not exists paid_at timestamptz,
     add column if not exists booking_date date;
 
 update public.bookings
@@ -458,6 +468,8 @@ alter table public.bookings
 create index if not exists bookings_user_id_idx on public.bookings(user_id);
 create index if not exists bookings_provider_user_id_idx on public.bookings(provider_user_id);
 create index if not exists bookings_listing_lookup_idx on public.bookings(listing_type, listing_id);
+create unique index if not exists bookings_payment_id_uniq on public.bookings(payment_id) where payment_id is not null;
+create index if not exists bookings_payment_order_id_idx on public.bookings(payment_order_id);
 
 alter table public.favorites
     add column if not exists listing_id uuid,
