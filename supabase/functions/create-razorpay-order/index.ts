@@ -1,5 +1,22 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import { corsHeaders, jsonResponse } from '../_shared/http.ts';
+/// <reference path="../_types/deno-fallback.d.ts" />
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from '@supabase/supabase-js';
+
+const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const jsonResponse = (status: number, payload: unknown): Response => (
+    new Response(JSON.stringify(payload), {
+        status,
+        headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+        },
+    })
+);
 
 interface CreateOrderBody {
     listing_id?: string;

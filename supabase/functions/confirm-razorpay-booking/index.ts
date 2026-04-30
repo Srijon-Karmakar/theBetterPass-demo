@@ -1,6 +1,45 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import { hmacSha256Hex } from '../_shared/hmac.ts';
-import { corsHeaders, jsonResponse } from '../_shared/http.ts';
+/// <reference path="../_types/deno-fallback.d.ts" />
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from '@supabase/supabase-js';
+
+const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const jsonResponse = (status: number, payload: unknown): Response => (
+    new Response(JSON.stringify(payload), {
+        status,
+        headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+        },
+    })
+);
+
+const encoder = new TextEncoder();
+
+const toHex = (buffer: ArrayBuffer): string => (
+    Array.from(new Uint8Array(buffer))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('')
+);
+
+const hmacSha256Hex = async (secret: string, payload: string): Promise<string> => {
+    const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(secret),
+        {
+            name: 'HMAC',
+            hash: 'SHA-256',
+        },
+        false,
+        ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+    return toHex(signature);
+};
 
 type ListingType = 'tour' | 'activity' | 'guide';
 
