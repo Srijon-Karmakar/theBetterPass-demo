@@ -31,18 +31,76 @@
 .listing-card-media {
   aspect-ratio: 4 / 5;
   background-color: color-mix(in srgb, var(--accent) 14%, var(--surface-muted));
-  background-position: center;
-  background-size: cover;
   overflow: hidden;
   position: relative;
 }
 
+.listing-card-media-bg {
+  background-position: center;
+  background-size: cover;
+  inset: 0;
+  position: absolute;
+  transform: scale(1);
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 0;
+}
+
+.listing-card:hover .listing-card-media-bg,
+.listing-card:focus-within .listing-card-media-bg {
+  transform: scale(1.09);
+}
+
 .listing-card-media.is-fallback {
-  background: color-mix(in srgb, var(--surface-muted) 78%, #ffffff);
+  background-color: color-mix(in srgb, var(--surface-muted) 78%, #ffffff);
+}
+
+/* Scenic gradient defaults — applied to the bg div so zoom + overlay still work */
+.listing-card-media.is-fallback .listing-card-media-bg {
+  background-image: linear-gradient(
+    158deg,
+    #0f2542 0%,
+    #1b4978 28%,
+    #2e7aae 58%,
+    #68aed0 82%,
+    #b8d8ea 100%
+  );
+}
+
+.listing-card.dh-tone-tours .listing-card-media.is-fallback .listing-card-media-bg {
+  background-image: linear-gradient(
+    158deg,
+    #0c1e3c 0%,
+    #143870 26%,
+    #1e5ea8 52%,
+    #4a90c8 76%,
+    #90c4e0 100%
+  );
+}
+
+.listing-card.dh-tone-activities .listing-card-media.is-fallback .listing-card-media-bg {
+  background-image: linear-gradient(
+    158deg,
+    #0a2818 0%,
+    #13522e 26%,
+    #1e7a4a 52%,
+    #3eaa72 76%,
+    #82cca8 100%
+  );
+}
+
+.listing-card.dh-tone-events .listing-card-media.is-fallback .listing-card-media-bg {
+  background-image: linear-gradient(
+    158deg,
+    #2a1406 0%,
+    #622e0e 26%,
+    #a05a1a 52%,
+    #cc8c3a 76%,
+    #e8c07a 100%
+  );
 }
 
 .listing-card-media-overlay {
-  background: linear-gradient(180deg, rgba(8, 11, 18, 0.14) 0%, rgba(8, 11, 18, 0.26) 48%, rgba(8, 11, 18, 0.68) 100%);
+  background: linear-gradient(180deg, rgba(8, 11, 18, 0.04) 0%, rgba(8, 11, 18, 0.22) 52%, rgba(8, 11, 18, 0.84) 100%);
   inset: 0;
   pointer-events: none;
   position: absolute;
@@ -119,19 +177,18 @@
   pointer-events: none;
   position: absolute;
   right: 12px;
-  transition: opacity 0.34s ease, transform 0.34s ease;
-  z-index: 2;
+  z-index: 4;
 }
 
 .listing-card-title-static {
   color: #ffffff;
   font-family: 'SF Pro Display', 'Outfit', 'Inter', sans-serif;
-  font-size: clamp(1.02rem, 2.3vw, 1.24rem);
-  font-weight: 680;
-  letter-spacing: -0.02em;
-  line-height: 1.18;
+  font-size: clamp(1.45rem, 4.2vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.14;
   margin: 0;
-  text-shadow: 0 10px 26px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65), 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .listing-card-reveal-panel {
@@ -144,7 +201,7 @@
   left: 0;
   min-height: 58%;
   opacity: 0;
-  padding: 14px;
+  padding: 14px 14px 58px;
   pointer-events: none;
   position: absolute;
   right: 0;
@@ -162,13 +219,29 @@
 
 .listing-card:hover .listing-card-title-static-wrap,
 .listing-card:focus-within .listing-card-title-static-wrap {
-  opacity: 0;
-  transform: translate3d(0, 10px, 0);
+  opacity: 1;
+  transform: none;
 }
 
 .listing-card:hover .listing-card-media-overlay,
 .listing-card:focus-within .listing-card-media-overlay {
-  background: linear-gradient(180deg, rgba(8, 11, 18, 0.18) 0%, rgba(8, 11, 18, 0.34) 46%, rgba(8, 11, 18, 0.84) 100%);
+  background: linear-gradient(180deg, rgba(8, 11, 18, 0.08) 0%, rgba(8, 11, 18, 0.28) 46%, rgba(8, 11, 18, 0.72) 100%);
+}
+
+/* Colourful reveal panel per category */
+.listing-card.dh-tone-tours:hover .listing-card-reveal-panel,
+.listing-card.dh-tone-tours:focus-within .listing-card-reveal-panel {
+  background: linear-gradient(180deg, rgba(18, 52, 120, 0) 0%, rgba(18, 52, 120, 0.82) 28%, rgba(8, 30, 88, 0.97) 100%);
+}
+
+.listing-card.dh-tone-activities:hover .listing-card-reveal-panel,
+.listing-card.dh-tone-activities:focus-within .listing-card-reveal-panel {
+  background: linear-gradient(180deg, rgba(7, 70, 50, 0) 0%, rgba(7, 70, 50, 0.82) 28%, rgba(4, 48, 32, 0.97) 100%);
+}
+
+.listing-card.dh-tone-events:hover .listing-card-reveal-panel,
+.listing-card.dh-tone-events:focus-within .listing-card-reveal-panel {
+  background: linear-gradient(180deg, rgba(108, 54, 8, 0) 0%, rgba(108, 54, 8, 0.82) 28%, rgba(76, 34, 4, 0.97) 100%);
 }
 
 .listing-card-ghost-hit {
@@ -292,7 +365,8 @@
   .listing-card-body .listing-card-title,
   .listing-card-mobile-content .listing-card-title {
     color: var(--text-main);
-    font-size: 1.02rem;
+    font-size: 1.1rem;
+    font-weight: 720;
   }
 
   .listing-card-body .listing-card-sub,

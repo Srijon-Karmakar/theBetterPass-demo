@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
     CalendarDays,
+    ChevronLeft,
+    ChevronRight,
     Compass,
     Heart,
     Loader2,
@@ -280,17 +282,18 @@ const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
 
     return (
         <article
-            className="listing-card"
+            className={`listing-card dh-tone-${type}`}
             role="link"
             tabIndex={0}
             onClick={openListing}
             onKeyDown={handleCardKeyDown}
             aria-label={`Open ${title}`}
         >
-            <div
-                className={`listing-card-media${image ? '' : ' is-fallback'}`}
-                style={image ? { backgroundImage: `url(${image})` } : undefined}
-            >
+            <div className={`listing-card-media${image ? '' : ' is-fallback'}`}>
+                <div
+                    className="listing-card-media-bg"
+                    style={image ? { backgroundImage: `url(${image})` } : undefined}
+                />
                 <div className="listing-card-media-overlay" />
                 <div className="listing-card-media-top">
                     <span className="listing-card-chip">{chipLabel}</span>
@@ -320,7 +323,6 @@ const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
                 </div>
 
                 <div className="listing-card-reveal-panel">
-                    <h3 className="listing-card-title">{title}</h3>
                     <p className="listing-card-sub">{subtitle}</p>
 
                     <div className="listing-card-meta">
@@ -376,46 +378,139 @@ const ListingCard: React.FC<{ post: PostRecord }> = ({ post }) => {
     );
 };
 
-const Section: React.FC<{
-    section: SectionTab;
-    title: string;
+const CarouselRow: React.FC<{
     posts: PostRecord[];
-    moreHref: string;
-    indexOffset: number;
     expanded: boolean;
-}> = ({ section, title, posts, moreHref, indexOffset, expanded }) => {
-    const postsToRender = expanded ? posts : posts.slice(0, 4);
+    indexOffset?: number;
+}> = ({ posts, expanded, indexOffset = 0 }) => {
+    const rowRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    useEffect(() => {
+        const el = rowRef.current;
+        if (!el) return;
+
+        const check = () => {
+            if (expanded) {
+                setCanScrollLeft(false);
+                setCanScrollRight(false);
+                return;
+            }
+            setCanScrollLeft(el.scrollLeft > 4);
+            setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+        };
+
+        check();
+        el.addEventListener('scroll', check, { passive: true });
+        window.addEventListener('resize', check, { passive: true });
+        return () => {
+            el.removeEventListener('scroll', check);
+            window.removeEventListener('resize', check);
+        };
+    }, [expanded, posts.length]);
+
+    const scroll = (dir: 'left' | 'right') => {
+        const el = rowRef.current;
+        if (!el) return;
+        el.scrollBy({
+            left: dir === 'right' ? el.clientWidth * 0.8 : -(el.clientWidth * 0.8),
+            behavior: 'smooth',
+        });
+    };
 
     return (
-    <section className={`dh-listing-section ${getToneClass(section)}`}>
-        <Reveal delay={indexOffset * 100}>
-            <div className="dh-section-header">
-                <div className="dh-section-heading">
-                    <h2 className="dh-listing-section-title">{title}</h2>
-                    <p className="dh-listing-section-sub">{getSectionHelper(section)}</p>
-                </div>
-                {posts.length > 0 && (
-                    <Link to={expanded ? '/dashboard' : moreHref} className="dh-more-link">
-                        {expanded ? 'Less' : 'More'}
-                    </Link>
-                )}
-            </div>
-        </Reveal>
-
-        {posts.length > 0 ? (
-            <div className={`dh-listing-row${expanded ? ' dh-listing-row--expanded' : ''}`}>
-                {postsToRender.map((post, i) => (
-                    <Reveal key={post.id} delay={indexOffset * 100 + (i + 1) * 80}>
+        <div className="dh-carousel-wrap">
+            {canScrollLeft && (
+                <button
+                    type="button"
+                    className="dh-carousel-arrow dh-carousel-arrow--left"
+                    onClick={() => scroll('left')}
+                    aria-label="Scroll left"
+                >
+                    <ChevronLeft size={18} />
+                </button>
+            )}
+            <div
+                ref={rowRef}
+                className={`dh-listing-row${expanded ? ' dh-listing-row--expanded' : ''}`}
+            >
+                {posts.map((post, i) => (
+                    <Reveal key={post.id} delay={indexOffset * 100 + (i + 1) * 60}>
                         <ListingCard post={post} />
                     </Reveal>
                 ))}
             </div>
-        ) : (
-            <Reveal delay={indexOffset * 100 + 80}>
-                <p className="dh-empty-text">No {title.toLowerCase()} available yet.</p>
+            {canScrollRight && (
+                <button
+                    type="button"
+                    className="dh-carousel-arrow dh-carousel-arrow--right"
+                    onClick={() => scroll('right')}
+                    aria-label="Scroll right"
+                >
+                    <ChevronRight size={18} />
+                </button>
+            )}
+        </div>
+    );
+};
+
+const Section: React.FC<{
+    section: SectionTab;
+    title: string;
+    posts: PostRecord[];
+    indexOffset: number;
+}> = ({ section, title, posts, indexOffset }) => {
+    const [expanded, setExpanded] = useState(false);
+    const postsToShow = expanded ? posts : posts.slice(0, 8);
+
+    return (
+        <section className={`dh-listing-section ${getToneClass(section)}`}>
+            <Reveal delay={indexOffset * 100}>
+                <div className="dh-section-header">
+                    <div className="dh-section-heading">
+                        <h2 className="dh-listing-section-title">{title}</h2>
+                        <p className="dh-listing-section-sub">{getSectionHelper(section)}</p>
+                    </div>
+                    {posts.length > 4 && (
+                        <button
+                            type="button"
+                            className="dh-more-link"
+                            onClick={() => setExpanded((e) => !e)}
+                        >
+                            {expanded ? 'Less' : 'More'}
+                        </button>
+                    )}
+                </div>
             </Reveal>
-        )}
-    </section>
+
+            {posts.length > 0 ? (
+                <CarouselRow posts={postsToShow} expanded={expanded} indexOffset={indexOffset} />
+            ) : (
+                <Reveal delay={indexOffset * 100 + 80}>
+                    <p className="dh-empty-text">No {title.toLowerCase()} available yet.</p>
+                </Reveal>
+            )}
+        </section>
+    );
+};
+
+const SuggestedSection: React.FC<{ posts: PostRecord[] }> = ({ posts }) => {
+    if (posts.length === 0) return null;
+
+    return (
+        <section className="dh-suggested-section">
+            <div className="dh-section-header">
+                <div className="dh-section-heading">
+                    <h2 className="dh-listing-section-title dh-suggested-title">
+                        <Sparkles size={16} />
+                        Suggested for You
+                    </h2>
+                    <p className="dh-listing-section-sub">Picked based on your activity</p>
+                </div>
+            </div>
+            <CarouselRow posts={posts} expanded={false} indexOffset={0} />
+        </section>
     );
 };
 
@@ -427,6 +522,7 @@ export const DashboardHome: React.FC = () => {
     const [tourPosts, setTourPosts] = useState<PostRecord[]>([]);
     const [activityPosts, setActivityPosts] = useState<PostRecord[]>([]);
     const [eventPosts, setEventPosts] = useState<PostRecord[]>([]);
+    const [suggestedPosts, setSuggestedPosts] = useState<PostRecord[]>([]);
 
     const activeTab = useMemo<SectionTab | null>(() => {
         const tab = searchParams.get('tab');
@@ -493,6 +589,10 @@ export const DashboardHome: React.FC = () => {
                 setTourPosts(tours);
                 setActivityPosts(activities);
                 setEventPosts(events);
+
+                const all = [...tours, ...activities, ...events];
+                const shuffled = [...all].sort(() => Math.random() - 0.5);
+                setSuggestedPosts(shuffled.slice(0, 8));
             } catch (error) {
                 console.error('Dashboard load error:', error);
             } finally {
@@ -559,6 +659,12 @@ export const DashboardHome: React.FC = () => {
                     </section>
                 </Reveal>
 
+                {!loading && suggestedPosts.length > 0 && (
+                    <Reveal delay={140}>
+                        <SuggestedSection posts={suggestedPosts} />
+                    </Reveal>
+                )}
+
                 <Reveal delay={150}>
                     <div className="dh-tab-strip-wrapper">
                         <div className="dh-tab-strip-head">
@@ -603,9 +709,7 @@ export const DashboardHome: React.FC = () => {
                                 section="tours"
                                 title="Tours"
                                 posts={filteredTourPosts}
-                                moreHref="/dashboard?tab=tours"
                                 indexOffset={sectionIndexOffset++}
-                                expanded={activeTab === 'tours'}
                             />
                         )}
 
@@ -614,9 +718,7 @@ export const DashboardHome: React.FC = () => {
                                 section="activities"
                                 title="Activities"
                                 posts={filteredActivityPosts}
-                                moreHref="/dashboard?tab=activities"
                                 indexOffset={sectionIndexOffset++}
-                                expanded={activeTab === 'activities'}
                             />
                         )}
 
@@ -625,9 +727,7 @@ export const DashboardHome: React.FC = () => {
                                 section="events"
                                 title="Events"
                                 posts={filteredEventPosts}
-                                moreHref="/dashboard?tab=events"
                                 indexOffset={sectionIndexOffset++}
-                                expanded={activeTab === 'events'}
                             />
                         )}
                     </div>

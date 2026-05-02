@@ -1,16 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import {
+    ArrowLeft,
     Backpack,
     Building2,
-    GraduationCap,
-    Home,
+    Eye,
+    EyeOff,
     Loader2,
-    Lock,
-    Mail,
-    Map,
     MapPin,
     Phone,
-    User,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -25,23 +22,14 @@ import {
 } from '../lib/platform';
 import './auth.css';
 
-/* ── Background images ────────────────────────────────────────── */
-const BG_IMAGES = [
-    // Unsplash — forest / nature
-    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1920&q=85',
-    'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1920&q=85',
-    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1920&q=85',
-    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=1920&q=85',
-    'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1920&q=85',
-    'https://images.unsplash.com/photo-1511884642898-4c92249e20b6?auto=format&fit=crop&w=1920&q=85',
-    // Pexels — mountain / forest
-    'https://images.pexels.com/photos/1179229/pexels-photo-1179229.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/346529/pexels-photo-346529.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/235621/pexels-photo-235621.jpeg?auto=compress&cs=tinysrgb&w=1920',
-    'https://images.pexels.com/photos/371916/pexels-photo-371916.jpeg?auto=compress&cs=tinysrgb&w=1920',
+const NATURE_SIDE_IMAGES = [
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
 ];
 
-/* ── Field types ──────────────────────────────────────────────── */
 const FIELD_INPUT_TYPES: Partial<Record<RoleFormField, string>> = {
     website: 'url',
     yearsExperience: 'number',
@@ -53,31 +41,17 @@ const FIELD_ICONS: Partial<Record<RoleFormField, React.ReactNode>> = {
     city: <MapPin size={15} />,
 };
 
-/* ── Role display config ──────────────────────────────────────── */
-const ROLE_ICONS: Record<string, React.ReactNode> = {
-    tourist:         <Backpack size={24} />,
-    tour_company:    <Building2 size={24} />,
-    tour_guide:      <Map size={24} />,
-    tour_instructor: <GraduationCap size={24} />,
-};
-
-const FIELD_STYLES: React.CSSProperties = {
-    border: 'none',
-    background: 'transparent',
-    outline: 'none',
-    width: '100%',
-    fontWeight: 500,
-    fontFamily: 'inherit',
-    fontSize: '0.88rem',
-    color: '#fff',
-};
-
-/* ── Component ────────────────────────────────────────────────── */
 export const Auth: React.FC = () => {
-    const [bgImage] = useState(() => BG_IMAGES[Math.floor(Math.random() * BG_IMAGES.length)]);
+    const [sideImage] = useState(
+        () => NATURE_SIDE_IMAGES[Math.floor(Math.random() * NATURE_SIDE_IMAGES.length)]
+    );
     const [isLogin, setIsLogin] = useState(true);
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
+    const [showLoginPassword, setShowLoginPassword] = useState(false);
+    const [showSignupPassword, setShowSignupPassword] = useState(false);
+    const [loginAgree, setLoginAgree] = useState(true);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const [formValues, setFormValues] = useState<SignupFormValues>(DEFAULT_SIGNUP_VALUES);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -86,10 +60,9 @@ export const Auth: React.FC = () => {
 
     const activeRole = formValues.role;
     const roleConfig = useMemo(() => ROLE_SIGNUP_CONFIG[activeRole], [activeRole]);
-    const providerRoles = (Object.keys(ROLE_LABELS) as UserRole[]).filter((r) => r !== 'admin');
 
     const updateField = <K extends keyof SignupFormValues>(key: K, value: SignupFormValues[K]) =>
-        setFormValues((c) => ({ ...c, [key]: value }));
+        setFormValues((current) => ({ ...current, [key]: value }));
 
     const switchMode = (login: boolean) => {
         setIsLogin(login);
@@ -102,6 +75,7 @@ export const Auth: React.FC = () => {
         setLoading(true);
         setError(null);
         setInfo(null);
+
         try {
             const { error: signInError } = await supabase.auth.signInWithPassword({
                 email: loginEmail,
@@ -121,6 +95,7 @@ export const Auth: React.FC = () => {
         setLoading(true);
         setError(null);
         setInfo(null);
+
         try {
             await signUpWithRole({
                 fullName: formValues.fullName,
@@ -142,6 +117,7 @@ export const Auth: React.FC = () => {
                 certificateId: formValues.certificateId,
                 worksUnderCompany: formValues.worksUnderCompany,
             });
+
             setInfo(
                 activeRole === 'tour_company' || activeRole === 'tour_instructor' || activeRole === 'tour_guide'
                     ? 'Account created. Check your email verification link, then sign in to submit listings for admin approval.'
@@ -157,231 +133,257 @@ export const Auth: React.FC = () => {
         }
     };
 
+    const handleGoogleTouristAuth = async (mode: 'login' | 'signup') => {
+        if (mode === 'signup' && activeRole !== 'tourist') {
+            setInfo('Google signup is available for Tourist accounts only.');
+            return;
+        }
+
+        setGoogleLoading(true);
+        setError(null);
+        setInfo(null);
+
+        try {
+            const redirectTo = `${window.location.origin}/dashboard`;
+            const { error: oauthError } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo,
+                    queryParams: {
+                        prompt: 'select_account',
+                    },
+                },
+            });
+            if (oauthError) throw oauthError;
+        } catch (err: unknown) {
+            const fallback = 'Google authentication failed. Please try again.';
+            const message = err instanceof Error ? err.message : fallback;
+            const normalized = message.toLowerCase();
+
+            if (normalized.includes('unsupported provider') || normalized.includes('provider is not enabled')) {
+                setError('Google provider is not enabled in Supabase Auth settings. Enable Google OAuth in your Supabase project.');
+            } else {
+                setError(message || fallback);
+            }
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
     return (
-        <div
-            className="auth-page"
-            style={{ backgroundImage: `url(${bgImage})` }}
-        >
-            <a href="/" className="auth-home-btn">
-                <Home size={15} />
-                <span>Home</span>
+        <div className="auth-page">
+            <a href="/" className="auth-back-link">
+                <ArrowLeft size={16} />
+                <span>Back to home</span>
             </a>
-            <div className="auth-outer">
-                {/* ══════════════════════════════════
-                    LOGIN
-                ══════════════════════════════════ */}
-                {isLogin && (
-                    <div className="auth-card auth-form-enter">
-                        {/* Brand */}
-                        <div className="auth-brand">
-                            <div className="auth-brand-mark">
-                                <MapPin size={22} color="#fff" />
-                            </div>
-                            <span className="auth-brand-name">The Better Pass</span>
-                            <span className="auth-brand-tagline">Your travel experience starts here</span>
-                        </div>
 
-                        {/* Toggle */}
-                        <div className="auth-toggle-wrap">
-                            <div className="auth-toggle" role="tablist">
-                                <button
-                                    type="button"
-                                    className={`auth-toggle-btn${isLogin ? ' is-active' : ''}`}
-                                    onClick={() => switchMode(true)}
-                                >
-                                    Login
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`auth-toggle-btn${!isLogin ? ' is-active' : ''}`}
-                                    onClick={() => switchMode(false)}
-                                >
-                                    Signup
-                                </button>
-                            </div>
-                        </div>
+            <div className="auth-shell">
+                <aside className="auth-visual">
+                    <img src={sideImage} alt="Nature travel" className="auth-visual-image" />
+                    <div className="auth-visual-overlay" />
+                    <div className="auth-visual-brand">
+                        <img src="/logo/icon.png" alt="The Better Pass" />
+                        <span>The Better Pass</span>
+                    </div>
+                </aside>
 
-                        {error && <div className="auth-alert auth-alert-error">{error}</div>}
-                        {info  && <div className="auth-alert auth-alert-info">{info}</div>}
+                <section className="auth-panel">
+                    {error && <div className="auth-alert auth-alert-error">{error}</div>}
+                    {info && <div className="auth-alert auth-alert-info">{info}</div>}
 
-                        <form onSubmit={handleLogin} className="auth-form">
-                            <label>
-                                <span className="auth-field-label">Email address</span>
-                                <div className="auth-input-wrap">
-                                    <Mail size={17} />
+                    {isLogin ? (
+                        <>
+                            <header className="auth-header">
+                                <h1>Log in</h1>
+                                <p>
+                                    Don&apos;t have an account?{' '}
+                                    <button type="button" onClick={() => switchMode(false)}>
+                                        Create Account
+                                    </button>
+                                </p>
+                            </header>
+
+                            <form onSubmit={handleLogin} className="auth-form">
+                                <label className="auth-field">
+                                    <span>Email Address</span>
                                     <input
                                         type="email"
                                         required
-                                        placeholder="alex@example.com"
+                                        placeholder="you@example.com"
                                         value={loginEmail}
                                         onChange={(e) => setLoginEmail(e.target.value)}
-                                        style={FIELD_STYLES}
                                     />
+                                </label>
+
+                                <label className="auth-field">
+                                    <span>Password</span>
+                                    <div className="auth-password-wrap">
+                                        <input
+                                            type={showLoginPassword ? 'text' : 'password'}
+                                            required
+                                            placeholder="Enter password"
+                                            value={loginPassword}
+                                            onChange={(e) => setLoginPassword(e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="auth-eye-btn"
+                                            onClick={() => setShowLoginPassword((current) => !current)}
+                                            aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                </label>
+
+                                <div className="auth-row-link">
+                                    <button type="button" className="auth-text-link">Forgot Password?</button>
                                 </div>
-                            </label>
 
-                            <label>
-                                <span className="auth-field-label">Password</span>
-                                <div className="auth-input-wrap">
-                                    <Lock size={17} />
-                                    <input
-                                        type="password"
-                                        required
-                                        placeholder="Enter your password"
-                                        value={loginPassword}
-                                        onChange={(e) => setLoginPassword(e.target.value)}
-                                        style={FIELD_STYLES}
-                                    />
-                                </div>
-                            </label>
-
-                            <button type="submit" className="auth-submit" disabled={loading}>
-                                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
-                            </button>
-                        </form>
-
-                        <p className="auth-footer-link">
-                            No account?{' '}
-                            <button type="button" onClick={() => switchMode(false)}>
-                                Sign up here
-                            </button>
-                        </p>
-                    </div>
-                )}
-
-                {/* ══════════════════════════════════
-                    SIGNUP
-                ══════════════════════════════════ */}
-                {!isLogin && (
-                    <div className="auth-signup-wrapper">
-                        {/* Role Picker */}
-                        <div className="auth-roles-row">
-                            {providerRoles.map((role) => (
-                                <button
-                                    key={role}
-                                    type="button"
-                                    className={`auth-role-card${activeRole === role ? ' is-active' : ''}`}
-                                    onClick={() => updateField('role', role)}
-                                >
-                                    {ROLE_ICONS[role] ?? <User size={24} />}
-                                    <span>{ROLE_LABELS[role]}</span>
+                                <button type="submit" className="auth-submit" disabled={loading}>
+                                    {loading ? <Loader2 className="animate-spin" size={18} /> : 'Log in'}
                                 </button>
-                            ))}
-                        </div>
 
-                        {/* Form Card */}
-                        <div className={`auth-card auth-card--wide auth-form-enter`}>
-                            {/* Toggle */}
-                            <div className="auth-toggle-wrap">
-                                <div className="auth-toggle" role="tablist">
+                                <label className="auth-check-row">
+                                    <input
+                                        type="checkbox"
+                                        checked={loginAgree}
+                                        onChange={(e) => setLoginAgree(e.target.checked)}
+                                    />
+                                    <span>
+                                        I agree to the <button type="button" className="auth-text-link">Terms &amp; Condition</button>
+                                    </span>
+                                </label>
+
+                                <div className="auth-divider">or</div>
+
+                                <div className="auth-social-row auth-social-row--single">
                                     <button
                                         type="button"
-                                        className={`auth-toggle-btn${isLogin ? ' is-active' : ''}`}
-                                        onClick={() => switchMode(true)}
+                                        className="auth-social-btn"
+                                        disabled={googleLoading}
+                                        onClick={() => void handleGoogleTouristAuth('login')}
                                     >
-                                        Login
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`auth-toggle-btn${!isLogin ? ' is-active' : ''}`}
-                                        onClick={() => switchMode(false)}
-                                    >
-                                        Signup
+                                        {googleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
                                     </button>
                                 </div>
+                                <p className="auth-role-note">Google login is available for Tourist accounts only.</p>
+                            </form>
+                        </>
+                    ) : (
+                        <>
+                            <header className="auth-header">
+                                <h1>Create account</h1>
+                                <p>
+                                    Already have an account?{' '}
+                                    <button type="button" onClick={() => switchMode(true)}>
+                                        Log in
+                                    </button>
+                                </p>
+                            </header>
+
+                            <div className="auth-role-choice">
+                                <button
+                                    type="button"
+                                    className={`auth-role-choice-btn${activeRole === 'tourist' ? ' is-active' : ''}`}
+                                    onClick={() => updateField('role', 'tourist')}
+                                >
+                                    <Backpack size={16} />
+                                    <span>Tourist</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`auth-role-choice-btn${activeRole !== 'tourist' ? ' is-active' : ''}`}
+                                    onClick={() => {
+                                        if (activeRole === 'tourist') updateField('role', 'tour_company');
+                                    }}
+                                >
+                                    <Building2 size={16} />
+                                    <span>Provider</span>
+                                </button>
                             </div>
 
-                            {error && <div className="auth-alert auth-alert-error" style={{ marginTop: '14px' }}>{error}</div>}
-                            {info  && <div className="auth-alert auth-alert-info" style={{ marginTop: '14px' }}>{info}</div>}
-
-                            <form onSubmit={handleSignup} className="auth-signup-form" style={{ marginTop: '16px' }}>
-                                {/* Core fields always shown */}
-                                <div className="auth-section-sep"><span>Account</span></div>
-
-                                <div className="auth-grid-2">
-                                    <label>
-                                        <span className="auth-field-label">Full Name</span>
-                                        <div className="auth-input-box">
-                                            <User size={14} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-                                            <input
-                                                type="text"
-                                                required
-                                                placeholder="Alex Mercer"
-                                                value={formValues.fullName}
-                                                onChange={(e) => updateField('fullName', e.target.value)}
-                                                style={FIELD_STYLES}
-                                            />
-                                        </div>
-                                    </label>
-
-                                    <label>
-                                        <span className="auth-field-label">Email Address</span>
-                                        <div className="auth-input-box">
-                                            <Mail size={14} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-                                            <input
-                                                type="email"
-                                                required
-                                                placeholder="alex@example.com"
-                                                value={formValues.email}
-                                                onChange={(e) => updateField('email', e.target.value)}
-                                                style={FIELD_STYLES}
-                                            />
-                                        </div>
-                                    </label>
-
-                                    <label className="auth-full-col">
-                                        <span className="auth-field-label">Password</span>
-                                        <div className="auth-input-box">
-                                            <Lock size={14} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-                                            <input
-                                                type="password"
-                                                required
-                                                minLength={8}
-                                                placeholder="Minimum 8 characters"
-                                                value={formValues.password}
-                                                onChange={(e) => updateField('password', e.target.value)}
-                                                style={FIELD_STYLES}
-                                            />
-                                        </div>
-                                    </label>
+                            {activeRole !== 'tourist' && (
+                                <div className="auth-provider-select-wrap">
+                                    <select
+                                        className="auth-provider-select"
+                                        value={activeRole}
+                                        onChange={(e) => updateField('role', e.target.value as UserRole)}
+                                        aria-label="Select provider type"
+                                    >
+                                        <option value="tour_company">Tour Company</option>
+                                        <option value="tour_guide">Tour Guide</option>
+                                        <option value="tour_instructor">Tour Instructor</option>
+                                    </select>
                                 </div>
+                            )}
 
-                                {/* Role-specific fields */}
-                                {roleConfig.fields.length > 0 && (
-                                    <>
-                                        <div className="auth-section-sep" style={{ marginTop: '4px' }}>
-                                            <span>{ROLE_LABELS[activeRole]} details</span>
-                                        </div>
-                                        <div className="auth-grid-2">
-                                            {roleConfig.fields.map((field) => (
-                                                <label key={field.key}>
-                                                    <span className="auth-field-label">{field.label}</span>
-                                                    <div className="auth-input-box">
-                                                        {FIELD_ICONS[field.key] && (
-                                                            <span style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0, display: 'flex' }}>
-                                                                {FIELD_ICONS[field.key]}
-                                                            </span>
-                                                        )}
-                                                        <input
-                                                            type={FIELD_INPUT_TYPES[field.key] || 'text'}
-                                                            required={field.required}
-                                                            placeholder={field.placeholder}
-                                                            value={String(formValues[field.key] ?? '')}
-                                                            onChange={(e) =>
-                                                                updateField(field.key, e.target.value as SignupFormValues[typeof field.key])
-                                                            }
-                                                            style={FIELD_STYLES}
-                                                        />
-                                                    </div>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
+                            <form onSubmit={handleSignup} className="auth-form auth-form--signup">
+                                <label className="auth-field">
+                                    <span>Full Name</span>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Alex Mercer"
+                                        value={formValues.fullName}
+                                        onChange={(e) => updateField('fullName', e.target.value)}
+                                    />
+                                </label>
 
-                                {/* Works under company */}
+                                <label className="auth-field">
+                                    <span>Email Address</span>
+                                    <input
+                                        type="email"
+                                        required
+                                        placeholder="you@example.com"
+                                        value={formValues.email}
+                                        onChange={(e) => updateField('email', e.target.value)}
+                                    />
+                                </label>
+
+                                <label className="auth-field auth-field-full">
+                                    <span>Password</span>
+                                    <div className="auth-password-wrap">
+                                        <input
+                                            type={showSignupPassword ? 'text' : 'password'}
+                                            required
+                                            minLength={8}
+                                            placeholder="Minimum 8 characters"
+                                            value={formValues.password}
+                                            onChange={(e) => updateField('password', e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="auth-eye-btn"
+                                            onClick={() => setShowSignupPassword((current) => !current)}
+                                            aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                </label>
+
+                                {roleConfig.fields.length > 0 &&
+                                    roleConfig.fields.map((field) => (
+                                        <label key={field.key} className="auth-field">
+                                            <span>{field.label}</span>
+                                            <div className="auth-input-icon-wrap">
+                                                {FIELD_ICONS[field.key] && <i>{FIELD_ICONS[field.key]}</i>}
+                                                <input
+                                                    type={FIELD_INPUT_TYPES[field.key] || 'text'}
+                                                    required={field.required}
+                                                    placeholder={field.placeholder}
+                                                    value={String(formValues[field.key] ?? '')}
+                                                    onChange={(e) =>
+                                                        updateField(field.key, e.target.value as SignupFormValues[typeof field.key])
+                                                    }
+                                                />
+                                            </div>
+                                        </label>
+                                    ))}
+
                                 {activeRole !== 'tour_company' && activeRole !== 'tourist' && (
-                                    <label className="auth-toggle-check">
+                                    <label className="auth-check-row auth-check-row-full">
                                         <input
                                             type="checkbox"
                                             checked={formValues.worksUnderCompany}
@@ -391,20 +393,30 @@ export const Auth: React.FC = () => {
                                     </label>
                                 )}
 
+                                <p className="auth-role-note">Selected role: {ROLE_LABELS[activeRole]}</p>
+
                                 <button type="submit" className="auth-submit" disabled={loading}>
                                     {loading ? <Loader2 className="animate-spin" size={18} /> : 'Create Account'}
                                 </button>
-                            </form>
 
-                            <p className="auth-footer-link">
-                                Already have an account?{' '}
-                                <button type="button" onClick={() => switchMode(true)}>
-                                    Sign in here
-                                </button>
-                            </p>
-                        </div>
-                    </div>
-                )}
+                                <div className="auth-signup-social">
+                                    <div className="auth-divider">or</div>
+                                    <button
+                                        type="button"
+                                        className="auth-social-btn"
+                                        disabled={googleLoading || activeRole !== 'tourist'}
+                                        onClick={() => void handleGoogleTouristAuth('signup')}
+                                    >
+                                        {googleLoading ? 'Redirecting to Google...' : 'Sign up with Google'}
+                                    </button>
+                                    {activeRole !== 'tourist' && (
+                                        <p className="auth-role-note">Switch role to Tourist to use Google signup.</p>
+                                    )}
+                                </div>
+                            </form>
+                        </>
+                    )}
+                </section>
             </div>
         </div>
     );

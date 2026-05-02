@@ -488,16 +488,25 @@
 }
 
 .dh-more-link {
+  appearance: none;
+  background: none;
+  border: none;
   border-bottom: 1px solid color-mix(in srgb, var(--text-main) 45%, transparent);
   color: color-mix(in srgb, var(--text-main) 78%, transparent);
+  cursor: pointer;
   flex-shrink: 0;
   font-family: 'Outfit', sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
-  padding-bottom: 2px;
+  padding: 0 0 2px;
   text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.dh-more-link:hover {
+  color: var(--text-main);
 }
 
 .dh-listing-row {
@@ -563,14 +572,12 @@
 .listing-card-media {
   aspect-ratio: 4 / 3;
   background-color: color-mix(in srgb, var(--accent) 15%, var(--surface-muted));
-  background-position: center;
-  background-size: cover;
   overflow: hidden;
   position: relative;
 }
 
 .listing-card-media.is-fallback {
-  background: color-mix(in srgb, var(--surface-muted) 78%, #ffffff);
+  background-color: color-mix(in srgb, var(--surface-muted) 78%, #ffffff);
 }
 
 .listing-card-media-overlay {
@@ -996,6 +1003,101 @@
 
   .dh-listing-row--expanded {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* ── Carousel wrapper + arrows ─────────────────── */
+
+.dh-carousel-wrap {
+  position: relative;
+}
+
+.dh-carousel-arrow {
+  align-items: center;
+  background: var(--surface-main, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--border-light) 80%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  color: var(--text-main);
+  cursor: pointer;
+  display: none;
+  height: 38px;
+  justify-content: center;
+  position: absolute;
+  top: 42%;
+  transform: translateY(-50%);
+  transition: box-shadow 0.22s ease, transform 0.22s ease, opacity 0.18s ease;
+  width: 38px;
+  z-index: 10;
+}
+
+.dh-carousel-arrow:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+  transform: translateY(calc(-50% - 2px));
+}
+
+.dh-carousel-arrow--left {
+  left: -16px;
+}
+
+.dh-carousel-arrow--right {
+  right: -16px;
+}
+
+:root[data-theme='dark'] .dh-carousel-arrow {
+  background: #111113;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  color: #f0f2f9;
+}
+
+@media (min-width: 640px) {
+  .dh-carousel-arrow {
+    display: flex;
+  }
+}
+
+/* ── Suggested for You section ──────────────────── */
+
+.dh-suggested-section {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.dh-suggested-title {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+}
+
+.dh-suggested-title svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+:root[data-theme='dark'] .dh-suggested-title svg {
+  color: #fbbf24;
+}
+
+/* Keep suggested row as horizontal carousel even on large screens */
+@media (min-width: 900px) {
+  .dh-suggested-section .dh-listing-row {
+    grid-auto-columns: clamp(188px, 20vw, 256px);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  .dh-suggested-section .dh-listing-row > .dh-reveal {
+    scroll-snap-align: start;
+  }
+}
+
+@media (min-width: 1220px) {
+  .dh-suggested-section .dh-listing-row {
+    grid-template-columns: none;
   }
 }
 
