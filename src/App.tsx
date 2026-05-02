@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } f
 import { Navbar } from './components/Navbar';
 import { Home3 } from './pages/Home3';
 import { DashboardHome } from './pages/DashboardHome';
+import { RoleDashboard } from './pages/RoleDashboard';
 import { Auth } from './pages/Auth';
 import { DestinationDetail } from './pages/DestinationDetail';
 import { Profile } from './pages/Profile';
@@ -15,10 +16,10 @@ import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { SupportChatbot } from './components/SupportChatbot';
 
-const APP_HOME_PATH = '/dashboard';
-const DASHBOARD_TOURS_PATH = '/dashboard?tab=tours';
-const DASHBOARD_ACTIVITIES_PATH = '/dashboard?tab=activities';
-const DASHBOARD_EVENTS_PATH = '/dashboard?tab=events';
+const APP_HOME_PATH = '/';
+const DASHBOARD_TOURS_PATH = '/?tab=tours';
+const DASHBOARD_ACTIVITIES_PATH = '/?tab=activities';
+const DASHBOARD_EVENTS_PATH = '/?tab=events';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, profileLoading } = useAuth();
@@ -46,6 +47,20 @@ const GuestOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   return <>{children}</>;
+};
+
+const HomeRoute: React.FC = () => {
+  const { user, loading, profileLoading } = useAuth();
+
+  if (loading || profileLoading) {
+    return null;
+  }
+
+  if (user) {
+    return <DashboardHome />;
+  }
+
+  return <Home3 />;
 };
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -87,11 +102,12 @@ function App() {
       <div className="app">
         <AppNavbar />
         <Routes>
-          <Route path="/" element={<GuestOnlyRoute><Home3 /></GuestOnlyRoute>} />
+          <Route path="/" element={<HomeRoute />} />
           <Route path="/home2" element={<Navigate to="/" replace />} />
           <Route path="/home3" element={<Navigate to="/" replace />} />
           <Route path="/auth" element={<GuestOnlyRoute><Auth /></GuestOnlyRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><DashboardHome /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><RoleDashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/:role" element={<ProtectedRoute><RoleDashboard /></ProtectedRoute>} />
           <Route path="/activities" element={<ProtectedRoute><Navigate to={DASHBOARD_ACTIVITIES_PATH} replace /></ProtectedRoute>} />
           <Route path="/tours" element={<ProtectedRoute><Navigate to={DASHBOARD_TOURS_PATH} replace /></ProtectedRoute>} />
           <Route path="/guides" element={<ProtectedRoute><Navigate to={DASHBOARD_EVENTS_PATH} replace /></ProtectedRoute>} />

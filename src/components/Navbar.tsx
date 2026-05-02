@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
 
-type NavTab = 'home' | 'explore' | 'messages' | 'notifications' | 'bookings';
+type NavTab = 'explore' | 'messages' | 'notifications' | 'bookings';
 
 export const Navbar: React.FC = () => {
     const { user, profile, signOut, isAdmin, isProvider, roleLabel } = useAuth();
@@ -15,7 +15,7 @@ export const Navbar: React.FC = () => {
     const location = useLocation();
 
     const isDark = theme === 'dark';
-    const homePath = user ? '/dashboard' : '/';
+    const homePath = '/';
     const logoSrc = isDark ? '/logo/logo-white.png' : '/logo/logo.png';
     const navSurface = isDark ? 'rgba(0,0,0,0.74)' : 'rgba(242,138,36,0.46)';
     const navSurfaceSoft = isDark ? 'rgba(10,10,10,0.80)' : 'rgba(242,138,36,0.58)';
@@ -28,13 +28,15 @@ export const Navbar: React.FC = () => {
     const navActiveBg = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.86)';
     const navActiveText = '#ffffff';
 
-    const activeTab: NavTab = (() => {
+    const activeTab: NavTab | null = (() => {
         const tab = new URLSearchParams(location.search).get('tab');
+        if (location.pathname.startsWith('/dashboard')) return null;
         if (location.pathname === '/profile') return 'bookings';
         if (location.pathname === '/notifications') return 'notifications';
         if (location.pathname === '/messages') return 'messages';
         if (
-            location.pathname === '/events'
+            location.pathname === '/'
+            || location.pathname === '/events'
             || location.pathname === '/guides'
             || tab === 'tours'
             || tab === 'activities'
@@ -43,13 +45,11 @@ export const Navbar: React.FC = () => {
         ) {
             return 'explore';
         }
-        if (location.pathname !== '/dashboard') return 'home';
-        return 'home';
+        return null;
     })();
 
     const navLinks: Array<{ key: NavTab; label: string; to: string }> = [
-        { key: 'home', label: 'Home', to: '/dashboard' },
-        { key: 'explore', label: 'Explore', to: '/dashboard?tab=tours' },
+        { key: 'explore', label: 'Explore', to: '/?tab=tours' },
         { key: 'messages', label: 'Messages', to: '/messages' },
         { key: 'notifications', label: 'Notifications', to: '/notifications' },
         { key: 'bookings', label: 'Bookings', to: '/profile' },
@@ -129,7 +129,7 @@ export const Navbar: React.FC = () => {
 
                 {/* Right: user chip (outside the pill) */}
                 {user && (
-                    <Link to="/profile" className="nbr-user-chip">
+                    <Link to="/dashboard" className="nbr-user-chip">
                         <div className="nbr-user-text">
                             <span className="nbr-user-name">{shortName}</span>
                             <span className="nbr-user-role">{roleLabel}</span>
@@ -153,7 +153,7 @@ export const Navbar: React.FC = () => {
                             </Link>
                         )}
                         {user && (
-                            <Link to="/profile" className="nbr-avatar-sm-wrap">
+                            <Link to="/dashboard" className="nbr-avatar-sm-wrap">
                                 <img src={avatarSrc} alt={shortName} className="nbr-avatar-sm" />
                             </Link>
                         )}
@@ -172,8 +172,8 @@ export const Navbar: React.FC = () => {
                 {showMenu && (
                     <div className="nbr-dropdown">
                         {user && (
-                            <Link to="/profile" className="nbr-drop-item" onClick={() => setShowMenu(false)}>
-                                Profile
+                            <Link to="/dashboard" className="nbr-drop-item" onClick={() => setShowMenu(false)}>
+                                Dashboard
                             </Link>
                         )}
                         {user && navLinks.map((item) => (
