@@ -1,4 +1,9 @@
 import { supabase } from './supabase';
+import {
+    FunctionsFetchError,
+    FunctionsHttpError,
+    FunctionsRelayError,
+} from '@supabase/supabase-js';
 import type {
     RazorpayCheckoutOptions,
     RazorpayPaymentSuccessResponse,
@@ -8,6 +13,7 @@ import type { ListingType } from './platform';
 const RAZORPAY_SDK_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 
 let razorpaySdkPromise: Promise<void> | null = null;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const loadRazorpaySdk = async (): Promise<void> => {
     if (typeof window !== 'undefined' && window.Razorpay) return;
@@ -57,8 +63,65 @@ export interface RazorpayCheckoutPrefill {
     contact?: string;
 }
 
+const getFunctionErrorMessage = async (error: unknown, fallback: string): Promise<string> => {
+    if (error instanceof FunctionsHttpError) {
+        try {
+            const contentType = error.context.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const payload = await error.context.json() as { error?: unknown; message?: unknown };
+                if (typeof payload.error === 'string' && payload.error.trim()) return payload.error.trim();
+                if (typeof payload.message === 'string' && payload.message.trim()) return payload.message.trim();
+            }
+        } catch {
+            // Ignore parse errors and try text fallback.
+        }
+
+        try {
+            const message = (await error.context.text()).trim();
+            if (message) return message;
+        } catch {
+            // Ignore text parse errors.
+        }
+
+        return fallback;
+    }
+
+    if (error instanceof FunctionsRelayError || error instanceof FunctionsFetchError) {
+        return error.message || fallback;
+    }
+
+    if (error instanceof Error) {
+        return error.message || fallback;
+    }
+
+    return fallback;
+};
+
+const getAccessTokenOrThrow = async (): Promise<string> => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+        throw new Error('Could not read your login session. Please sign in again.');
+    }
+
+    const token = data.session?.access_token?.trim() || '';
+    if (!token) {
+        throw new Error('Your session has expired. Please sign in and try again.');
+    }
+
+    const userId = data.session?.user?.id?.trim() || '';
+    if (!userId || !UUID_REGEX.test(userId)) {
+        throw new Error('Invalid login session. Please sign out and sign in again.');
+    }
+
+    return token;
+};
+
 export const createRazorpayOrder = async (booking: BookingPaymentDraft): Promise<RazorpayOrderPayload> => {
+    const accessToken = await getAccessTokenOrThrow();
     const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
         body: {
             ...booking,
             currency: 'INR',
@@ -66,7 +129,7 @@ export const createRazorpayOrder = async (booking: BookingPaymentDraft): Promise
     });
 
     if (error) {
-        throw new Error(error.message || 'Could not create payment order.');
+        throw new Error(await getFunctionErrorMessage(error, 'Could not create payment order.'));
     }
 
     const payload = data as Partial<RazorpayOrderPayload> | null;
@@ -94,12 +157,16 @@ export interface ConfirmRazorpayBookingResult {
 export const confirmRazorpayBooking = async (
     input: ConfirmRazorpayBookingInput
 ): Promise<ConfirmRazorpayBookingResult> => {
+    const accessToken = await getAccessTokenOrThrow();
     const { data, error } = await supabase.functions.invoke('confirm-razorpay-booking', {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
         body: input,
     });
 
     if (error) {
-        throw new Error(error.message || 'Payment verification failed.');
+        throw new Error(await getFunctionErrorMessage(error, 'Payment verification failed.'));
     }
 
     const payload = data as Partial<ConfirmRazorpayBookingResult> | null;

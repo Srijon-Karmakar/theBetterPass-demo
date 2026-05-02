@@ -143,8 +143,8 @@ export const Auth: React.FC = () => {
                 worksUnderCompany: formValues.worksUnderCompany,
             });
             setInfo(
-                roleConfig.requiresVerification
-                    ? 'Account created. Check your email, then sign in to see your verification pending status.'
+                activeRole === 'tour_company' || activeRole === 'tour_instructor' || activeRole === 'tour_guide'
+                    ? 'Account created. Check your email verification link, then sign in to submit listings for admin approval.'
                     : 'Account created. Check your email verification link to continue.'
             );
             setIsLogin(true);

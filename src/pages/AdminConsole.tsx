@@ -37,11 +37,18 @@ type BulkConfirmationState =
 const statusPillClass = (status?: string | null) => {
     switch (status) {
         case 'approved':    return 'ac-pill ac-pill--approved';
+        case 'live':
+        case 'published':
+            return 'ac-pill ac-pill--live';
         case 'rejected':    return 'ac-pill ac-pill--rejected';
         case 'resubmitted': return 'ac-pill ac-pill--resubmitted';
-        case 'published':   return 'ac-pill ac-pill--published';
         default:            return 'ac-pill ac-pill--pending';
     }
+};
+
+const getListingStatusLabel = (status?: string | null) => {
+    if (status === 'published') return 'live';
+    return status || 'pending';
 };
 
 const initials = (name?: string | null, email?: string | null) => {
@@ -61,7 +68,7 @@ export const AdminConsole: React.FC = () => {
     const [listingRejectReason, setListingRejectReason] = useState<Record<string, string>>({});
     const [verificationStatusFilter, setVerificationStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'resubmitted'>('all');
     const [verificationRoleFilter, setVerificationRoleFilter] = useState<'all' | 'tour_company' | 'tour_instructor' | 'tour_guide'>('all');
-    const [listingStatusFilter, setListingStatusFilter] = useState<'all' | 'pending' | 'rejected' | 'published'>('all');
+    const [listingStatusFilter, setListingStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
     const [listingTypeFilter, setListingTypeFilter] = useState<'all' | 'tour' | 'activity' | 'guide'>('all');
     const [verificationSearch, setVerificationSearch] = useState('');
     const [listingSearch, setListingSearch] = useState('');
@@ -156,7 +163,7 @@ export const AdminConsole: React.FC = () => {
         }
     };
 
-    const handleListingReview = async (listingId: string, decision: 'published' | 'rejected') => {
+    const handleListingReview = async (listingId: string, decision: 'live' | 'rejected') => {
         setBusyId(listingId);
         try {
             await reviewListing(listingId, decision, {
@@ -213,7 +220,7 @@ export const AdminConsole: React.FC = () => {
         }
     };
 
-    const handleBulkListingReview = async (decision: 'published' | 'rejected') => {
+    const handleBulkListingReview = async (decision: 'live' | 'rejected') => {
         const items = filteredListingQueue.filter((i) => selectedListingIds.includes(i.id));
         if (!items.length) return;
         setBulkBusy('listing');
@@ -261,7 +268,8 @@ export const AdminConsole: React.FC = () => {
             if (log.action === 'rejected') return 'Rejected provider verification';
             return 'Provider verification resubmitted';
         }
-        if (log.action === 'published') return 'Published listing';
+        if (log.action === 'published' || log.action === 'live') return 'Listing went live';
+        if (log.action === 'approved') return 'Approved listing';
         if (log.action === 'rejected') return 'Rejected listing';
         return 'Listing resubmitted';
     };
@@ -633,7 +641,7 @@ export const AdminConsole: React.FC = () => {
                             <div>
                                 <h2 className="ac-section-title">Listing Review Queue</h2>
                                 <p className="ac-section-sub">
-                                    Listings in manual review state. Verified providers now publish instantly.
+                                    Review and approve provider listings before they go live.
                                 </p>
                             </div>
                         </div>
@@ -658,8 +666,8 @@ export const AdminConsole: React.FC = () => {
                                 >
                                     <option value="all">All statuses</option>
                                     <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
                                     <option value="rejected">Rejected</option>
-                                    <option value="published">Published</option>
                                 </select>
                             </div>
                             <div className="ac-filter-group">
@@ -696,7 +704,7 @@ export const AdminConsole: React.FC = () => {
                             <div className="ac-empty">
                                 <CheckCircle2 size={32} />
                                 <strong>No listings match these filters</strong>
-                                <p>Newly created provider content publishes directly once the account is approved.</p>
+                                <p>New submissions will appear here for moderation.</p>
                             </div>
                         ) : (
                             <>
@@ -717,10 +725,10 @@ export const AdminConsole: React.FC = () => {
                                         <button
                                             className="ac-btn ac-btn--approve"
                                             disabled={selectedListingIds.length === 0 || bulkBusy === 'listing'}
-                                            onClick={() => void handleBulkListingReview('published')}
+                                            onClick={() => void handleBulkListingReview('live')}
                                         >
                                             {bulkBusy === 'listing' ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />}
-                                            Publish ({selectedListingIds.length})
+                                            Approve & Go Live ({selectedListingIds.length})
                                         </button>
                                         <button
                                             className="ac-btn ac-btn--reject"
@@ -793,7 +801,7 @@ export const AdminConsole: React.FC = () => {
                                                         <div>
                                                             <div className="ac-applicant-pills">
                                                                 <span className="ac-pill ac-pill--role">{LISTING_LABELS[normType] || 'Listing'}</span>
-                                                                <span className={statusPillClass(listing.status)}>{listing.status || 'pending'}</span>
+                                                                <span className={statusPillClass(listing.status)}>{getListingStatusLabel(listing.status)}</span>
                                                             </div>
                                                             <p className="ac-applicant-name">{listing.title || listing.name || 'Untitled listing'}</p>
                                                             <p className="ac-applicant-contact">
@@ -805,11 +813,11 @@ export const AdminConsole: React.FC = () => {
                                                     <div className="ac-queue-card-actions">
                                                         <button
                                                             className="ac-btn ac-btn--approve"
-                                                            disabled={isBusy || listing.status === 'published'}
-                                                            onClick={() => void handleListingReview(listing.id, 'published')}
+                                                            disabled={isBusy || listing.status === 'live' || listing.status === 'published'}
+                                                            onClick={() => void handleListingReview(listing.id, 'live')}
                                                         >
                                                             {isBusy ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle2 size={14} />}
-                                                            Publish
+                                                            Approve & Go Live
                                                         </button>
                                                         <button
                                                             className="ac-btn ac-btn--reject"

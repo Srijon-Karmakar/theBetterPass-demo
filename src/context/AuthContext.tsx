@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { createOrUpdateProfileFromSignup, ensureProviderVerificationRecord, getProfile } from '../lib/destinations';
+import { createOrUpdateProfileFromSignup, getProfile } from '../lib/destinations';
 import type { Profile, SignupInput } from '../lib/destinations';
 import { getRoleLabel, getVerificationLabel, isProviderRole, type UserRole } from '../lib/platform';
 import { AuthContext } from './auth-context';
@@ -99,17 +99,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         );
                         profileData = await getProfile(nextUser.id);
                     }
-
-                    const providerProfile = ({
-                        ...(profileData || {}),
-                        id: nextUser.id,
-                        role: effectiveProviderRole,
-                        full_name: profileData?.full_name || nextUser.email?.split('@')[0] || 'Provider',
-                    } as Profile);
-                    await ensureProviderVerificationRecord(nextUser.id, providerProfile);
-                    profileData = await getProfile(nextUser.id);
                 } catch (error) {
-                    console.error('Failed ensuring provider verification record:', error);
+                    console.error('Failed ensuring provider profile:', error);
                 }
             }
             setProfile(profileData);

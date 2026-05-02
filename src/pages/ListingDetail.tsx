@@ -20,6 +20,24 @@ const toInternalListingType = (value: string | undefined): ListingType | undefin
     return undefined;
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const normalizeLooseString = (value: unknown): string | null => {
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const lowered = trimmed.toLowerCase();
+    if (lowered === 'undefined' || lowered === 'null') return null;
+    return trimmed;
+};
+
+const normalizeUuidString = (value: unknown): string | null => {
+    const normalized = normalizeLooseString(value);
+    if (!normalized) return null;
+    return UUID_REGEX.test(normalized) ? normalized : null;
+};
+
 const getListingTitle = (listing: PostRecord): string => {
     const title = listing.title || listing.name;
     return typeof title === 'string' && title.trim().length > 0 ? title : 'Untitled listing';
@@ -69,11 +87,9 @@ export const ListingDetail: React.FC = () => {
     const description = typeof listing?.description === 'string' ? listing.description : 'No description provided yet.';
     const location = typeof listing?.location === 'string' ? listing.location : 'Location available after booking';
     const unitPrice = typeof listing?.price === 'number' ? listing.price : 0;
-    const ownerUserId = typeof listing?.provider_user_id === 'string'
-        ? listing.provider_user_id
-        : typeof listing?.user_id === 'string'
-            ? listing.user_id
-            : null;
+    const ownerUserId = normalizeUuidString(listing?.provider_user_id)
+        || normalizeUuidString(listing?.user_id)
+        || null;
     const listingTypeValue = listing?.type;
     const effectiveType: ListingType = toInternalListingType(listingTypeValue || undefined)
         ? (toInternalListingType(listingTypeValue || undefined) as ListingType)
@@ -99,8 +115,15 @@ export const ListingDetail: React.FC = () => {
 
     const handleBooking = async (event: React.FormEvent) => {
         event.preventDefault();
-        if (!user || !listing?.id) {
+        const currentUserId = normalizeUuidString(user?.id);
+        const listingId = normalizeLooseString(listing?.id) || normalizeLooseString(id);
+        if (!currentUserId) {
+            setBookingError('Your session expired. Please sign in again.');
             navigate('/auth');
+            return;
+        }
+        if (!listingId) {
+            setBookingError('Listing id is invalid. Please reopen this listing from dashboard.');
             return;
         }
         if (!canBook) {
@@ -112,9 +135,9 @@ export const ListingDetail: React.FC = () => {
         setBookingError(null);
         try {
             const bookingDraft = {
-                listing_id: listing.id,
+                listing_id: listingId,
                 listing_type: effectiveType,
-                provider_user_id: ownerUserId,
+                provider_user_id: normalizeUuidString(ownerUserId),
                 listing_title: title,
                 listing_image: image,
                 number_of_people: guests,
@@ -129,7 +152,7 @@ export const ListingDetail: React.FC = () => {
                 booking: bookingDraft,
                 prefill: {
                     name: profile?.full_name || undefined,
-                    email: user.email || undefined,
+                    email: user?.email || undefined,
                     contact: profile?.phone || undefined,
                 },
             });

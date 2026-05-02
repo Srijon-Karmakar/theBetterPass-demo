@@ -177,7 +177,7 @@ export interface ModerationAuditLogRecord {
     id: string;
     entity_type: 'verification' | 'listing';
     entity_id: string;
-    action: 'approved' | 'rejected' | 'published' | 'resubmitted';
+    action: 'approved' | 'rejected' | 'published' | 'live' | 'resubmitted';
     actor_user_id?: string | null;
     target_user_id?: string | null;
     reason?: string | null;
@@ -273,10 +273,19 @@ type LegacyBookingRow = {
 const DEFAULT_BOOKING_IMAGE = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800';
 
 const safeArray = <T,>(value: T[] | null | undefined): T[] => (Array.isArray(value) ? value : []);
+let eventsTableAvailable: boolean | null = null;
 
 const isMissingRelationError = (error: { code?: string; message?: string } | null | undefined) => (
     error?.code === 'PGRST205' || error?.message?.toLowerCase().includes('moderation_audit_logs')
 );
+
+const isMissingEventsRelationError = (error: { code?: string; message?: string } | null | undefined) => {
+    const message = error?.message?.toLowerCase() || '';
+    return (
+        error?.code === 'PGRST205'
+        || (message.includes('relation') && message.includes('events') && message.includes('does not exist'))
+    );
+};
 
 const isMissingNotificationsError = (error: { code?: string; message?: string } | null | undefined) => {
     const message = error?.message?.toLowerCase() || '';
@@ -472,7 +481,7 @@ const getPostFallbackValue = (columnName: string, payload: Record<string, unknow
         case 'price':
             return typeof payload.price === 'number' ? payload.price : 0;
         case 'status':
-            return 'published';
+            return 'pending';
         case 'type':
             return payload.type || 'activity';
         case 'created_at':
@@ -523,7 +532,7 @@ const normalizeBookingStatus = (value: string | null | undefined): BookingStatus
 const normalizeVerificationStatus = (profile: Partial<Profile> | null): VerificationStatus => {
     if (!profile) return 'not_required';
     if (profile.verification_status) return profile.verification_status;
-    if (profile.role === 'tourist') return 'not_required';
+    if (profile.role === 'tourist' || isProviderRole(profile.role)) return 'not_required';
     return profile.is_verified ? 'approved' : 'pending';
 };
 
@@ -671,25 +680,36 @@ export const getTours = async () => {
 };
 
 export const getEvents = async () => {
+    if (eventsTableAvailable === false) return [];
+
     const { data, error } = await supabase
         .from('events')
         .select('*')
         .order('created_at', { ascending: false });
 
     if (error) {
+        if (isMissingEventsRelationError(error)) {
+            eventsTableAvailable = false;
+            return [];
+        }
         console.error('Error fetching legacy events:', error);
         return [];
     }
 
+    eventsTableAvailable = true;
     return safeArray(data) as EventRecord[];
 };
 
 export const getPosts = async () => {
+    const eventsQuery = eventsTableAvailable === false
+        ? Promise.resolve({ data: [], error: null })
+        : supabase.from('events').select('*').order('created_at', { ascending: false });
+
     const [postsResult, toursResult, activitiesResult, eventsResult] = await Promise.all([
         supabase
             .from('posts')
             .select('*')
-            .eq('status', 'published')
+            .in('status', ['live', 'published'])
             .order('created_at', { ascending: false }),
         supabase
             .from('tours')
@@ -699,10 +719,7 @@ export const getPosts = async () => {
             .from('activities')
             .select('*')
             .order('created_at', { ascending: false }),
-        supabase
-            .from('events')
-            .select('*')
-            .order('created_at', { ascending: false }),
+        eventsQuery,
     ]);
 
     if (postsResult.error) {
@@ -714,9 +731,13 @@ export const getPosts = async () => {
     if (activitiesResult.error) {
         console.error('Error fetching activities for unified feed:', activitiesResult.error);
     }
-    if (eventsResult.error) {
+    if (eventsResult.error && !isMissingEventsRelationError(eventsResult.error)) {
         console.error('Error fetching events for unified feed:', eventsResult.error);
     }
+    if (eventsResult.error && isMissingEventsRelationError(eventsResult.error)) {
+        eventsTableAvailable = false;
+    }
+    if (!eventsResult.error) eventsTableAvailable = true;
 
     const combined = [
         ...safeArray(postsResult.data) as PostRecord[],
@@ -734,7 +755,7 @@ export const getPublicListingsByType = async (type: ListingType): Promise<PostRe
     const publishedPostsQuery = supabase
         .from('posts')
         .select('*')
-        .eq('status', 'published')
+        .in('status', ['live', 'published'])
         .eq('type', type)
         .order('created_at', { ascending: false });
 
@@ -768,13 +789,23 @@ export const getPublicListingsByType = async (type: ListingType): Promise<PostRe
         ]);
     }
 
+    const eventsQuery = eventsTableAvailable === false
+        ? Promise.resolve({ data: [], error: null })
+        : supabase.from('events').select('*').order('created_at', { ascending: false });
+
     const [postsResult, eventsResult] = await Promise.all([
         publishedPostsQuery,
-        supabase.from('events').select('*').order('created_at', { ascending: false }),
+        eventsQuery,
     ]);
 
     if (postsResult.error) console.error('Error fetching published events from posts:', postsResult.error);
-    if (eventsResult.error) console.error('Error fetching legacy events:', eventsResult.error);
+    if (eventsResult.error && !isMissingEventsRelationError(eventsResult.error)) {
+        console.error('Error fetching legacy events:', eventsResult.error);
+    }
+    if (eventsResult.error && isMissingEventsRelationError(eventsResult.error)) {
+        eventsTableAvailable = false;
+    }
+    if (!eventsResult.error) eventsTableAvailable = true;
 
     return dedupePostsById([
         ...safeArray(postsResult.data) as PostRecord[],
@@ -798,13 +829,13 @@ export const getMyPosts = async (userId: string) => {
 };
 
 export const createOrUpdateListing = async (listing: ListingInput) => {
-    const normalizedStatus: ListingStatus = 'published';
+    const normalizedStatus: ListingStatus = 'pending';
     const normalizedTitle = listing.title?.trim() || 'Untitled listing';
     const normalizedType = normalizeListingType(listing.type);
     const normalizedCategory = listing.sub_category?.trim() || normalizedType;
     const normalizedImage = listing.image_url?.trim() || '';
     const normalizedPrice = typeof listing.price === 'number' ? listing.price : Number(listing.price || 0) || 0;
-    const payload = {
+    const payload: Record<string, unknown> = {
         ...listing,
         title: normalizedTitle,
         name: normalizedTitle,
@@ -819,11 +850,11 @@ export const createOrUpdateListing = async (listing: ListingInput) => {
         rejection_reason: null,
         reviewed_at: null,
         reviewed_by: null,
-        created_at: new Date().toISOString(),
     };
 
     if (!listing.id) {
         delete payload.id;
+        payload.created_at = new Date().toISOString();
     }
 
     return writePostWithSchemaFallback(payload, listing.id);
@@ -833,7 +864,7 @@ export const getContentModerationQueue = async (): Promise<PostRecord[]> => {
     const { data, error } = await supabase
         .from('posts')
         .select('*')
-        .in('status', ['pending', 'rejected'])
+        .in('status', ['pending', 'approved', 'rejected'])
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -846,14 +877,15 @@ export const getContentModerationQueue = async (): Promise<PostRecord[]> => {
 
 export const reviewListing = async (
     listingId: string,
-    status: 'published' | 'rejected',
+    status: 'approved' | 'live' | 'rejected',
     options?: { reason?: string; reviewerId?: string }
 ) => {
     const reviewedAt = new Date().toISOString();
-    const { data, error } = await supabase
+    let effectiveStatus: 'approved' | 'live' | 'rejected' | 'published' = status;
+    let result = await supabase
         .from('posts')
         .update({
-            status,
+            status: effectiveStatus,
             rejection_reason: status === 'rejected' ? options?.reason || null : null,
             reviewed_at: reviewedAt,
             reviewed_by: options?.reviewerId || null,
@@ -862,12 +894,35 @@ export const reviewListing = async (
         .select()
         .maybeSingle();
 
+    if (
+        result.error?.code === '23514'
+        && typeof result.error.message === 'string'
+        && result.error.message.toLowerCase().includes('status')
+        && (status === 'live' || status === 'approved')
+    ) {
+        // Backward compatibility for older schemas that still use "published".
+        effectiveStatus = 'published';
+        result = await supabase
+            .from('posts')
+            .update({
+                status: effectiveStatus,
+                rejection_reason: null,
+                reviewed_at: reviewedAt,
+                reviewed_by: options?.reviewerId || null,
+            })
+            .eq('id', listingId)
+            .select()
+            .maybeSingle();
+    }
+
+    const { data, error } = result;
+
     if (error) throw error;
 
     await writeModerationAuditLog({
         entityType: 'listing',
         entityId: listingId,
-        action: status,
+        action: effectiveStatus,
         actorUserId: options?.reviewerId,
         targetUserId: typeof data?.provider_user_id === 'string' ? data.provider_user_id : null,
         reason: status === 'rejected' ? options?.reason || null : null,
@@ -895,10 +950,12 @@ export const reviewListing = async (
             userId: targetProviderId,
             actorUserId: options?.reviewerId || targetProviderId,
             type: isRejected ? 'listing_rejected' : 'listing_approved',
-            title: isRejected ? 'Listing rejected' : 'Listing approved',
+            title: isRejected ? 'Listing rejected' : effectiveStatus === 'live' || effectiveStatus === 'published' ? 'Listing live' : 'Listing approved',
             body: isRejected
                 ? `${listingTitle} needs updates before going live.${options?.reason ? ` Reason: ${options.reason}` : ''}`
-                : `${listingTitle} is approved and live.`,
+                : effectiveStatus === 'live' || effectiveStatus === 'published'
+                    ? `${listingTitle} is approved and now live.`
+                    : `${listingTitle} is approved.`,
             metadata: { listing_id: listingId, route: '/provider/studio' },
         });
     }
@@ -1290,51 +1347,7 @@ export const getProfile = async (userId: string) => {
         verification_status: normalizeVerificationStatus(profile),
     };
 
-    let verificationResult = await supabase
-        .from('verification')
-        .select('role, status')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-    if (isMissingSpecificColumnError(verificationResult.error, 'updated_at')) {
-        verificationResult = await supabase
-            .from('verification')
-            .select('role, status')
-            .eq('user_id', userId)
-            .order('submitted_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-    }
-
-    if (isMissingColumnError(verificationResult.error)) {
-        verificationResult = await supabase
-            .from('verification')
-            .select('role, status')
-            .eq('user_id', userId)
-            .limit(1)
-            .maybeSingle();
-    }
-
-    const verificationData = verificationResult.data;
-    const verificationError = verificationResult.error;
-
-    if (verificationError) {
-        console.error('Error fetching latest verification for profile:', verificationError);
-        return normalizedProfile;
-    }
-
-    if (!verificationData) {
-        return normalizedProfile;
-    }
-
-    return {
-        ...normalizedProfile,
-        role: isProviderRole(normalizedProfile.role) ? normalizedProfile.role : verificationData.role as UserRole,
-        verification_status: verificationData.status as VerificationStatus,
-        is_verified: verificationData.status === 'approved',
-    };
+    return normalizedProfile;
 };
 
 export const updateProfile = async (profile: Partial<Profile>) => {
@@ -1548,7 +1561,7 @@ const writePostWithSchemaFallback = async (
         if (result.error.code === '23514') {
             const constraintName = extractCheckConstraintName(result.error.message)?.toLowerCase() || '';
             if (constraintName.includes('status')) {
-                nextPayload.status = 'published';
+                nextPayload.status = 'pending';
                 continue;
             }
             if (constraintName.includes('category')) {
@@ -1566,8 +1579,7 @@ const writePostWithSchemaFallback = async (
 };
 
 export const createOrUpdateProfileFromSignup = async (userId: string, input: SignupInput) => {
-    const roleConfig = ROLE_SIGNUP_CONFIG[input.role];
-    const verificationStatus: VerificationStatus = roleConfig.requiresVerification ? 'pending' : 'not_required';
+    const verificationStatus: VerificationStatus = 'not_required';
 
     const payload: Record<string, unknown> = {
         id: userId,
@@ -1578,7 +1590,7 @@ export const createOrUpdateProfileFromSignup = async (userId: string, input: Sig
         city: input.city,
         bio: input.bio || null,
         role: input.role,
-        is_verified: input.role === 'tourist',
+        is_verified: true,
         verification_status: verificationStatus,
         company_name: input.companyName || null,
         works_under_company: !!input.worksUnderCompany,
@@ -1774,11 +1786,6 @@ export const signUpWithRole = async (input: SignupInput) => {
     } catch (profileErr) {
         if (data.session) throw profileErr;
         console.error('Failed to submit profile during signup (will retry on first login):', profileErr);
-    }
-    try {
-        await submitVerificationApplication(data.user.id, input);
-    } catch (verificationErr) {
-        console.error('Failed to submit verification application during signup (will retry on first login):', verificationErr);
     }
     return data;
 };
@@ -2577,7 +2584,6 @@ export const getVerificationQueue = async (): Promise<VerificationRecord[]> => {
             profile.verification_status === 'pending'
             || profile.verification_status === 'rejected'
             || profile.verification_status === 'resubmitted'
-            || profile.is_verified === false
         ))
         .filter((profile) => !coveredUserIds.has(profile.id))
         .map((profile) => ({
@@ -2807,7 +2813,7 @@ export const getAllowedListingTypes = (role: UserRole | null | undefined): Listi
 export const getProviderCapabilitySummary = (role: UserRole | null | undefined) => {
     const listingTypes = getAllowedListingTypes(role);
     if (!role || listingTypes.length === 0) return 'Bookings, favorites, reviews, and provider chat';
-    return `Can publish ${listingTypes.map((type) => (type === 'guide' ? 'event' : type)).join(', ')} listings after account verification`;
+    return `Can submit ${listingTypes.map((type) => (type === 'guide' ? 'event' : type)).join(', ')} listings for admin approval`;
 };
 
 export const canCreateListing = (role: UserRole | null | undefined, type: ListingType) => canRolePublish(role, type);

@@ -16,7 +16,7 @@ export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 export const PAYMENT_STATUSES = ['pending', 'paid', 'refunded'] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const LISTING_STATUSES = ['draft', 'pending', 'published', 'rejected'] as const;
+export const LISTING_STATUSES = ['draft', 'pending', 'approved', 'live', 'rejected', 'published'] as const;
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -115,8 +115,8 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_company: {
-        summary: 'Manage a company profile and publish tours, activities, and events after account verification.',
-        requiresVerification: true,
+        summary: 'Manage a company profile and submit tours, activities, and events for admin post approval.',
+        requiresVerification: false,
         allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
             { key: 'phone', label: 'Business Phone', placeholder: '+91 98765 43210', required: true },
@@ -130,8 +130,8 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_instructor: {
-        summary: 'Offer tours, activities, and events independently or under a company profile after account verification.',
-        requiresVerification: true,
+        summary: 'Offer tours, activities, and events independently or under a company profile with post-level approval.',
+        requiresVerification: false,
         allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
             { key: 'phone', label: 'Phone', placeholder: '+91 98765 43210', required: true },
@@ -145,8 +145,8 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     tour_guide: {
-        summary: 'Lead tours, activities, and events, optionally under a company profile after account verification.',
-        requiresVerification: true,
+        summary: 'Lead tours, activities, and events, optionally under a company profile with post-level approval.',
+        requiresVerification: false,
         allowedListingTypes: ['tour', 'activity', 'guide'],
         fields: [
             { key: 'phone', label: 'Phone', placeholder: '+91 98765 43210', required: true },
@@ -160,7 +160,7 @@ export const ROLE_SIGNUP_CONFIG: Record<UserRole, RoleSignupConfig> = {
         ],
     },
     admin: {
-        summary: 'Internal role for verification review and moderation.',
+        summary: 'Internal role for post moderation and operations.',
         requiresVerification: false,
         allowedListingTypes: [],
         fields: [],

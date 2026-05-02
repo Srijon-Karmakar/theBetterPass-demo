@@ -586,9 +586,14 @@
     letter-spacing: 0.07em;
 }
 
-.ps-status-dot--published {
+.ps-status-dot--live {
     background: rgba(34, 197, 94, 0.1);
     color: #15803d;
+}
+
+.ps-status-dot--approved {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
 }
 
 .ps-status-dot--rejected {

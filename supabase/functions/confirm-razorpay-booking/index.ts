@@ -1,6 +1,5 @@
-/// <reference path="../_types/deno-fallback.d.ts" />
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': '*',
@@ -87,6 +86,23 @@ const ensureEnv = (name: string): string => {
     return value;
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const normalizeLooseString = (value: unknown): string => {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const lowered = trimmed.toLowerCase();
+    if (lowered === 'undefined' || lowered === 'null') return '';
+    return trimmed;
+};
+
+const normalizeOptionalUuid = (value: unknown): string | null => {
+    const normalized = normalizeLooseString(value);
+    if (!normalized) return null;
+    return UUID_REGEX.test(normalized) ? normalized : null;
+};
+
 const authenticateUser = async (authHeader: string) => {
     const supabaseUrl = ensureEnv('SUPABASE_URL');
     const supabaseAnonKey = ensureEnv('SUPABASE_ANON_KEY');
@@ -95,9 +111,13 @@ const authenticateUser = async (authHeader: string) => {
         global: { headers: { Authorization: authHeader } },
     });
 
-    const { data, error } = await client.auth.getUser();
-    if (error || !data.user) throw new Error('Unauthorized');
-    return data.user;
+    try {
+        const { data, error } = await client.auth.getUser();
+        if (error || !data.user) throw new Error('Unauthorized');
+        return data.user;
+    } catch {
+        throw new Error('Unauthorized');
+    }
 };
 
 Deno.serve(async (req) => {
@@ -118,23 +138,20 @@ Deno.serve(async (req) => {
         const booking = body.booking;
         const payment = body.payment;
 
-        const listingId = typeof booking?.listing_id === 'string' ? booking.listing_id.trim() : '';
+        const listingId = normalizeLooseString(booking?.listing_id);
         const listingType = booking?.listing_type;
-        const listingTitle = typeof booking?.listing_title === 'string' ? booking.listing_title.trim() : '';
-        const listingImage = typeof booking?.listing_image === 'string' ? booking.listing_image.trim() : '';
-        const providerUserId = typeof booking?.provider_user_id === 'string'
-            ? booking.provider_user_id.trim()
-            : null;
+        const listingTitle = normalizeLooseString(booking?.listing_title);
+        const listingImage = normalizeLooseString(booking?.listing_image);
+        const providerUserId = normalizeOptionalUuid(booking?.provider_user_id);
         const numberOfPeople = normalizePeopleCount(booking?.number_of_people);
         const unitPrice = toPositiveNumber(booking?.unit_price);
         const totalPrice = toPositiveNumber(booking?.total_price);
-        const bookingDate = typeof booking?.booking_date === 'string' && booking.booking_date.trim()
-            ? booking.booking_date.trim()
-            : null;
+        const bookingDateRaw = normalizeLooseString(booking?.booking_date);
+        const bookingDate = bookingDateRaw || null;
 
-        const orderId = typeof payment?.razorpay_order_id === 'string' ? payment.razorpay_order_id.trim() : '';
-        const paymentId = typeof payment?.razorpay_payment_id === 'string' ? payment.razorpay_payment_id.trim() : '';
-        const signature = typeof payment?.razorpay_signature === 'string' ? payment.razorpay_signature.trim() : '';
+        const orderId = normalizeLooseString(payment?.razorpay_order_id);
+        const paymentId = normalizeLooseString(payment?.razorpay_payment_id);
+        const signature = normalizeLooseString(payment?.razorpay_signature);
 
         if (!listingId || !listingType || !listingTitle) {
             return jsonResponse(400, { error: 'Booking data is incomplete.' });

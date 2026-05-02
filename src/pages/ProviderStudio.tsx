@@ -47,15 +47,24 @@ const EMPTY_FORM = (type: ListingType): ListingInput => ({
     sub_category: '',
     price: null,
     starts_at: '',
-    status: 'published',
+    status: 'pending',
 });
 
 const getStatusDotClass = (status?: string | null) => {
     switch (status) {
-        case 'published': return 'ps-status-dot ps-status-dot--published';
+        case 'live':
+        case 'published':
+            return 'ps-status-dot ps-status-dot--live';
+        case 'approved':
+            return 'ps-status-dot ps-status-dot--approved';
         case 'rejected': return 'ps-status-dot ps-status-dot--rejected';
         default: return 'ps-status-dot ps-status-dot--pending';
     }
+};
+
+const getListingStatusLabel = (status?: string | null) => {
+    if (status === 'published') return 'live';
+    return status || 'pending';
 };
 
 const getStatusPillClass = (verificationStatus?: string | null) => {
@@ -70,9 +79,9 @@ const getListingTitle = (listing: PostRecord) => listing.title || listing.name |
 
 const getPrimaryActionCopy = (type: ListingType) => {
     switch (type) {
-        case 'tour': return 'Publish Tour';
-        case 'activity': return 'Publish Activity';
-        case 'guide': return 'Publish Event';
+        case 'tour': return 'Submit Tour';
+        case 'activity': return 'Submit Activity';
+        case 'guide': return 'Submit Event';
     }
 };
 
@@ -91,7 +100,7 @@ export const ProviderStudio: React.FC = () => {
         () => (['tour', 'activity', 'guide'] as ListingType[]).filter((type) => canRolePublish(profile?.role, type)),
         [profile?.role]
     );
-    const canAccessStudio = isProvider && profile?.verification_status === 'approved' && allowedTypes.length > 0;
+    const canAccessStudio = isProvider && allowedTypes.length > 0;
 
     const loadListings = async () => {
         if (!user) return;
@@ -140,7 +149,7 @@ export const ProviderStudio: React.FC = () => {
             sub_category: listing.sub_category || '',
             price: typeof listing.price === 'number' ? listing.price : null,
             starts_at: listing.starts_at || '',
-            status: 'published',
+            status: (listing.status as ListingInput['status']) || 'pending',
         });
     };
 
@@ -155,7 +164,7 @@ export const ProviderStudio: React.FC = () => {
                 provider_user_id: user.id,
                 user_id: user.id,
                 company_profile_id: profile?.company_profile_id || null,
-                status: 'published',
+                status: 'pending',
                 rejection_reason: null,
                 price: typeof form.price === 'number' ? form.price : Number(form.price || 0) || null,
                 starts_at: form.starts_at || null,
@@ -236,7 +245,7 @@ export const ProviderStudio: React.FC = () => {
                     </span>
                     <h1 className="ps-title">Your Posting Studio</h1>
                     <p className="ps-subtitle">
-                        Publish tours, activities, and events directly to the live catalog — no queue, instant visibility.
+                        Submit tours, activities, and events for admin review, then track each post until it goes live.
                     </p>
                 </div>
 
@@ -264,8 +273,8 @@ export const ProviderStudio: React.FC = () => {
                     <div className="ps-lock-banner">
                         <ShieldAlert size={20} />
                         <div>
-                            <strong>Publishing unlocks after account approval</strong>
-                            <p>Your account is set up. Live posting opens once verification is marked approved by admin.</p>
+                            <strong>Provider publishing is not available for this role</strong>
+                            <p>Your current role cannot create tours, activities, or events.</p>
                         </div>
                     </div>
                 )}
@@ -304,10 +313,10 @@ export const ProviderStudio: React.FC = () => {
                                     {editingListingId ? 'Editing' : 'Create Listing'}
                                 </span>
                                 <h2 className="ps-card-title">
-                                    {editingListingId ? 'Edit live listing' : getPrimaryActionCopy(form.type)}
+                                    {editingListingId ? 'Update listing for review' : getPrimaryActionCopy(form.type)}
                                 </h2>
                                 <p className="ps-card-desc">
-                                    Publishes directly into the live catalog — no moderation queue.
+                                    New and edited listings are sent to admin moderation before they go live.
                                 </p>
                             </div>
                             {editingListingId && (
@@ -473,7 +482,7 @@ export const ProviderStudio: React.FC = () => {
 
                             <button type="submit" className="ps-submit" disabled={!canAccessStudio || saving}>
                                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
-                                {editingListingId ? 'Update Listing' : getPrimaryActionCopy(form.type)}
+                                {editingListingId ? 'Update & Re-submit' : getPrimaryActionCopy(form.type)}
                             </button>
                         </form>
                     </article>
@@ -484,13 +493,13 @@ export const ProviderStudio: React.FC = () => {
                             <div>
                                 <span className="ps-card-label">
                                     <Sparkles size={11} />
-                                    Live Inventory
+                                    Posting History
                                 </span>
                                 <h2 className="ps-card-title">Your listings</h2>
                                 <p className="ps-card-desc">
                                     {listings.length > 0
-                                        ? `${listings.length} listing${listings.length === 1 ? '' : 's'} live in the catalog`
-                                        : 'Nothing published yet'}
+                                        ? `${listings.length} listing${listings.length === 1 ? '' : 's'} submitted`
+                                        : 'No posts yet'}
                                 </p>
                             </div>
                             <Link to="/dashboard" className="ps-inventory-link">
@@ -535,7 +544,7 @@ export const ProviderStudio: React.FC = () => {
                                                 <div className="ps-listing-footer">
                                                     <span className="ps-type-pill">{LISTING_LABELS[listingType] || 'Listing'}</span>
                                                     <span className={getStatusDotClass(listing.status)}>
-                                                        {listing.status || 'published'}
+                                                        {getListingStatusLabel(listing.status)}
                                                     </span>
                                                     {typeof listing.price === 'number' && (
                                                         <span className="ps-price">Rs {listing.price.toLocaleString()}</span>
@@ -551,7 +560,7 @@ export const ProviderStudio: React.FC = () => {
                                 <Sparkles size={26} />
                                 <strong>No listings yet</strong>
                                 <p>
-                                    Create your first {allowedTypes[0] ? LISTING_LABELS[allowedTypes[0]].toLowerCase() : 'listing'} — it appears here instantly after publishing.
+                                    Create your first {allowedTypes[0] ? LISTING_LABELS[allowedTypes[0]].toLowerCase() : 'listing'} and track pending, approved, live, or rejected states here.
                                 </p>
                             </div>
                         )}

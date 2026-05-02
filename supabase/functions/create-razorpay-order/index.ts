@@ -1,6 +1,5 @@
-/// <reference path="../_types/deno-fallback.d.ts" />
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': '*',
@@ -50,6 +49,15 @@ const ensureEnv = (name: string): string => {
     return value;
 };
 
+const normalizeLooseString = (value: unknown): string => {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const lowered = trimmed.toLowerCase();
+    if (lowered === 'undefined' || lowered === 'null') return '';
+    return trimmed;
+};
+
 const authenticateUser = async (authHeader: string) => {
     const supabaseUrl = ensureEnv('SUPABASE_URL');
     const supabaseAnonKey = ensureEnv('SUPABASE_ANON_KEY');
@@ -59,12 +67,15 @@ const authenticateUser = async (authHeader: string) => {
         global: { headers: { Authorization: authHeader } },
     });
 
-    const { data, error } = await client.auth.getUser();
-    if (error || !data.user) {
+    try {
+        const { data, error } = await client.auth.getUser();
+        if (error || !data.user) {
+            throw new Error('Unauthorized');
+        }
+        return data.user;
+    } catch {
         throw new Error('Unauthorized');
     }
-
-    return data.user;
 };
 
 Deno.serve(async (req) => {
@@ -83,9 +94,9 @@ Deno.serve(async (req) => {
         const user = await authenticateUser(authHeader);
         const body = (await req.json()) as CreateOrderBody;
 
-        const listingId = typeof body.listing_id === 'string' ? body.listing_id.trim() : '';
-        const listingType = typeof body.listing_type === 'string' ? body.listing_type.trim() : '';
-        const listingTitle = typeof body.listing_title === 'string' ? body.listing_title.trim() : '';
+        const listingId = normalizeLooseString(body.listing_id);
+        const listingType = normalizeLooseString(body.listing_type);
+        const listingTitle = normalizeLooseString(body.listing_title);
         const totalPrice = toPositiveNumber(body.total_price);
         const unitPrice = toPositiveNumber(body.unit_price);
         const numberOfPeople = normalizeInteger(body.number_of_people, 1);
