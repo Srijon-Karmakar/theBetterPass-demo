@@ -36,6 +36,98 @@
   color: var(--text-muted);
 }
 
+.listing-unavailable-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.listing-unavailable-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(245, 245, 245, 0.48);
+  -webkit-backdrop-filter: blur(11px);
+  backdrop-filter: blur(11px);
+  cursor: default;
+}
+
+.listing-unavailable-card {
+  position: relative;
+  z-index: 1;
+  width: min(360px, calc(100vw - 48px));
+  border-radius: 16px;
+  background: var(--surface-main);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  padding: 24px 22px 20px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+  animation: listing-unavailable-in 180ms ease both;
+}
+
+.listing-unavailable-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-muted));
+  color: var(--accent);
+}
+
+.listing-unavailable-card h2,
+.listing-unavailable-card p {
+  margin: 0;
+}
+
+.listing-unavailable-card h2 {
+  max-width: 300px;
+  font-size: 1.2rem;
+  line-height: 1.18;
+}
+
+.listing-unavailable-card p {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.listing-unavailable-btn {
+  min-height: 42px;
+  min-width: 112px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  margin-top: 4px;
+  padding: 0 18px;
+}
+
+.listing-unavailable-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+@keyframes listing-unavailable-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .listing-detail-shell {
   display: grid;
   gap: 18px;

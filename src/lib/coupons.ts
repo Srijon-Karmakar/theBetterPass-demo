@@ -1,7 +1,7 @@
 const COUPON_STORAGE_KEY = 'tbp:coupon-claim:v1';
 
 export const FIRST_BOOKING_COUPON_CODE = 'FIRST20';
-export const FIRST_BOOKING_COUPON_PERCENT = 20;
+export const FIRST_BOOKING_COUPON_PERCENT = 5;
 export const COUPON_STORAGE_EVENT = 'tbp:coupon-claim-changed';
 
 export interface StoredCouponClaim {

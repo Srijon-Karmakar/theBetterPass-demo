@@ -269,6 +269,7 @@ export const Auth: React.FC = () => {
     const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
     const [forgotEmail, setForgotEmail] = useState('');
     const [recoveryPassword, setRecoveryPassword] = useState('');
+    const [confirmSignupPassword, setConfirmSignupPassword] = useState('');
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [subscribeNewsletter, setSubscribeNewsletter] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
@@ -623,10 +624,31 @@ export const Auth: React.FC = () => {
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (activeRole === 'tourist') {
+            if (!formValues.fullName.trim()) {
+                setError('Your name is required.');
+                setInfo(null);
+                return;
+            }
+
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(formValues.email.trim())) {
+                setError('Enter a valid email address.');
+                setInfo(null);
+                return;
+            }
+        }
+
         if (!passwordFormat.isComplete) {
             const passwordStepIndex = signupSteps.findIndex((step) => step.kind === 'base' && step.key === 'password');
             if (passwordStepIndex >= 0) setSignupStepIndex(passwordStepIndex);
             setError(PASSWORD_REQUIREMENTS_ERROR);
+            setInfo(null);
+            return;
+        }
+
+        if (activeRole === 'tourist' && formValues.password !== confirmSignupPassword) {
+            setError('Password and confirm password must match.');
             setInfo(null);
             return;
         }
@@ -698,6 +720,7 @@ export const Auth: React.FC = () => {
             );
             clearAuthDraft();
             setFormValues(DEFAULT_SIGNUP_VALUES);
+            setConfirmSignupPassword('');
             setAcceptTerms(false);
             setSubscribeNewsletter(false);
             setIsLogin(true);
@@ -1044,7 +1067,140 @@ export const Auth: React.FC = () => {
                             )}
 
                             <form onSubmit={handleSignup} className="auth-form auth-form--signup">
-                                {isSignupWizard && currentSignupStep ? (
+                                {activeRole === 'tourist' ? (
+                                    <>
+                                        <label className="auth-field">
+                                            <span>Full name</span>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Srijon Karmakar"
+                                                value={formValues.fullName}
+                                                onChange={(e) => updateField('fullName', e.target.value)}
+                                            />
+                                        </label>
+
+                                        <label className="auth-field">
+                                            <span>Email Address</span>
+                                            <input
+                                                type="email"
+                                                required
+                                                placeholder="you@example.com"
+                                                value={formValues.email}
+                                                onChange={(e) => updateField('email', e.target.value)}
+                                            />
+                                        </label>
+
+                                        <label className="auth-field">
+                                            <span>Password</span>
+                                            <div className="auth-password-wrap">
+                                                <input
+                                                    type={showSignupPassword ? 'text' : 'password'}
+                                                    required
+                                                    minLength={8}
+                                                    pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).{8,}"
+                                                    placeholder="Minimum 8 characters"
+                                                    value={formValues.password}
+                                                    onChange={(e) => updateField('password', e.target.value)}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="auth-eye-btn"
+                                                    onClick={() => setShowSignupPassword((current) => !current)}
+                                                    aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
+                                                >
+                                                    {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
+                                        </label>
+
+                                        <label className="auth-field">
+                                            <span>Confirm password</span>
+                                            <input
+                                                type={showSignupPassword ? 'text' : 'password'}
+                                                required
+                                                minLength={8}
+                                                placeholder="Re-enter password"
+                                                value={confirmSignupPassword}
+                                                onChange={(e) => setConfirmSignupPassword(e.target.value)}
+                                            />
+                                        </label>
+
+                                        <div
+                                            className={`auth-password-format auth-field-full${passwordFormat.isComplete ? ' is-complete' : ''}`}
+                                            aria-live="polite"
+                                        >
+                                            <div
+                                                className="auth-password-meter"
+                                                style={passwordProgressStyle}
+                                                role="img"
+                                                aria-label={`Password format ${passwordFormat.percentage}% complete`}
+                                            >
+                                                <svg viewBox="0 0 64 64" aria-hidden="true">
+                                                    <circle className="auth-password-meter-track" cx="32" cy="32" r="25" />
+                                                    <circle className="auth-password-meter-progress" cx="32" cy="32" r="25" />
+                                                </svg>
+                                                <span>{passwordFormat.percentage}%</span>
+                                            </div>
+                                            <ul className="auth-password-rules">
+                                                {passwordFormat.requirements.map((requirement) => (
+                                                    <li
+                                                        key={requirement.key}
+                                                        className={requirement.met ? 'is-met' : ''}
+                                                    >
+                                                        <span aria-hidden="true" />
+                                                        {requirement.label}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        <label className="auth-check-row auth-check-row-full auth-terms-check auth-terms-check--compact">
+                                            <input
+                                                type="checkbox"
+                                                checked={acceptTerms}
+                                                onChange={(e) => {
+                                                    setAcceptTerms(e.target.checked);
+                                                    setError(null);
+                                                }}
+                                            />
+                                            <span>I agree to the </span>
+                                            <button type="button" className="auth-text-link" onClick={() => navigate('/terms')}>
+                                                Terms &amp; Condition
+                                            </button>
+                                        </label>
+
+                                        <label className="auth-check-row auth-check-row-full auth-terms-check--compact">
+                                            <input
+                                                type="checkbox"
+                                                checked={subscribeNewsletter}
+                                                onChange={(e) => setSubscribeNewsletter(e.target.checked)}
+                                            />
+                                            <span>Send me newsletter emails with travel deals and updates</span>
+                                        </label>
+
+                                        <button type="submit" className="auth-submit" disabled={loading || !passwordFormat.isComplete}>
+                                            {loading ? <Loader2 className="animate-spin" size={18} /> : 'Create Account'}
+                                        </button>
+
+                                        <div className="auth-signup-social auth-signup-social--compact">
+                                            <div className="auth-divider">or</div>
+                                            <button
+                                                type="button"
+                                                className="auth-social-btn"
+                                                disabled={googleLoading}
+                                                onClick={() => void handleGoogleTouristAuth('signup')}
+                                            >
+                                                {googleLoading ? (
+                                                    <Loader2 className="animate-spin" size={18} />
+                                                ) : (
+                                                    <GoogleIcon />
+                                                )}
+                                                <span>{googleLoading ? 'Redirecting to Google...' : 'Sign up with Google'}</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : isSignupWizard && currentSignupStep ? (
                                     <>
                                         <div className="auth-tourist-step-header">
                                             <p className="auth-tourist-step-kicker">
@@ -1108,7 +1264,7 @@ export const Auth: React.FC = () => {
                                                     </button>
                                                 </div>
 
-                                                {activeRole === 'tourist' && (
+                                                {String(activeRole) === 'tourist' && (
                                                     <div className="auth-signup-social">
                                                         <div className="auth-divider">or</div>
                                                         <button
@@ -1371,7 +1527,7 @@ export const Auth: React.FC = () => {
                                                             <span>Send me newsletter emails with travel deals and updates</span>
                                                         </label>
 
-                                                        {activeRole === 'tourist' && (
+                                                        {String(activeRole) === 'tourist' && (
                                                             <div className="auth-signup-social auth-signup-social--compact">
                                                                 <div className="auth-divider">or</div>
                                                                 <button

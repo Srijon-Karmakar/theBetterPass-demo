@@ -74,6 +74,8 @@ const getBookingEmailWarning = (delivery?: BookingEmailDelivery): string | null 
     return 'Booking saved, but the confirmation email was not sent.';
 };
 
+const isBookingTemporarilyUnavailable = () => true;
+
 const normalizeLooseString = (value: unknown): string | null => {
     if (typeof value === 'number' && Number.isFinite(value)) return String(value);
     if (typeof value !== 'string') return null;
@@ -194,6 +196,7 @@ export const ListingDetail: React.FC = () => {
     const [bookingPendingSync, setBookingPendingSync] = useState(false);
     const [bookingError, setBookingError] = useState<string | null>(null);
     const [bookingEmailWarning, setBookingEmailWarning] = useState<string | null>(null);
+    const [bookingUnavailableOpen, setBookingUnavailableOpen] = useState(false);
     const [shareFeedback, setShareFeedback] = useState<string | null>(null);
     const [hasExistingBooking, setHasExistingBooking] = useState(false);
     const [hasConfirmedBooking, setHasConfirmedBooking] = useState(false);
@@ -634,6 +637,12 @@ export const ListingDetail: React.FC = () => {
         }
 
         trackEvent('booking_started', { target: `${effectiveType}:${listingId}` });
+        if (isBookingTemporarilyUnavailable()) {
+            setBookingError(null);
+            setBookingUnavailableOpen(true);
+            return;
+        }
+
         setBookingLoading(true);
         setConfirmingBooking(false);
         setBookingAwaitingProvider(false);
@@ -930,6 +939,30 @@ export const ListingDetail: React.FC = () => {
                     </div>
                 </div>
             )}
+            {bookingUnavailableOpen && (
+                <div className="listing-unavailable-modal" role="dialog" aria-modal="true" aria-labelledby="listing-unavailable-title">
+                    <button
+                        type="button"
+                        className="listing-unavailable-backdrop"
+                        aria-label="Close booking unavailable message"
+                        onClick={() => setBookingUnavailableOpen(false)}
+                    />
+                    <section className="listing-unavailable-card">
+                        <div className="listing-unavailable-icon">
+                            <MapPin size={20} />
+                        </div>
+                        <h2 id="listing-unavailable-title">Sorry, we are temporarily unavailable in your location</h2>
+                        <p>We are not serving in your location right now. Coming soon.</p>
+                        <button
+                            type="button"
+                            className="listing-unavailable-btn"
+                            onClick={() => setBookingUnavailableOpen(false)}
+                        >
+                            Got it
+                        </button>
+                    </section>
+                </div>
+            )}
             <div className="container listing-detail-shell">
                 <button
                     type="button"
@@ -1146,7 +1179,7 @@ export const ListingDetail: React.FC = () => {
                                         <BadgePercent size={18} />
                                         <span>
                                             <strong>{couponPreview.code} applied</strong>
-                                            <small>20% off your first provider-confirmed booking.</small>
+                                            <small>5% off your first provider-confirmed booking.</small>
                                         </span>
                                     </div>
                                 )}
