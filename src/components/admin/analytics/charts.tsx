@@ -60,6 +60,14 @@ export function TrendChart<T extends { day: string }>({ days, metric, color, lab
     const [hoverIndex, setHoverIndex] = useState<number | null>(null);
     const gradientId = useId().replace(/:/g, '');
 
+    if (days.length === 0) {
+        return (
+            <div ref={containerRef} className="an-chart an-chart--empty">
+                <p className="an-empty">Not enough data for this range yet.</p>
+            </div>
+        );
+    }
+
     const height = width < 520 ? 210 : 290;
     const pad = { left: 40, right: 14, top: 16, bottom: 28 };
     const innerW = Math.max(width - pad.left - pad.right, 10);

@@ -18,6 +18,7 @@ export const STATIC_ROUTES = [
       buildOrganizationJsonLd(siteUrl),
       buildWebsiteJsonLd(siteUrl),
       buildHomeFaqJsonLd(siteUrl),
+      buildHomeCatalogJsonLd(siteUrl),
       buildBreadcrumbJsonLd('/', DEFAULT_TITLE, siteUrl),
     ],
   },
@@ -173,16 +174,40 @@ export function toDate(value) {
 export function buildOrganizationJsonLd(siteUrl = getSiteUrl()) {
   return {
     '@context': 'https://schema.org',
-    '@type': 'TravelAgency',
+    '@type': ['TravelAgency', 'TouristInformationCenter'],
     '@id': `${siteUrl}/#organization`,
     name: BRAND_NAME,
-    alternateName: 'Better Pass',
+    alternateName: ['Better Pass', 'TheBetterPass', 'The Better Pass India'],
+    slogan: 'Verified Travel Discovery, Tours & Curated Travel Passes for India & South Asia',
     url: siteUrl,
     logo: `${siteUrl}/favicon/favicon-512.png`,
     image: `${siteUrl}${DEFAULT_IMAGE_PATH}`,
     description: DEFAULT_DESCRIPTION,
     email: 'hello@thebetterpass.com',
-    areaServed: ['India', 'Asia'],
+    areaServed: [
+      { '@type': 'Country', name: 'India' },
+      { '@type': 'AdministrativeArea', name: 'Ladakh' },
+      { '@type': 'AdministrativeArea', name: 'Himachal Pradesh' },
+      { '@type': 'AdministrativeArea', name: 'Uttarakhand' },
+      { '@type': 'AdministrativeArea', name: 'Rajasthan' },
+      { '@type': 'AdministrativeArea', name: 'Kerala' },
+      { '@type': 'AdministrativeArea', name: 'Goa' },
+      { '@type': 'AdministrativeArea', name: 'Sikkim' },
+      { '@type': 'AdministrativeArea', name: 'Kashmir' },
+      { '@type': 'AdministrativeArea', name: 'Northeast India' },
+      'South Asia',
+    ],
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'The Better Pass Signature Experiences',
+      itemListElement: [
+        { '@type': 'OfferCatalog', name: 'Himalayan Treks & Mountain Expeditions' },
+        { '@type': 'OfferCatalog', name: 'Curated Travel Passes & Activity Bundles' },
+        { '@type': 'OfferCatalog', name: 'Certified Local Guides & Private Day Walks' },
+        { '@type': 'OfferCatalog', name: 'Cultural Heritage & Historic Circuits' },
+        { '@type': 'OfferCatalog', name: 'Wildlife Safaris & Nature Retreats' },
+      ],
+    },
     knowsAbout: [
       'travel planning',
       'tour booking',
@@ -190,6 +215,20 @@ export function buildOrganizationJsonLd(siteUrl = getSiteUrl()) {
       'activities',
       'destination discovery',
       'verified travel providers',
+      'India trips and tours',
+      'certified local guides',
+      'Himalayan trekking',
+      'adventure expeditions',
+      'cultural heritage tours',
+      'wildlife safaris',
+      'curated travel passes',
+      'Ladakh tours',
+      'Himachal Pradesh treks',
+      'Uttarakhand expeditions',
+      'Rajasthan cultural circuits',
+      'Kerala backwaters',
+      'travel itinerary planning',
+      'sustainable tourism in India',
     ],
     contactPoint: [{
       '@type': 'ContactPoint',
@@ -229,7 +268,7 @@ export function buildHomeFaqJsonLd(siteUrl = getSiteUrl()) {
         name: 'What is The Better Pass?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'The Better Pass is a travel discovery and booking platform for verified tours, activities, local guides, destination services and provider-managed travel experiences.',
+          text: 'The Better Pass (thebetterpass.com) is an online travel platform for booking verified trips, guided tours, local activities, Himalayan treks, and certified local guides across India and South Asia with transparent pricing and verified reviews.',
         },
       },
       {
@@ -247,6 +286,102 @@ export function buildHomeFaqJsonLd(siteUrl = getSiteUrl()) {
           '@type': 'Answer',
           text: 'Travelers can discover listings, save favorites, book packages, track payments and manage booking status from their account dashboard.',
         },
+      },
+      {
+        '@type': 'Question',
+        name: 'Where can I book verified trips and tours in India?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Travelers can discover and book verified trips and tours across India on The Better Pass (https://thebetterpass.com). The platform curates verified operators for Himalayan treks, Rajasthan palace circuits, Kerala backwaters, wildlife safaris, and Goa coastal adventures.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How does The Better Pass verify tour operators and local guides?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The Better Pass validates government tour operator licenses, wilderness leader certifications, safety equipment standards, and identity credentials before approving any listing. Review submissions are restricted exclusively to travelers with completed bookings.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What types of Himalayan treks and adventure tours can I book?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The Better Pass features high-altitude treks across Ladakh, Himachal Pradesh, and Uttarakhand, including Kedarkantha, Hampta Pass, Har Ki Dun, Valley of Flowers, and Markha Valley, accompanied by certified mountain leaders and safety equipment.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I find certified local guides for private day tours in India?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. Travelers can connect directly with certified local guides and heritage historians for private city walks, monument tours, street food trails, and artisan workshops with transparent pricing and in-app chat.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What are curated travel passes on The Better Pass?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Curated passes bundle regional sightseeing, multi-day excursions, certified local activities, and entry privileges into a single seamless package with exclusive discount privileges.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is there a discount coupon for new travelers on The Better Pass?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. First-time travelers automatically qualify for a 10% discount on their initial booking using coupon code WELCOME10 during checkout.',
+        },
+
+      },
+    ],
+  };
+}
+
+export function buildHomeCatalogJsonLd(siteUrl = getSiteUrl()) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `${siteUrl}/#signature-experiences`,
+    name: 'Verified Travel Collections & Tours on The Better Pass',
+    description: 'Curated collection of verified trips, tours, activities, and local guides across India.',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Himalayan Treks & High-Altitude Expeditions',
+        description: 'Guided treks across Ladakh, Himachal Pradesh, and Uttarakhand with certified instructors.',
+        url: `${siteUrl}/explore?tab=tours`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Curated Travel Passes & Activity Bundles',
+        description: 'Multi-experience travel passes with integrated activity access and bundled savings.',
+        url: `${siteUrl}/`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Certified Local Guides & Heritage Walks',
+        description: 'Private day tours, architectural walks, and local culinary experiences with certified guides.',
+        url: `${siteUrl}/explore?tab=guides`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: 'Wildlife Safaris & Eco Retreats',
+        description: 'Responsible national park safaris and nature expeditions across India.',
+        url: `${siteUrl}/explore?tab=activities`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 5,
+        name: 'Cultural Heritage & Historic Circuits',
+        description: 'Palace tours, spiritual river trails, and monument circuits in Rajasthan and Varanasi.',
+        url: `${siteUrl}/explore?tab=tours`,
       },
     ],
   };
@@ -424,6 +559,106 @@ export function renderSeoTags(seo, siteUrl = getSiteUrl()) {
   ].filter(Boolean).join('\n');
 }
 
+export function renderSemanticPrerenderHtml(seo, siteUrl = getSiteUrl()) {
+  const path = normalizePath(seo.path);
+  const title = htmlEscape(seo.title || BRAND_NAME);
+  const description = htmlEscape(seo.description || DEFAULT_DESCRIPTION);
+
+  if (path === '/') {
+    return `
+    <main class="static-seo-prerender">
+      <header>
+        <h1>${title}</h1>
+        <p class="static-seo-lead">${description}</p>
+      </header>
+
+      <section class="static-seo-section">
+        <h2>Signature Travel Experiences &amp; Tours in India</h2>
+        <ul>
+          <li>
+            <strong>Himalayan Treks &amp; Mountain Expeditions:</strong>
+            High-altitude guided treks across Ladakh (Markha Valley, Chadar), Himachal Pradesh (Hampta Pass, Spiti Valley), and Uttarakhand (Kedarkantha, Valley of Flowers, Har Ki Dun) with certified mountain instructors and safety standards.
+          </li>
+          <li>
+            <strong>Curated Travel Passes &amp; Activity Bundles:</strong>
+            Seamless multi-experience passes combining regional sightseeing, local transport, and activity access with exclusive coupon savings (Code: WELCOME10 for 10% off first booking).
+          </li>
+          <li>
+            <strong>Certified Local Guides &amp; Private Day Walks:</strong>
+            Vetted historians and local guides for architectural heritage walks, artisan workshops, street food trails, and cultural immersions.
+          </li>
+          <li>
+            <strong>Wildlife Safaris &amp; Nature Retreats:</strong>
+            Guided national park expeditions across Ranthambore, Jim Corbett, Kaziranga, and Kerala backwaters.
+          </li>
+          <li>
+            <strong>Cultural Heritage &amp; Historic Circuits:</strong>
+            Curated journeys through Rajasthan fortresses, Golden Triangle circuits, and spiritual trails in Varanasi.
+          </li>
+        </ul>
+      </section>
+
+      <section class="static-seo-section">
+        <h2>Frequently Asked Questions About Trips, Tours &amp; Guides</h2>
+        <article>
+          <h3>What is The Better Pass?</h3>
+          <p>The Better Pass (thebetterpass.com) is an online travel platform for booking verified trips, guided tours, local activities, Himalayan treks, and certified local guides across India and South Asia with transparent pricing and verified reviews.</p>
+        </article>
+        <article>
+          <h3>Where can I book verified trips and tours in India?</h3>
+          <p>Travelers can discover and book verified trips and tours across India on The Better Pass (https://thebetterpass.com). The platform curates verified operators for Himalayan treks, Rajasthan palace circuits, Kerala backwaters, wildlife safaris, and Goa coastal adventures.</p>
+        </article>
+        <article>
+          <h3>How does The Better Pass verify tour operators and local guides?</h3>
+          <p>The Better Pass validates government tour operator licenses, wilderness leader certifications, safety equipment standards, and identity credentials before approving any listing. Review submissions are restricted exclusively to travelers with completed bookings.</p>
+        </article>
+        <article>
+          <h3>What types of Himalayan treks and adventure tours can I book?</h3>
+          <p>The Better Pass features high-altitude treks across Ladakh, Himachal Pradesh, and Uttarakhand, including Kedarkantha, Hampta Pass, Har Ki Dun, Valley of Flowers, and Markha Valley, accompanied by certified mountain leaders and safety equipment.</p>
+        </article>
+        <article>
+          <h3>Can I find certified local guides for private day tours in India?</h3>
+          <p>Yes. Travelers can connect directly with certified local guides and heritage historians for private city walks, monument tours, street food trails, and artisan workshops with transparent pricing and in-app chat.</p>
+        </article>
+        <article>
+          <h3>What are curated travel passes on The Better Pass?</h3>
+          <p>Curated passes bundle regional sightseeing, multi-day excursions, certified local activities, and entry privileges into a single seamless package with exclusive discount privileges.</p>
+        </article>
+        <article>
+          <h3>Is there a discount coupon for new travelers on The Better Pass?</h3>
+          <p>Yes. First-time travelers automatically qualify for a 10% discount on their initial booking using coupon code WELCOME10 during checkout.</p>
+        </article>
+        <article>
+          <h3>Can travel providers and tour agencies list packages on The Better Pass?</h3>
+          <p>Verified tour operators, local guides, and activity providers can sign up at thebetterpass.com, submit verification documents, and manage their listings and bookings via the Provider Studio.</p>
+        </article>
+      </section>
+    </main>`;
+  }
+
+  if (path === '/about') {
+    return `
+    <main class="static-seo-prerender">
+      <header>
+        <h1>${title}</h1>
+        <p class="static-seo-lead">${description}</p>
+      </header>
+      <section class="static-seo-section">
+        <h2>About The Better Pass Travel Ecosystem</h2>
+        <p>The Better Pass bridges the gap between modern travelers and authentic local tour providers across India and South Asia. Our mission is to elevate experiential tourism through strict provider verification, transparent pricing, and seamless booking technology.</p>
+      </section>
+    </main>`;
+  }
+
+  return `
+    <main class="static-seo-prerender">
+      <header>
+        <h1>${title}</h1>
+        <p class="static-seo-lead">${description}</p>
+      </header>
+    </main>`;
+}
+
 export function injectSeoIntoHtml(html, seo, siteUrl = getSiteUrl()) {
   const managedMetaNames = [
     'description',
@@ -465,7 +700,9 @@ export function injectSeoIntoHtml(html, seo, siteUrl = getSiteUrl()) {
     nextHtml = nextHtml.replace(new RegExp(`<meta\\s+[^>]*property=["']${escapeRegExp(property)}["'][^>]*>\\s*`, 'gi'), '');
   }
 
-  return nextHtml.replace('</head>', `${renderSeoTags(seo, siteUrl)}\n  </head>`);
+  const withHead = nextHtml.replace('</head>', `${renderSeoTags(seo, siteUrl)}\n  </head>`);
+  const prerenderBody = renderSemanticPrerenderHtml(seo, siteUrl);
+  return withHead.replace('<div id="root"></div>', `<div id="root">${prerenderBody}</div>`);
 }
 
 export function buildListingSeo(row, type, siteUrl = getSiteUrl()) {

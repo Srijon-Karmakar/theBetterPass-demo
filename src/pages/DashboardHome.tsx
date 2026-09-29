@@ -41,6 +41,7 @@ import { DEFAULT_HERO_MESSAGES, getDynamicHeroMessage, getPublicAppContent, type
 import { getListingImages } from '../lib/listingImages';
 import { VIRTUAL_TOURS_ENABLED, isVirtualTourRecord } from '../lib/virtualTours';
 import { useStaggeredImageRotation } from '../hooks/useStaggeredImageRotation';
+import { TravelKnowledgeFaq } from '../components/TravelKnowledgeFaq';
 import './dashboard-home.css';
 import '../components/listing-card.css';
 
@@ -1288,6 +1289,10 @@ export const DashboardHome: React.FC = () => {
             )}
           </div>
         )}
+
+        <Reveal delay={200}>
+          <TravelKnowledgeFaq />
+        </Reveal>
       </div>
 
       <LiquidMobileNav

@@ -102,6 +102,14 @@ export const fillMissingDays = (daily: AnalyticsDay[], from: Date, days: number)
     fillMissingDaysGeneric(daily, from, days, emptyDay)
 );
 
+const fillNewsletterDays = (
+    daily: NewsletterAnalytics['daily'],
+    from: Date,
+    days: number,
+): NewsletterAnalytics['daily'] => (
+    fillMissingDaysGeneric(daily, from, days, (day) => ({ day, subscribers: 0 }))
+);
+
 export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promise<AnalyticsSummary> => {
     const { from, to, days } = getAnalyticsRangeDates(key);
     const { data, error } = await supabase.rpc('admin_analytics_summary', {
@@ -129,7 +137,9 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
         heatmap: raw.heatmap || [],
         funnel: raw.funnel || { visited: 0, viewed_listing: 0, authenticated: 0, started_booking: 0 },
         active_now: raw.active_now || 0,
-        newsletter: raw.newsletter,
+        newsletter: raw.newsletter
+            ? { ...raw.newsletter, daily: fillNewsletterDays(raw.newsletter.daily || [], from, days) }
+            : undefined,
         crm_funnel: raw.crm_funnel,
         is_marketing: raw.is_marketing,
     };

@@ -1,5 +1,18 @@
+# The Better Pass Robots Directive (AEO & Search Engine Optimization)
+# Website: https://thebetterpass.com
+# AI Content Context: https://thebetterpass.com/llms.txt
+# Full LLM Knowledge Base: https://thebetterpass.com/llms-full.txt
+
+# Default rule for all web crawlers
 User-agent: *
 Allow: /
+Allow: /listings/
+Allow: /blogs/
+Allow: /about
+Allow: /map
+Allow: /terms
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /login
 Disallow: /signup
 Disallow: /dashboard
@@ -12,4 +25,99 @@ Disallow: /admin/
 Disallow: /provider/studio
 Disallow: /notifications
 
+# OpenAI - ChatGPT & SearchGPT
+User-agent: GPTBot
+Allow: /
+Allow: /listings/
+Allow: /blogs/
+Allow: /about
+Allow: /map
+Allow: /terms
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /messages/
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /listings/
+Allow: /blogs/
+Allow: /about
+Allow: /map
+Allow: /terms
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+Allow: /listings/
+Allow: /blogs/
+Allow: /about
+Allow: /map
+Allow: /terms
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /messages/
+
+# Anthropic - Claude
+User-agent: ClaudeBot
+Allow: /
+Allow: /listings/
+Allow: /blogs/
+Allow: /about
+Allow: /map
+Allow: /terms
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /messages/
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Google Gemini & Extended AI Crawlers
+User-agent: Google-Extended
+Allow: /
+Allow: /listings/
+Allow: /blogs/
+Allow: /about
+Allow: /map
+Allow: /terms
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: GoogleOther
+Allow: /
+
+# Common Crawl (Foundation training data for LLMs)
+User-agent: CCBot
+Allow: /
+Allow: /listings/
+Allow: /blogs/
+Allow: /about
+Allow: /map
+Allow: /terms
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Apple AI & Siri Knowledge
+User-agent: Applebot-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# XML Sitemap and LLM Context Manifests
 Sitemap: https://thebetterpass.com/sitemap.xml
