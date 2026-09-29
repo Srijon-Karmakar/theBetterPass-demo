@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 export const NATIVE_APP_SCHEME = 'com.tbp.app';
 export const NATIVE_AUTH_HOST = 'auth';
 export const NATIVE_AUTH_CALLBACK_PATH = '/callback';
-export const DEFAULT_NATIVE_AUTH_REDIRECT_PATH = '/explore';
+export const DEFAULT_NATIVE_AUTH_REDIRECT_PATH = '/';
 const APP_LINK_HOSTS = new Set(['thebetterpass.com', 'www.thebetterpass.com']);
 
 export const isNativeApp = () => Capacitor.isNativePlatform() || Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios';

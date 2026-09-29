@@ -546,6 +546,7 @@ const parseTouristSection = (value: string | null): SidebarKey | null => {
     if (normalized === 'revenue' || normalized === 'spend') return 'revenue';
     if (normalized === 'messages') return 'messages';
     if (normalized === 'favorites' || normalized === 'favs') return 'favorites';
+    if (normalized === 'analytics' || normalized === 'activity' || normalized === 'insights') return 'analytics';
     return null;
 };
 
@@ -561,6 +562,7 @@ const parseProviderSection = (value: string | null): SidebarKey | null => {
     if (normalized === 'advertisements' || normalized === 'ads' || normalized === 'ad') return 'advertisements';
     if (normalized === 'manage_posts' || normalized === 'manage-posts' || normalized === 'posts') return 'studio';
     if (normalized === 'messages') return 'messages';
+    if (normalized === 'analytics' || normalized === 'performance' || normalized === 'insights') return 'analytics';
     return null;
 };
 
@@ -597,6 +599,7 @@ const parseMarketingSection = (value: string | null): SidebarKey | null => {
     if (normalized === 'about' || normalized === 'about-us' || normalized === 'about_us' || normalized === 'edit-about') return 'about';
     if (normalized === 'content' || normalized === 'marketing' || normalized === 'copy') return 'greetings';
     if (normalized === 'messages' || normalized === 'notifications') return 'messages';
+    if (normalized === 'analytics' || normalized === 'traffic' || normalized === 'insights') return 'analytics';
     return null;
 };
 
@@ -664,6 +667,16 @@ const LazyAdminAccountMap = lazy(async () => {
 const LazyAdminAnalytics = lazy(async () => {
     const module = await import('../components/admin/AdminAnalytics');
     return { default: module.AdminAnalytics };
+});
+
+const LazyProviderAnalytics = lazy(async () => {
+    const module = await import('../components/provider/ProviderAnalytics');
+    return { default: module.ProviderAnalytics };
+});
+
+const LazyTouristAnalytics = lazy(async () => {
+    const module = await import('../components/tourist/TouristAnalytics');
+    return { default: module.TouristAnalytics };
 });
 
 const LazyProviderStudio = lazy(async () => {
@@ -1346,6 +1359,7 @@ export const RoleDashboard: React.FC = () => {
         if (effectiveRole === 'provider') {
             const providerNavItems: NavItem[] = [
                 { key: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+                { key: 'analytics', label: 'Analytics', icon: BarChart3 },
                 { key: 'bookings', label: 'Bookings', icon: ClipboardList },
                 ...(VIRTUAL_TOURS_ENABLED ? [{ key: 'virtualTours' as SidebarKey, label: 'Live Tours', icon: RadioTower, iconSrc: MOBILE_NAV_ICON_SRC.virtualTours }] : []),
                 { key: 'revenue', label: 'Revenue', icon: CalendarDays, iconSrc: MOBILE_NAV_ICON_SRC.revenue },
@@ -1358,8 +1372,8 @@ export const RoleDashboard: React.FC = () => {
             if (resolvedAccountRole === 'local_guide') {
                 const itemByKey = new Map(providerNavItems.map((item) => [item.key, item]));
                 const localGuideKeys: SidebarKey[] = VIRTUAL_TOURS_ENABLED
-                    ? ['virtualTours', 'bookings', 'revenue', 'listings', 'messages', 'overview']
-                    : ['overview', 'bookings', 'revenue', 'listings', 'messages'];
+                    ? ['virtualTours', 'bookings', 'revenue', 'listings', 'messages', 'overview', 'analytics']
+                    : ['overview', 'bookings', 'revenue', 'listings', 'messages', 'analytics'];
                 return localGuideKeys
                     .map((key) => itemByKey.get(key))
                     .filter((item): item is NavItem => Boolean(item))
@@ -1375,6 +1389,7 @@ export const RoleDashboard: React.FC = () => {
         if (effectiveRole === 'marketing') {
             return [
                 { key: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+                { key: 'analytics', label: 'Analytics', icon: BarChart3 },
                 { key: 'greetings', label: 'Edit Greetings', icon: SquarePen },
                 { key: 'about', label: 'Edit About', icon: FileText },
                 { key: 'contact', label: 'Edit Contact Info', icon: Megaphone },
@@ -1385,6 +1400,7 @@ export const RoleDashboard: React.FC = () => {
         }
         return [
             { key: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+            { key: 'analytics', label: 'My Activity', icon: BarChart3 },
             { key: 'explore', label: 'Explore', icon: Compass },
             ...(VIRTUAL_TOURS_ENABLED ? [{ key: 'virtualTours' as SidebarKey, label: 'Live Tours', icon: RadioTower, iconSrc: MOBILE_NAV_ICON_SRC.virtualTours }] : []),
             { key: 'bookings', label: 'Bookings', icon: ClipboardList },
@@ -2374,6 +2390,16 @@ export const RoleDashboard: React.FC = () => {
     };
 
     const renderTouristSection = () => {
+        if (activeSection === 'analytics') {
+            return (
+                <section className="rdb-panel rdb-panel-wide">
+                    <Suspense fallback={<div className="rdb-loading"><Loader2 size={32} className="animate-spin" /><p>Loading your activity…</p></div>}>
+                        <LazyTouristAnalytics />
+                    </Suspense>
+                </section>
+            );
+        }
+
         if (VIRTUAL_TOURS_ENABLED && activeSection === 'virtualTours') {
             return (
                 <section className="rdb-content-grid rdb-virtual-tour-section">
@@ -2899,6 +2925,16 @@ export const RoleDashboard: React.FC = () => {
     };
 
     const renderProviderSection = () => {
+        if (activeSection === 'analytics') {
+            return (
+                <section className="rdb-panel rdb-panel-wide">
+                    <Suspense fallback={<div className="rdb-loading"><Loader2 size={32} className="animate-spin" /><p>Loading your listing analytics…</p></div>}>
+                        <LazyProviderAnalytics />
+                    </Suspense>
+                </section>
+            );
+        }
+
         if (VIRTUAL_TOURS_ENABLED && activeSection === 'virtualTours') {
             return (
                 <section className="rdb-content-grid rdb-virtual-tour-section">
@@ -3621,6 +3657,16 @@ export const RoleDashboard: React.FC = () => {
     };
 
     const renderMarketingSection = () => {
+        if (activeSection === 'analytics') {
+            return (
+                <section className="rdb-panel rdb-panel-wide">
+                    <Suspense fallback={<div className="rdb-loading"><Loader2 size={32} className="animate-spin" /><p>Loading analytics…</p></div>}>
+                        <LazyAdminAnalytics />
+                    </Suspense>
+                </section>
+            );
+        }
+
         if (activeSection === 'greetings') {
             return <MarketingContentEditor userId={user?.id} mode="greetings" />;
         }

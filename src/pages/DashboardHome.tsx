@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { LiquidMobileNav, type LiquidNavItem } from '../components/ui/liquid-mobile-nav';
 import { MOBILE_NAV_ICON_SRC } from '../components/ui/mobile-nav-icon-map';
+import { trackEvent } from '../lib/analytics';
 import { buildLoginPath } from '../lib/authRedirect';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -343,6 +344,7 @@ const ListingCard: React.FC<{
       } else {
         await addListingFavorite(user.id, post.id, listingTypeValue);
         setIsFavorite(true);
+        trackEvent('favorite_added', { target: `${listingTypeValue}:${post.id}` });
       }
     } catch (error) {
       console.error('Favorite update failed:', error);

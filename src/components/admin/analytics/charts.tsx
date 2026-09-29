@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { formatCompact, formatFull, type AnalyticsDay } from '../../../lib/adminAnalytics';
+import { formatCompact, formatFull } from '../../../lib/analyticsShared';
+import type { AnalyticsDay } from '../../../lib/adminAnalytics';
 
 export type DailyMetricKey = Exclude<keyof AnalyticsDay, 'day'>;
 
@@ -45,15 +46,16 @@ const niceStep = (rawStep: number): number => {
     return nice * pow;
 };
 
-interface TrendChartProps {
-    days: AnalyticsDay[];
-    metric: DailyMetricKey;
+interface TrendChartProps<T extends { day: string }> {
+    days: T[];
+    metric: Exclude<keyof T, 'day'> & string;
     color: string;
     label: string;
-    tooltipMetrics: Array<{ key: DailyMetricKey; label: string; color: string }>;
+    tooltipMetrics: Array<{ key: Exclude<keyof T, 'day'> & string; label: string; color: string }>;
+    formatValue?: (value: number) => string;
 }
 
-export const TrendChart: React.FC<TrendChartProps> = ({ days, metric, color, label, tooltipMetrics }) => {
+export function TrendChart<T extends { day: string }>({ days, metric, color, label, tooltipMetrics, formatValue = formatCompact }: TrendChartProps<T>) {
     const [containerRef, width] = useContainerWidth();
     const [hoverIndex, setHoverIndex] = useState<number | null>(null);
     const gradientId = useId().replace(/:/g, '');
@@ -63,7 +65,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ days, metric, color, lab
     const innerW = Math.max(width - pad.left - pad.right, 10);
     const innerH = height - pad.top - pad.bottom;
 
-    const values = days.map((day) => day[metric]);
+    const values = days.map((day) => day[metric] as unknown as number);
     const max = Math.max(...values, 1);
     const step = niceStep(max / 4);
     const yMax = step * 4;
@@ -118,7 +120,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ days, metric, color, lab
                             <g key={tick}>
                                 <line x1={pad.left} x2={width - pad.right} y1={y} y2={y} className="an-grid-line" />
                                 <text x={pad.left - 8} y={y + 4} textAnchor="end" className="an-axis-text">
-                                    {formatCompact(step * tick)}
+                                    {formatValue(step * tick)}
                                 </text>
                             </g>
                         );
@@ -180,7 +182,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ days, metric, color, lab
                         <span key={item.key}>
                             <i style={{ background: item.color }} />
                             {item.label}
-                            <b>{formatFull(hovered[item.key])}</b>
+                            <b>{formatFull(hovered[item.key] as unknown as number)}</b>
                         </span>
                     ))}
                 </div>

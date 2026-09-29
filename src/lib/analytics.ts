@@ -7,7 +7,8 @@ export type AnalyticsEventType =
     | 'signup'
     | 'link_visit'
     | 'listing_view'
-    | 'booking_started';
+    | 'booking_started'
+    | 'favorite_added';
 
 interface TrackOptions {
     target?: string | null;

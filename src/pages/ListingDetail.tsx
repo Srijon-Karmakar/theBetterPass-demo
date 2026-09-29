@@ -853,6 +853,7 @@ export const ListingDetail: React.FC = () => {
             } else {
                 await addListingFavorite(user.id, listing.id, effectiveType);
                 setIsFavorite(true);
+                trackEvent('favorite_added', { target: `${effectiveType}:${listing.id}` });
             }
         } catch (error) {
             console.error('Favorite update failed:', error);

@@ -1,0 +1,85 @@
+.ta-flame {
+  vertical-align: -3px;
+  margin-right: 4px;
+  color: #f97316;
+}
+
+.ta-trending-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.ta-trend-card {
+  display: block;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-muted);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease;
+}
+
+.ta-trend-card:hover { transform: translateY(-2px); }
+
+.ta-trend-media {
+  height: 90px;
+  background-color: var(--surface-muted);
+  background-size: cover;
+  background-position: center;
+}
+
+.ta-trend-body {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.ta-trend-body strong {
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ta-trend-body span {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.ta-recent-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ta-recent-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.86rem;
+}
+
+.ta-recent-list li:last-child { border-bottom: none; padding-bottom: 0; }
+
+.ta-recent-list a {
+  color: var(--text-main);
+  font-weight: 600;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ta-recent-list a:hover { text-decoration: underline; }
+
+.ta-recent-list span {
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}

@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, Bookmark, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Compass, Home, LayoutDashboard, Loader2, Map, Search, UserCircle2, X, Zap } from 'lucide-react';
 import { LiquidMobileNav, type LiquidNavItem } from '../components/ui/liquid-mobile-nav';
 import { MOBILE_NAV_ICON_SRC } from '../components/ui/mobile-nav-icon-map';
+import { trackEvent } from '../lib/analytics';
 import { useAuth } from '../hooks/useAuth';
 import { getProfileAvatarUrl } from '../lib/avatar';
 import { getListingImages, getPrimaryListingImage } from '../lib/listingImages';
@@ -256,6 +257,7 @@ const ExploreListingCard: React.FC<{
       } else {
         await addListingFavorite(user.id, post.id, listingTypeValue);
         setIsFavorite(true);
+        trackEvent('favorite_added', { target: `${listingTypeValue}:${post.id}` });
       }
     } catch (error) {
       console.error('Favorite update failed:', error);

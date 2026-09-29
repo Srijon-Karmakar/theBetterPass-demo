@@ -336,6 +336,51 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                                 <Heatmap cells={data.heatmap} />
                             </section>
 
+                            {(data.newsletter || data.crm_funnel) && (
+                                <div className="an-grid an-grid--2">
+                                    {data.newsletter && (
+                                        <section className="an-card">
+                                            <div className="an-card-head">
+                                                <div>
+                                                    <h3>Newsletter growth</h3>
+                                                    <p>{formatFull(data.newsletter.totals.new_subscribers)} new in this period</p>
+                                                </div>
+                                            </div>
+                                            <TrendChart
+                                                days={data.newsletter.daily}
+                                                metric="subscribers"
+                                                color="#8b5cf6"
+                                                label="New subscribers"
+                                                tooltipMetrics={[{ key: 'subscribers', label: 'New subscribers', color: '#8b5cf6' }]}
+                                            />
+                                            <div className="an-split">
+                                                <div><span>Active subscribers</span><b>{formatFull(data.newsletter.totals.active_subscribers)}</b></div>
+                                                <div><span>New this period</span><b>{formatFull(data.newsletter.totals.new_subscribers)}</b></div>
+                                            </div>
+                                        </section>
+                                    )}
+
+                                    {data.crm_funnel && (
+                                        <section className="an-card">
+                                            <div className="an-card-head">
+                                                <div>
+                                                    <h3>CRM lead funnel</h3>
+                                                    <p>Leads captured in this period</p>
+                                                </div>
+                                            </div>
+                                            <Funnel
+                                                steps={[
+                                                    { label: 'Leads captured', value: data.crm_funnel.leads, color: '#6366f1' },
+                                                    { label: 'Contacted', value: data.crm_funnel.contacted, color: '#0ea5e9' },
+                                                    { label: 'Qualified', value: data.crm_funnel.qualified, color: '#f59e0b' },
+                                                    { label: 'Converted', value: data.crm_funnel.converted, color: '#10b981' },
+                                                ]}
+                                            />
+                                        </section>
+                                    )}
+                                </div>
+                            )}
+
                             <p className="an-footnote">
                                 Visitors are counted from a random anonymous browser ID. No IP address or personal data is stored, and browsers with Do Not Track enabled are skipped.
                                 {updatedAt ? ` Updated ${updatedAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}, refreshes every 30 seconds.` : ''}

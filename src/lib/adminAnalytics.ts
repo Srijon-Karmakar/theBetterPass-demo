@@ -1,12 +1,22 @@
 import { supabase } from './supabase';
+import {
+    AnalyticsNotReadyError,
+    fillMissingDaysGeneric,
+    getAnalyticsRangeDates,
+    getTimeZone,
+    isAnalyticsNotReadyError,
+    type AnalyticsRangeKey,
+} from './analyticsShared';
 
-export type AnalyticsRangeKey = '7d' | '30d' | '90d';
-
-export const ANALYTICS_RANGES: Array<{ key: AnalyticsRangeKey; label: string; days: number }> = [
-    { key: '7d', label: '7 days', days: 7 },
-    { key: '30d', label: '30 days', days: 30 },
-    { key: '90d', label: '90 days', days: 90 },
-];
+export {
+    ANALYTICS_RANGES,
+    AnalyticsNotReadyError,
+    formatCompact,
+    formatFull,
+    getAnalyticsRangeDates,
+    percentChange,
+    type AnalyticsRangeKey,
+} from './analyticsShared';
 
 export interface AnalyticsTotals {
     visitors: number;
@@ -34,6 +44,18 @@ export interface AnalyticsDay {
     booking_starts: number;
 }
 
+export interface NewsletterAnalytics {
+    daily: Array<{ day: string; subscribers: number }>;
+    totals: { active_subscribers: number; new_subscribers: number; prev_new_subscribers: number };
+}
+
+export interface CrmFunnelAnalytics {
+    leads: number;
+    contacted: number;
+    qualified: number;
+    converted: number;
+}
+
 export interface AnalyticsSummary {
     range: { from: string; to: string; tz: string };
     totals: AnalyticsTotals;
@@ -47,31 +69,10 @@ export interface AnalyticsSummary {
     heatmap: Array<{ dow: number; hour: number; events: number }>;
     funnel: { visited: number; viewed_listing: number; authenticated: number; started_booking: number };
     active_now: number;
+    newsletter?: NewsletterAnalytics;
+    crm_funnel?: CrmFunnelAnalytics;
+    is_marketing?: boolean;
 }
-
-export class AnalyticsNotReadyError extends Error {
-    constructor() {
-        super('Analytics database functions are not installed yet.');
-        this.name = 'AnalyticsNotReadyError';
-    }
-}
-
-const getTimeZone = (): string => {
-    try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
-    } catch {
-        return 'Asia/Kolkata';
-    }
-};
-
-export const getAnalyticsRangeDates = (key: AnalyticsRangeKey): { from: Date; to: Date; days: number } => {
-    const days = ANALYTICS_RANGES.find((range) => range.key === key)?.days ?? 7;
-    const to = new Date();
-    const from = new Date(to);
-    from.setHours(0, 0, 0, 0);
-    from.setDate(from.getDate() - (days - 1));
-    return { from, to, days };
-};
 
 const emptyTotals = (): AnalyticsTotals => ({
     visitors: 0,
@@ -85,33 +86,21 @@ const emptyTotals = (): AnalyticsTotals => ({
     booking_starts: 0,
 });
 
-const dayKey = (date: Date): string => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-};
+const emptyDay = (day: string): AnalyticsDay => ({
+    day,
+    visitors: 0,
+    page_views: 0,
+    clicks: 0,
+    logins: 0,
+    signups: 0,
+    link_visits: 0,
+    listing_views: 0,
+    booking_starts: 0,
+});
 
-/** Ensures every calendar day in the range exists, so charts never skip empty days. */
-export const fillMissingDays = (daily: AnalyticsDay[], from: Date, days: number): AnalyticsDay[] => {
-    const byDay = new Map(daily.map((row) => [row.day, row]));
-    return Array.from({ length: days }, (_, index) => {
-        const date = new Date(from);
-        date.setDate(from.getDate() + index);
-        const key = dayKey(date);
-        return byDay.get(key) || {
-            day: key,
-            visitors: 0,
-            page_views: 0,
-            clicks: 0,
-            logins: 0,
-            signups: 0,
-            link_visits: 0,
-            listing_views: 0,
-            booking_starts: 0,
-        };
-    });
-};
+export const fillMissingDays = (daily: AnalyticsDay[], from: Date, days: number): AnalyticsDay[] => (
+    fillMissingDaysGeneric(daily, from, days, emptyDay)
+);
 
 export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promise<AnalyticsSummary> => {
     const { from, to, days } = getAnalyticsRangeDates(key);
@@ -122,10 +111,7 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
     });
 
     if (error) {
-        const message = `${error.code || ''} ${error.message || ''}`;
-        if (/PGRST202|42883|admin_analytics_summary/i.test(message) && !/42501/.test(message)) {
-            throw new AnalyticsNotReadyError();
-        }
+        if (isAnalyticsNotReadyError(error, 'admin_analytics_summary')) throw new AnalyticsNotReadyError();
         throw new Error(error.message || 'Could not load analytics.');
     }
 
@@ -143,19 +129,11 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
         heatmap: raw.heatmap || [],
         funnel: raw.funnel || { visited: 0, viewed_listing: 0, authenticated: 0, started_booking: 0 },
         active_now: raw.active_now || 0,
+        newsletter: raw.newsletter,
+        crm_funnel: raw.crm_funnel,
+        is_marketing: raw.is_marketing,
     };
 };
-
-export const percentChange = (current: number, previous: number): number | null => {
-    if (previous <= 0) return current > 0 ? null : 0;
-    return ((current - previous) / previous) * 100;
-};
-
-const compactFormatter = new Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 });
-const fullFormatter = new Intl.NumberFormat('en-IN');
-
-export const formatCompact = (value: number): string => (value < 10000 ? fullFormatter.format(value) : compactFormatter.format(value));
-export const formatFull = (value: number): string => fullFormatter.format(value);
 
 export const buildAnalyticsCsv = (daily: AnalyticsDay[]): string => {
     const header = ['date', 'visitors', 'page_views', 'link_visits', 'listing_views', 'clicks', 'logins', 'signups', 'booking_starts'];

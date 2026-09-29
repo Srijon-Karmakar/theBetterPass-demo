@@ -35,7 +35,7 @@ import { getPasswordFormatStatus, PASSWORD_METER_CIRCUMFERENCE, PASSWORD_REQUIRE
 import { VIRTUAL_TOURS_ENABLED } from '../lib/virtualTours';
 import './auth.css';
 
-const TOURIST_EXPLORE_PATH = '/explore';
+const TOURIST_DEFAULT_PATH = '/';
 const DEFAULT_WEB_APP_URL = 'https://thebetterpass.com';
 type SignupBaseField = 'fullName' | 'email' | 'password';
 const PROVIDER_ROLE_SET = new Set<UserRole>(PROVIDER_ROLES);
@@ -66,7 +66,7 @@ const getPostLoginDestination = (role?: string | null) => {
     if (isProviderRole(normalizedRole) || normalizedRole === 'provider' || normalizedRole === 'vendor') {
         return '/dashboard/provider';
     }
-    return TOURIST_EXPLORE_PATH;
+    return TOURIST_DEFAULT_PATH;
 };
 
 const getRecoveryRedirectUrl = () => `${getOAuthRedirectBaseUrl()}/login?mode=recovery`;
@@ -703,7 +703,7 @@ export const Auth: React.FC = () => {
                 const { data: sessionData } = await supabase.auth.getSession();
                 if (sessionData.session?.user) {
                     trackAuthEvent('signup', sessionData.session.user.id);
-                    navigate(getSafeNextPath(location.search, TOURIST_EXPLORE_PATH));
+                    navigate(getSafeNextPath(location.search, TOURIST_DEFAULT_PATH));
                     return;
                 }
             }
@@ -752,7 +752,7 @@ export const Auth: React.FC = () => {
 
         try {
             const useNativeOAuth = isNativeApp();
-            const redirectTo = getOAuthRedirectUrl(getSafeNextPath(location.search, TOURIST_EXPLORE_PATH));
+            const redirectTo = getOAuthRedirectUrl(getSafeNextPath(location.search, TOURIST_DEFAULT_PATH));
 
             if (mode === 'signup') {
                 setOAuthIntent({

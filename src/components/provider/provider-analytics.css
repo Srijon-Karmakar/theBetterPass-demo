@@ -1,0 +1,59 @@
+.pa-table-wrap {
+  overflow-x: auto;
+}
+
+.pa-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.pa-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+
+.pa-table th svg { vertical-align: -2px; margin-right: 4px; }
+
+.pa-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.pa-table tr:last-child td { border-bottom: none; }
+
+.pa-listing-title {
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.pa-status-pill {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.pa-status-pill--approved,
+.pa-status-pill--live,
+.pa-status-pill--published { background: rgba(16, 185, 129, 0.14); color: #059669; }
+.pa-status-pill--rejected { background: rgba(239, 68, 68, 0.13); color: #dc2626; }
+.pa-status-pill--pending { background: rgba(245, 158, 11, 0.14); color: #b45309; }
