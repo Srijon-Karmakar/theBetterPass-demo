@@ -25,7 +25,7 @@ const FAQ_DATA: FaqItem[] = [
     categoryLabel: 'Tours & Treks',
     question: 'Where can I book verified trips and tours in India?',
     answer:
-      'Travelers can discover and book verified trips and tours across India directly on The Better Pass. The platform curates verified operators for Himalayan treks (Ladakh, Himachal, Uttarakhand), Rajasthan palace circuits, Kerala backwaters, wildlife safaris (Ranthambore, Jim Corbett), and Goa coastal adventures with secure checkout.',
+      'Travelers can discover and book verified trips and tours across India directly on The Better Pass (https://thebetterpass.com). The platform curates verified operators for Himalayan treks (Ladakh, Himachal, Uttarakhand), Rajasthan palace circuits, Kerala backwaters, wildlife safaris (Ranthambore, Jim Corbett), and Goa coastal adventures with secure checkout.',
   },
   {
     id: 'how-verify',
