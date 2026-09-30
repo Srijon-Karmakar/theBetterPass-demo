@@ -98,7 +98,9 @@ import { DEFAULT_SALES_SETTINGS, getPublicAppContent, type SalesSettingsContent 
 import { ContactSubmissionsPanel } from '../components/contact/ContactSubmissionsPanel';
 import { CrmPanel } from '../components/admin/CrmPanel';
 import { MarketingContentEditor, SalesSettingsEditor } from '../components/marketing/MarketingContentEditor';
+import { ExpandableText, ModerationMediaGallery } from '../components/admin/ModerationListingMedia';
 import { FeeBreakdownView } from '../components/FeeBreakdownView';
+import { getListingImages } from '../lib/listingImages';
 import {
     StatusDonut,
     TimeSeriesChart,
@@ -3832,19 +3834,19 @@ export const RoleDashboard: React.FC = () => {
     };
 
     const renderAdminPackageDetail = (item: PostRecord) => {
-        const image = item.image_url || item.cover_image_url || item.thumbnail_url;
         return (
             <div className="rdb-package-expanded">
                 <div className="rdb-moderation-detail">
                     <div className="rdb-moderation-media-wrap">
-                        <div
-                            className="rdb-moderation-media"
-                            style={image ? { backgroundImage: `url(${image})` } : undefined}
-                        />
+                        <ModerationMediaGallery key={item.id} images={getListingImages(item)} title={titleForPost(item)} />
                     </div>
                     <div className="rdb-moderation-info">
                         <h3>{titleForPost(item)}</h3>
-                        <p className="rdb-moderation-desc">{item.description || 'No description provided.'}</p>
+                        <ExpandableText
+                            key={item.id}
+                            className="rdb-moderation-desc"
+                            text={item.description || 'No description provided.'}
+                        />
                         <div className="rdb-stat-list">
                             <div><span>Status</span><strong>{item.status || 'pending'}</strong></div>
                             <div><span>Type</span><strong>{item.type || 'listing'}</strong></div>
@@ -3852,7 +3854,7 @@ export const RoleDashboard: React.FC = () => {
                             <div><span>Price</span><strong>{formatCurrency(item.price || 0)}</strong></div>
                             <div><span>Created</span><strong>{formatDate(item.created_at)}</strong></div>
                             <div><span>Reviewed</span><strong>{formatDate(item.reviewed_at || null)}</strong></div>
-                            {item.rejection_reason && <div><span>Reason</span><strong>{item.rejection_reason}</strong></div>}
+                            {item.rejection_reason && <div className="rdb-stat-wide"><span>Reason</span><strong>{item.rejection_reason}</strong></div>}
                         </div>
                         <FeeBreakdownView
                             feeBreakdown={item.fee_breakdown}
@@ -4390,21 +4392,19 @@ export const RoleDashboard: React.FC = () => {
                         {selectedModerationItem ? (
                             <div className="rdb-moderation-detail">
                                 <div className="rdb-moderation-media-wrap">
-                                    <div
-                                        className="rdb-moderation-media"
-                                        style={{
-                                            backgroundImage: (() => {
-                                                const image = selectedModerationItem.image_url
-                                                    || selectedModerationItem.cover_image_url
-                                                    || selectedModerationItem.thumbnail_url;
-                                                return image ? `url(${image})` : undefined;
-                                            })(),
-                                        }}
+                                    <ModerationMediaGallery
+                                        key={selectedModerationItem.id}
+                                        images={getListingImages(selectedModerationItem)}
+                                        title={titleForPost(selectedModerationItem)}
                                     />
                                 </div>
                                 <div className="rdb-moderation-info">
                                     <h3>{titleForPost(selectedModerationItem)}</h3>
-                                    <p className="rdb-moderation-desc">{selectedModerationItem.description || 'No description provided.'}</p>
+                                    <ExpandableText
+                                        key={selectedModerationItem.id}
+                                        className="rdb-moderation-desc"
+                                        text={selectedModerationItem.description || 'No description provided.'}
+                                    />
                                     <div className="rdb-stat-list">
                                         <div><span>Status</span><strong>{selectedModerationItem.status || 'pending'}</strong></div>
                                         <div><span>Type</span><strong>{selectedModerationItem.type || 'listing'}</strong></div>
