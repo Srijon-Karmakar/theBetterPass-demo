@@ -590,6 +590,8 @@ export function renderSeoTags(seo, siteUrl = getSiteUrl()) {
 
 export function renderSemanticPrerenderHtml(seo, siteUrl = getSiteUrl()) {
   const path = normalizePath(seo.path);
+  const title = seo.title || '';
+  const description = seo.description || '';
 
   if (path === '/') {
     return `
