@@ -150,7 +150,13 @@ export const Navbar: React.FC = () => {
 
     const locationSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const dashboardSection = locationSearchParams.get('section');
-    const desktopNavItems: DesktopLiquidNavItem[] = [
+    const guestDesktopNavItems: DesktopLiquidNavItem[] = [
+        { key: 'home', label: 'Home', to: homePath, iconSrc: DESKTOP_NAV_ICON_SRC.home, active: location.pathname === homePath },
+        { key: 'blogs', label: 'Blogs', to: '/blogs', iconSrc: DESKTOP_NAV_ICON_SRC.blogs, active: location.pathname.startsWith('/blogs') },
+        { key: 'about', label: 'About Us', to: '/about', iconSrc: '/icons/mobile-nav-icons/about.webp', active: location.pathname === '/about' },
+        { key: 'faq', label: 'FAQ', to: '/faq', iconSrc: DESKTOP_NAV_ICON_SRC.messages, active: location.pathname === '/faq' },
+    ];
+    const desktopNavItems: DesktopLiquidNavItem[] = !user ? guestDesktopNavItems : [
         ...navLinks
             .filter((item) => item.key !== 'profile')
             .map((item) => ({
@@ -294,7 +300,7 @@ export const Navbar: React.FC = () => {
                     <img src={logoSrc} alt="The Better Pass" className="nbr-logo" />
                 </Link>
 
-                {user && desktopNavItems.length > 0 ? (
+                {desktopNavItems.length > 0 ? (
                     <nav className="nbr-liquid-nav" aria-label="Primary navigation">
                         <svg className="nbr-liquid-defs" aria-hidden="true" focusable="false">
                             <filter id={desktopGooFilterId} x="-30%" y="-60%" width="160%" height="220%">
@@ -352,6 +358,7 @@ export const Navbar: React.FC = () => {
                 ) : (
                     <div className="nbr-guest-actions">
                         <Link to="/blogs" className={`nbr-guest-link${location.pathname.startsWith('/blogs') ? ' is-active' : ''}`}>Blogs</Link>
+                        <Link to="/faq" className={`nbr-guest-link${location.pathname === '/faq' ? ' is-active' : ''}`}>FAQ</Link>
                         <Link to="/signup" className="nbr-join nbr-join--desktop">Join</Link>
                     </div>
                 )}
@@ -408,6 +415,12 @@ export const Navbar: React.FC = () => {
                     )}
                 </div>
 
+                {!user && (
+                    <div className="nbr-right-actions">
+                        <Link to="/signup" className="nbr-join nbr-join--desktop">Join</Link>
+                    </div>
+                )}
+
                 {/* Right: map shortcut and user chip (outside the pill) */}
                 {user && (
                     <div className="nbr-right-actions">
@@ -449,6 +462,11 @@ export const Navbar: React.FC = () => {
                         {user && (
                             <Link to={dashboardPath} className="nbr-avatar-sm-wrap">
                                 <img src={avatarSrc} alt={shortName} className="nbr-avatar-sm" />
+                            </Link>
+                        )}
+                        {!user && (
+                            <Link to="/signup" className="nbr-signup-sm" onClick={() => setShowMenu(false)}>
+                                Signup
                             </Link>
                         )}
                         <button
@@ -507,12 +525,14 @@ export const Navbar: React.FC = () => {
                                 <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
                             </Link>
                         )}
-                        {!user && (
-                            <Link to="/signup" className="nbr-drop-item nbr-drop-item--main nbr-drop-item--accent" onClick={() => setShowMenu(false)}>
-                                <span>Join Membership</span>
-                                <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
-                            </Link>
-                        )}
+                        <Link to="/about" className="nbr-drop-item nbr-drop-item--main" onClick={() => setShowMenu(false)}>
+                            <span>About Us</span>
+                            <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
+                        </Link>
+                        <Link to="/faq" className="nbr-drop-item nbr-drop-item--main" onClick={() => setShowMenu(false)}>
+                            <span>FAQ</span>
+                            <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
+                        </Link>
                         <button
                             type="button"
                             className="nbr-drop-item nbr-drop-item--btn nbr-drop-item--theme"
@@ -1236,7 +1256,20 @@ export const Navbar: React.FC = () => {
                     .nbr-hamburger {
                         background: ${mobileMenuBg};
                         border: none;
-                        box-shadow: 0 6px 18px rgba(15,23,42,0.14);
+                        box-shadow: none;
+                    }
+
+                    .nbr-signup-sm {
+                        display: inline-flex;
+                        align-items: center;
+                        height: 32px;
+                        padding: 0 14px;
+                        border-radius: 999px;
+                        background: #f97316;
+                        color: #fff;
+                        font-size: 13px;
+                        font-weight: 600;
+                        text-decoration: none;
                     }
 
                     .nbr-avatar-sm-wrap { display: none !important; }

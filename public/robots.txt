@@ -2,6 +2,7 @@
 # Website: https://thebetterpass.com
 # AI Content Context: https://thebetterpass.com/llms.txt
 # Full LLM Knowledge Base: https://thebetterpass.com/llms-full.txt
+# AI Text Protocol: https://thebetterpass.com/.well-known/ai.txt
 
 # Default rule for all web crawlers
 User-agent: *
@@ -11,8 +12,10 @@ Allow: /blogs/
 Allow: /about
 Allow: /map
 Allow: /terms
+Allow: /faq
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 Disallow: /login
 Disallow: /signup
 Disallow: /dashboard
@@ -33,8 +36,10 @@ Allow: /blogs/
 Allow: /about
 Allow: /map
 Allow: /terms
+Allow: /faq
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 Disallow: /dashboard/
 Disallow: /admin/
 Disallow: /messages/
@@ -46,8 +51,10 @@ Allow: /blogs/
 Allow: /about
 Allow: /map
 Allow: /terms
+Allow: /faq
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 
 # Perplexity AI
 User-agent: PerplexityBot
@@ -57,8 +64,10 @@ Allow: /blogs/
 Allow: /about
 Allow: /map
 Allow: /terms
+Allow: /faq
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 Disallow: /dashboard/
 Disallow: /admin/
 Disallow: /messages/
@@ -71,8 +80,10 @@ Allow: /blogs/
 Allow: /about
 Allow: /map
 Allow: /terms
+Allow: /faq
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 Disallow: /dashboard/
 Disallow: /admin/
 Disallow: /messages/
@@ -81,6 +92,7 @@ User-agent: anthropic-ai
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 
 # Google Gemini & Extended AI Crawlers
 User-agent: Google-Extended
@@ -90,8 +102,10 @@ Allow: /blogs/
 Allow: /about
 Allow: /map
 Allow: /terms
+Allow: /faq
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 
 User-agent: GoogleOther
 Allow: /
@@ -104,20 +118,24 @@ Allow: /blogs/
 Allow: /about
 Allow: /map
 Allow: /terms
+Allow: /faq
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 
 # Apple AI & Siri Knowledge
 User-agent: Applebot-Extended
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 
 # Cohere AI
 User-agent: cohere-ai
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai.txt
 
 # XML Sitemap and LLM Context Manifests
 Sitemap: https://thebetterpass.com/sitemap.xml

@@ -23,6 +23,7 @@ import { VIRTUAL_TOURS_ENABLED } from './lib/virtualTours';
 const Home5 = lazy(async () => ({ default: (await import('./pages/Home5')).Home5 }));
 const AboutFinal = lazy(async () => ({ default: (await import('./pages/AboutFinal')).AboutFinal }));
 const WhoMadeIt = lazy(async () => ({ default: (await import('./pages/WhoMadeIt')).WhoMadeIt }));
+const FaqPage = lazy(async () => ({ default: (await import('./pages/FaqPage')).FaqPage }));
 const DashboardHome = lazy(async () => ({ default: (await import('./pages/DashboardHome')).DashboardHome }));
 const TouristExplorePage = lazy(async () => ({ default: (await import('./pages/TouristExplorePage')).TouristExplorePage }));
 const RoleDashboard = lazy(async () => ({ default: (await import('./pages/RoleDashboard')).RoleDashboard }));
@@ -275,6 +276,7 @@ function App() {
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/auth" element={<LegacyAuthRedirect />} />
               <Route path="/terms" element={<TermsAndConditions />} />
+              <Route path="/faq" element={<FaqPage />} />
               <Route path="/blogs" element={<Blogs />} />
               <Route path="/blogs/new" element={<ProtectedRoute><BlogCreate /></ProtectedRoute>} />
               <Route path="/blogs/:slug" element={<BlogDetail />} />

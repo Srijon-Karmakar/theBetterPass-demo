@@ -291,3 +291,14 @@
     justify-content: center;
   }
 }
+
+/* Standalone /faq page */
+.faq-page {
+  width: min(100% - 32px, 1080px);
+  margin: 0 auto;
+  padding: 96px 0 48px;
+}
+
+.faq-page .tk-faq-section {
+  margin-top: 0;
+}

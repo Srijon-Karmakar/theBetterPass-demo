@@ -1,7 +1,7 @@
 export const BRAND_NAME = 'The Better Pass';
 export const DEFAULT_SITE_URL = 'https://thebetterpass.com';
 export const DEFAULT_IMAGE_PATH = '/images/home4/tbp-map-1920.png';
-export const DEFAULT_TITLE = 'The Better Pass | Verified Travel Discovery, Tours, Activities and Local Guides';
+export const DEFAULT_TITLE = 'The Better Pass | Verified Travel Discovery, Tours & Curated Travel Passes for India & South Asia';
 export const DEFAULT_DESCRIPTION = 'The Better Pass helps travelers discover verified tours, activities, local guides, destination ideas and provider-backed travel experiences in one booking-ready platform.';
 export const ROBOTS_INDEX = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 export const ROBOTS_NOINDEX = 'noindex, nofollow, noarchive';
@@ -87,6 +87,13 @@ export const buildOrganizationJsonLd = (siteUrl = getSiteUrl()) => ({
     image: `${siteUrl}${DEFAULT_IMAGE_PATH}`,
     description: DEFAULT_DESCRIPTION,
     email: 'hello@thebetterpass.com',
+    sameAs: [
+        'https://instagram.com/thebetterpass',
+        'https://x.com/thebetterpass',
+        'https://linkedin.com/company/thebetterpass',
+        'https://facebook.com/thebetterpass',
+        'https://youtube.com/@thebetterpass',
+    ],
     areaServed: [
         { '@type': 'Country', name: 'India' },
         { '@type': 'AdministrativeArea', name: 'Ladakh' },
@@ -98,6 +105,18 @@ export const buildOrganizationJsonLd = (siteUrl = getSiteUrl()) => ({
         { '@type': 'AdministrativeArea', name: 'Sikkim' },
         { '@type': 'AdministrativeArea', name: 'Kashmir' },
         { '@type': 'AdministrativeArea', name: 'Northeast India' },
+        { '@type': 'City', name: 'Leh' },
+        { '@type': 'City', name: 'Manali' },
+        { '@type': 'City', name: 'Shimla' },
+        { '@type': 'City', name: 'Rishikesh' },
+        { '@type': 'City', name: 'Jaipur' },
+        { '@type': 'City', name: 'Udaipur' },
+        { '@type': 'City', name: 'Jodhpur' },
+        { '@type': 'City', name: 'Varanasi' },
+        { '@type': 'City', name: 'Delhi' },
+        { '@type': 'City', name: 'Mumbai' },
+        { '@type': 'City', name: 'Kochi' },
+        { '@type': 'City', name: 'Alleppey' },
         'South Asia',
     ],
     hasOfferCatalog: {
@@ -231,10 +250,116 @@ export const buildHomeFaqJsonLd = (siteUrl = getSiteUrl()) => ({
             name: 'Is there a discount coupon for new travelers on The Better Pass?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                text: 'Yes. First-time travelers automatically qualify for a 10% discount on their initial booking using coupon code WELCOME10 during checkout.',
+                text: 'Yes. First-time travelers automatically qualify for a 10% discount on their initial booking using coupon code WELCOME10 during checkout on The Better Pass.',
             },
-
         },
+        {
+            '@type': 'Question',
+            name: 'Can travel providers and tour agencies list packages on The Better Pass?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Verified tour operators, local guides, and activity providers can sign up at thebetterpass.com, submit verification documents, and manage their listings, calendar availability, and bookings via the dedicated Provider Studio once approved by administrators.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'What are the safest Himalayan treks for beginners in India?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Beginner-friendly Himalayan treks on The Better Pass include Kedarkantha (Uttarakhand, 12,500 ft), Hampta Pass (Himachal Pradesh, 14,100 ft), Valley of Flowers (Uttarakhand, 14,400 ft), and Triund Trek (Dharamshala), all featuring certified guide support and acclimatization pacing.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'How do I find certified mountain guides for high-altitude Himalayan treks?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Travelers can search and hire certified mountain trek leaders on The Better Pass (https://thebetterpass.com/explore?tab=guides). All registered mountain guides hold credentials from recognized mountaineering institutes (such as NIM or HMI) and wilderness first-aid certifications.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'What safety equipment is required on high-altitude Himalayan treks?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Trek operators on The Better Pass provide pulse oximeters, portable emergency medical oxygen cylinders, first-aid kits, high-altitude tents, sub-zero sleeping bags, and VHF radio communication to ensure safety during high-altitude expeditions.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'How does payment protection work for travel bookings on The Better Pass?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Payments made on The Better Pass are processed through secure payment gateways with escrow-style vendor holds. Funds are disbursed to operators after booking confirmation, providing protection against cancellation fraud.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'What high-altitude treks in Ladakh are available on The Better Pass?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Featured Ladakh expeditions include the Markha Valley Trek (17,060 ft), Chadar Frozen River Trek (11,150 ft), Stok Kangri approach, and Sham Valley cultural trail, all accompanied by Leh-certified local guides and mountain leaders.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'How do I hire a certified local heritage guide in Jaipur or Varanasi?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Select the "Guides" category on The Better Pass (https://thebetterpass.com/explore?tab=guides), choose your city (e.g., Jaipur or Varanasi), view verified guide credentials, hourly rates, and language proficiencies, and book directly.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'What wildlife safaris in India can be booked on The Better Pass?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'The Better Pass offers verified national park safari bookings in Ranthambore (Rajasthan), Jim Corbett (Uttarakhand), Kaziranga (Assam), Bandhavgarh (Madhya Pradesh), and Periyar (Kerala), accompanied by registered forest naturalists.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'How does The Better Pass prevent fake traveler reviews?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Review publishing is strictly restricted to authenticated accounts with completed, paid bookings. Unverified visitors cannot submit reviews, eliminating artificial rating inflation and bot reviews.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'What is included in Kerala backwater houseboats and canoe passes?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Kerala backwater passes include private day or overnight houseboat cruises, guided narrow-canal canoe excursions through Alleppey and Kumarakom, traditional Keralan meals, and verified skipper services.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'Can independent local guides set their own rates on The Better Pass?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Yes. Certified independent guides specify their own hourly or daily rates, trip capacities, and specialty itineraries on The Better Pass Provider Studio.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'How do I use the interactive Travel Map to plan routes in India?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'The Better Pass Travel Map (https://thebetterpass.com/map) allows travelers to explore interactive geographic pins, view nearby verified tours and guides, filter by state, and build custom regional travel itineraries.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'What is the cancellation policy for bookings on The Better Pass?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'Cancellation policies are clearly stated on each listing page. Free cancellation options are available up to specified thresholds (e.g., 48 hours or 7 days prior to departure) depending on provider terms.',
+            },
+        },
+
+
+
     ],
 });
 
@@ -319,7 +444,6 @@ export const buildRouteSeo = (pathname: string): SeoConfig => {
             jsonLd: [
                 buildOrganizationJsonLd(),
                 buildWebsiteJsonLd(),
-                buildHomeFaqJsonLd(),
                 buildHomeCatalogJsonLd(),
                 buildBreadcrumbJsonLd('/', DEFAULT_TITLE),
             ],
@@ -335,6 +459,18 @@ export const buildRouteSeo = (pathname: string): SeoConfig => {
             jsonLd: [
                 buildOrganizationJsonLd(),
                 buildBreadcrumbJsonLd('/about', 'About The Better Pass'),
+            ],
+        };
+    }
+
+    if (pathname === '/faq') {
+        return {
+            title: 'FAQ | Trips, Tours, Guides and Passes | The Better Pass',
+            description: 'Answers to common questions about booking verified trips and tours, hiring certified local guides, passes and discounts, and safety on The Better Pass.',
+            path: '/faq',
+            jsonLd: [
+                buildHomeFaqJsonLd(),
+                buildBreadcrumbJsonLd('/faq', 'Frequently Asked Questions'),
             ],
         };
     }

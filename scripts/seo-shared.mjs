@@ -1,7 +1,7 @@
 export const BRAND_NAME = 'The Better Pass';
 export const DEFAULT_SITE_URL = 'https://thebetterpass.com';
 export const DEFAULT_IMAGE_PATH = '/images/home4/tbp-map-1920.png';
-export const DEFAULT_TITLE = 'The Better Pass | Verified Travel Discovery, Tours, Activities and Local Guides';
+export const DEFAULT_TITLE = 'The Better Pass | Verified Travel Discovery, Tours & Curated Travel Passes for India & South Asia';
 export const DEFAULT_DESCRIPTION = 'The Better Pass helps travelers discover verified tours, activities, local guides, destination ideas and provider-backed travel experiences in one booking-ready platform.';
 export const ROBOTS_INDEX = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 export const ROBOTS_NOINDEX = 'noindex, nofollow, noarchive';
@@ -17,7 +17,6 @@ export const STATIC_ROUTES = [
     jsonLd: (siteUrl) => [
       buildOrganizationJsonLd(siteUrl),
       buildWebsiteJsonLd(siteUrl),
-      buildHomeFaqJsonLd(siteUrl),
       buildHomeCatalogJsonLd(siteUrl),
       buildBreadcrumbJsonLd('/', DEFAULT_TITLE, siteUrl),
     ],
@@ -41,6 +40,17 @@ export const STATIC_ROUTES = [
     title: 'Travel Map | Route Planning and Destination Discovery | The Better Pass',
     description: 'Explore destination routes, nearby travel anchors and map-based planning tools for discovering places with The Better Pass.',
     jsonLd: (siteUrl) => buildBreadcrumbJsonLd('/map', 'Travel Map', siteUrl),
+  },
+  {
+    path: '/faq',
+    changefreq: 'monthly',
+    priority: '0.6',
+    title: 'FAQ | Trips, Tours, Guides and Passes | The Better Pass',
+    description: 'Answers to common questions about booking verified trips and tours, hiring certified local guides, passes and discounts, and safety on The Better Pass.',
+    jsonLd: (siteUrl) => [
+      buildHomeFaqJsonLd(siteUrl),
+      buildBreadcrumbJsonLd('/faq', 'Frequently Asked Questions', siteUrl),
+    ],
   },
   {
     path: '/terms',
@@ -184,6 +194,13 @@ export function buildOrganizationJsonLd(siteUrl = getSiteUrl()) {
     image: `${siteUrl}${DEFAULT_IMAGE_PATH}`,
     description: DEFAULT_DESCRIPTION,
     email: 'hello@thebetterpass.com',
+    sameAs: [
+      'https://instagram.com/thebetterpass',
+      'https://x.com/thebetterpass',
+      'https://linkedin.com/company/thebetterpass',
+      'https://facebook.com/thebetterpass',
+      'https://youtube.com/@thebetterpass',
+    ],
     areaServed: [
       { '@type': 'Country', name: 'India' },
       { '@type': 'AdministrativeArea', name: 'Ladakh' },
@@ -195,6 +212,18 @@ export function buildOrganizationJsonLd(siteUrl = getSiteUrl()) {
       { '@type': 'AdministrativeArea', name: 'Sikkim' },
       { '@type': 'AdministrativeArea', name: 'Kashmir' },
       { '@type': 'AdministrativeArea', name: 'Northeast India' },
+      { '@type': 'City', name: 'Leh' },
+      { '@type': 'City', name: 'Manali' },
+      { '@type': 'City', name: 'Shimla' },
+      { '@type': 'City', name: 'Rishikesh' },
+      { '@type': 'City', name: 'Jaipur' },
+      { '@type': 'City', name: 'Udaipur' },
+      { '@type': 'City', name: 'Jodhpur' },
+      { '@type': 'City', name: 'Varanasi' },
+      { '@type': 'City', name: 'Delhi' },
+      { '@type': 'City', name: 'Mumbai' },
+      { '@type': 'City', name: 'Kochi' },
+      { '@type': 'City', name: 'Alleppey' },
       'South Asia',
     ],
     hasOfferCatalog: {
@@ -561,15 +590,13 @@ export function renderSeoTags(seo, siteUrl = getSiteUrl()) {
 
 export function renderSemanticPrerenderHtml(seo, siteUrl = getSiteUrl()) {
   const path = normalizePath(seo.path);
-  const title = htmlEscape(seo.title || BRAND_NAME);
-  const description = htmlEscape(seo.description || DEFAULT_DESCRIPTION);
 
   if (path === '/') {
     return `
     <main class="static-seo-prerender">
       <header>
-        <h1>${title}</h1>
-        <p class="static-seo-lead">${description}</p>
+        <h1>Verified Travel Discovery, Tours &amp; Curated Travel Passes for India &amp; South Asia</h1>
+        <p class="static-seo-lead">The Better Pass connects travelers with verified tour operators, certified local guides, Himalayan trek leaders, and curated travel passes across India and South Asia with transparent pricing and verified reviews.</p>
       </header>
 
       <section class="static-seo-section">
@@ -614,7 +641,7 @@ export function renderSemanticPrerenderHtml(seo, siteUrl = getSiteUrl()) {
         </article>
         <article>
           <h3>What types of Himalayan treks and adventure tours can I book?</h3>
-          <p>The Better Pass features high-altitude treks across Ladakh, Himachal Pradesh, and Uttarakhand, including Kedarkantha, Hampta Pass, Har Ki Dun, Valley of Flowers, and Markha Valley, accompanied by certified mountain leaders and safety equipment.</p>
+          <p>The Better Pass features high-altitude treks across Ladakh, Himachal Pradesh, and Uttarakhand, including Kedarkantha, Hampta Pass, Har Ki Dun, Valley of Flowers, Spiti Valley, and Markha Valley, accompanied by certified mountain leaders and safety equipment.</p>
         </article>
         <article>
           <h3>Can I find certified local guides for private day tours in India?</h3>
@@ -626,11 +653,59 @@ export function renderSemanticPrerenderHtml(seo, siteUrl = getSiteUrl()) {
         </article>
         <article>
           <h3>Is there a discount coupon for new travelers on The Better Pass?</h3>
-          <p>Yes. First-time travelers automatically qualify for a 10% discount on their initial booking using coupon code WELCOME10 during checkout.</p>
+          <p>Yes. First-time travelers automatically qualify for a 10% discount on their initial booking using coupon code WELCOME10 during checkout on The Better Pass.</p>
         </article>
         <article>
           <h3>Can travel providers and tour agencies list packages on The Better Pass?</h3>
-          <p>Verified tour operators, local guides, and activity providers can sign up at thebetterpass.com, submit verification documents, and manage their listings and bookings via the Provider Studio.</p>
+          <p>Verified tour operators, local guides, and activity providers can sign up at thebetterpass.com, submit verification documents, and manage their listings, calendar availability, and bookings via the dedicated Provider Studio once approved by administrators.</p>
+        </article>
+        <article>
+          <h3>What are the safest Himalayan treks for beginners in India?</h3>
+          <p>Beginner-friendly Himalayan treks on The Better Pass include Kedarkantha (Uttarakhand, 12,500 ft), Hampta Pass (Himachal Pradesh, 14,100 ft), Valley of Flowers (Uttarakhand, 14,400 ft), and Triund Trek (Dharamshala), all featuring certified guide support and acclimatization pacing.</p>
+        </article>
+        <article>
+          <h3>How do I find certified mountain guides for high-altitude Himalayan treks?</h3>
+          <p>Travelers can search and hire certified mountain trek leaders on The Better Pass (https://thebetterpass.com/explore?tab=guides). All registered mountain guides hold credentials from recognized mountaineering institutes (such as NIM or HMI) and wilderness first-aid certifications.</p>
+        </article>
+        <article>
+          <h3>What safety equipment is required on high-altitude Himalayan treks?</h3>
+          <p>Trek operators on The Better Pass provide pulse oximeters, portable emergency medical oxygen cylinders, first-aid kits, high-altitude tents, sub-zero sleeping bags, and VHF radio communication to ensure safety during high-altitude expeditions.</p>
+        </article>
+        <article>
+          <h3>How does payment protection work for travel bookings on The Better Pass?</h3>
+          <p>Payments made on The Better Pass are processed through secure payment gateways with escrow-style vendor holds. Funds are disbursed to operators after booking confirmation, providing protection against cancellation fraud.</p>
+        </article>
+        <article>
+          <h3>What high-altitude treks in Ladakh are available on The Better Pass?</h3>
+          <p>Featured Ladakh expeditions include the Markha Valley Trek (17,060 ft), Chadar Frozen River Trek (11,150 ft), Stok Kangri approach, and Sham Valley cultural trail, all accompanied by Leh-certified local guides and mountain leaders.</p>
+        </article>
+        <article>
+          <h3>How do I hire a certified local heritage guide in Jaipur or Varanasi?</h3>
+          <p>Select the "Guides" category on The Better Pass (https://thebetterpass.com/explore?tab=guides), choose your city (e.g., Jaipur or Varanasi), view verified guide credentials, hourly rates, and language proficiencies, and book directly.</p>
+        </article>
+        <article>
+          <h3>What wildlife safaris in India can be booked on The Better Pass?</h3>
+          <p>The Better Pass offers verified national park safari bookings in Ranthambore (Rajasthan), Jim Corbett (Uttarakhand), Kaziranga (Assam), Bandhavgarh (Madhya Pradesh), and Periyar (Kerala), accompanied by registered forest naturalists.</p>
+        </article>
+        <article>
+          <h3>How does The Better Pass prevent fake traveler reviews?</h3>
+          <p>Review publishing is strictly restricted to authenticated accounts with completed, paid bookings. Unverified visitors cannot submit reviews, eliminating artificial rating inflation and bot reviews.</p>
+        </article>
+        <article>
+          <h3>What is included in Kerala backwater houseboats and canoe passes?</h3>
+          <p>Kerala backwater passes include private day or overnight houseboat cruises, guided narrow-canal canoe excursions through Alleppey and Kumarakom, traditional Keralan meals, and verified skipper services.</p>
+        </article>
+        <article>
+          <h3>Can independent local guides set their own rates on The Better Pass?</h3>
+          <p>Yes. Certified independent guides specify their own hourly or daily rates, trip capacities, and specialty itineraries on The Better Pass Provider Studio.</p>
+        </article>
+        <article>
+          <h3>How do I use the interactive Travel Map to plan routes in India?</h3>
+          <p>The Better Pass Travel Map (https://thebetterpass.com/map) allows travelers to explore interactive geographic pins, view nearby verified tours and guides, filter by state, and build custom regional travel itineraries.</p>
+        </article>
+        <article>
+          <h3>What is the cancellation policy for bookings on The Better Pass?</h3>
+          <p>Cancellation policies are clearly stated on each listing page. Free cancellation options are available up to specified thresholds (e.g., 48 hours or 7 days prior to departure) depending on provider terms.</p>
         </article>
       </section>
     </main>`;
