@@ -101,7 +101,7 @@
     border-radius: 12px;
     padding: 10px 12px;
     font-size: 0.83rem;
-    font-weight: 500;
+    font-weight: 700;
     line-height: 1.5;
 }
 
@@ -167,7 +167,7 @@
 .auth-field span {
     font-size: 0.86rem;
     color: #222;
-    font-weight: 500;
+    font-weight: 700;
 }
 
 .auth-field > input,
@@ -293,7 +293,7 @@
     overflow-y: auto;
     display: grid;
     gap: 6px;
-    padding: 6px;
+    padding: 5px;
     border: 1px solid #e3e3e3;
     border-radius: 22px;
     background: #ffffff;
@@ -482,7 +482,7 @@
     background: #000;
     color: #fff;
     font-size: 0.98rem;
-    font-weight: 500;
+    font-weight: 700;
     font-family: inherit;
     cursor: pointer;
     transition: opacity 0.16s ease, transform 0.16s ease;
@@ -579,7 +579,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 0 18px;
+    padding: 0 14px;
     width: 100%;
     transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
@@ -818,7 +818,7 @@
 
 .auth-secondary-btn {
     min-height: 48px;
-    padding: 0 18px;
+    padding: 0 14px;
     border-radius: 999px;
     border: 1px solid #d3d3d3;
     background: #fff;
@@ -1128,5 +1128,101 @@
     .auth-secondary-btn {
         min-height: 42px;
         font-size: 0.86rem;
+    }
+}
+/* Tourist / vendor role switch */
+.auth-role-choice {
+    position: relative;
+    width: min(100%, 214px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0 auto 14px;
+    padding: 4px;
+    border-radius: 999px;
+    background: #d9d9d9;
+    border: none;
+    box-shadow: none;
+    isolation: isolate;
+}
+
+.auth-role-choice::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    z-index: 0;
+    width: calc((100% - 8px) / 2);
+    height: calc(100% - 8px);
+    border-radius: 999px;
+    background: #ff741d;
+    transform: translateX(0);
+    transition: transform 0.24s cubic-bezier(0.2, 0.85, 0.28, 1), box-shadow 0.24s ease;
+}
+
+.auth-role-choice:has(.auth-role-choice-btn:nth-child(2).is-active)::before {
+    transform: translateX(100%);
+}
+
+.auth-role-choice-btn {
+    position: relative;
+    z-index: 1;
+    min-height: 36px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: #050505;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 0 10px;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: clamp(0.9rem, 1.35vw, 1.05rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    cursor: pointer;
+    transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.auth-role-choice-btn svg {
+    display: none;
+}
+
+.auth-role-choice-btn span {
+    display: inline-block;
+    color: inherit;
+    font: inherit;
+    line-height: 1;
+}
+
+.auth-role-choice-btn.is-active {
+    background: transparent;
+    color: #050505;
+    border-color: transparent;
+}
+
+.auth-role-choice-btn:hover,
+.auth-role-choice-btn:focus-visible {
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.auth-role-choice:focus-within::before {
+    box-shadow: 0 0 0 3px rgba(255, 116, 29, 0.22);
+}
+
+@media (max-width: 520px) {
+    .auth-role-choice {
+        width: min(100%, 206px);
+        padding: 4px;
+        margin: 0 auto 14px;
+    }
+
+    .auth-role-choice-btn {
+        min-height: 34px;
+        font-size: clamp(0.86rem, 4.2vw, 1rem);
+        padding: 0 8px;
     }
 }

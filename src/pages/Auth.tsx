@@ -1012,7 +1012,7 @@ export const Auth: React.FC = () => {
                                         ) : (
                                             <GoogleIcon />
                                         )}
-                                        <span>{googleLoading ? 'Redirecting to Google…' : 'Continue with Google'}</span>
+                                        <span>{googleLoading ? 'Redirecting to Googleâ€¦' : 'Continue with Google'}</span>
                                     </button>
                                 </div>
                                 {/* <p className="auth-role-note">Google login is available for Tourist accounts only.</p> */}
@@ -1047,7 +1047,7 @@ export const Auth: React.FC = () => {
                                     }}
                                 >
                                     <Building2 size={16} />
-                                    <span>Provider</span>
+                                    <span>Vendor</span>
                                 </button>
                             </div>
 
@@ -1278,7 +1278,7 @@ export const Auth: React.FC = () => {
                                                             ) : (
                                                                 <GoogleIcon />
                                                             )}
-                                                            <span>{googleLoading ? 'Redirecting to Google…' : 'Sign up with Google'}</span>
+                                                            <span>{googleLoading ? 'Redirecting to Googleâ€¦' : 'Sign up with Google'}</span>
                                                         </button>
                                                     </div>
                                                 )}
@@ -1541,7 +1541,7 @@ export const Auth: React.FC = () => {
                                                                     ) : (
                                                                         <GoogleIcon />
                                                                     )}
-                                                                    <span>{googleLoading ? 'Redirecting to Google…' : 'Sign up with Google'}</span>
+                                                                    <span>{googleLoading ? 'Redirecting to Googleâ€¦' : 'Sign up with Google'}</span>
                                                                 </button>
                                                             </div>
                                                         )}
