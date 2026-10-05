@@ -366,6 +366,28 @@
   animation: an-grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+.an-exit-rate {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.an-exit-share {
+  flex: none;
+  min-width: 3ch;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .an-empty { margin: 0; padding: 18px 4px; font-size: 0.84rem; line-height: 1.5; color: var(--text-muted); }
 
 /* Donut ------------------------------------------------------------------ */

@@ -108,7 +108,12 @@ export const GuestOfferPopup: React.FC = () => {
 
             <div className="guest-offer-popup__content">
                 <h2 id="guest-offer-popup-title">Congratulations</h2>
-                <p>You have been awarded a BetterPass offer.</p>
+                <p>
+                    You have been awarded a BetterPass offer:{' '}
+                    <strong className="guest-offer-popup__highlight">
+                        {FIRST_BOOKING_COUPON_PERCENT}% off on your first booking
+                    </strong>.
+                </p>
                 <p className="guest-offer-popup__redeem">Join now to redeem.</p>
             </div>
 

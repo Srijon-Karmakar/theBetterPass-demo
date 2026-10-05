@@ -12,7 +12,7 @@ import {
     type AnalyticsSummary,
     type AnalyticsTotals,
 } from '../../lib/adminAnalytics';
-import { BarList, Donut, Funnel, Heatmap, TrendChart, type DailyMetricKey } from './analytics/charts';
+import { BarList, Donut, ExitPageList,Funnel, Heatmap, TrendChart, type DailyMetricKey } from './analytics/charts';
 import './admin-analytics.css';
 
 type KpiKey = Exclude<DailyMetricKey, never> & keyof AnalyticsTotals;
@@ -325,6 +325,24 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                                     />
                                 </section>
                             </div>
+
+                            <section className="an-card">
+                                <div className="an-card-head">
+                                    <div>
+                                        <h3>Exit pages</h3>
+                                        <p>
+                                            The last page people viewed before leaving
+                                            {data.exit_sessions > 0 ? ` · ${formatFull(data.exit_sessions)} finished visits` : ''}
+                                        </p>
+                                    </div>
+                                </div>
+                                <ExitPageList
+                                    color="#6366f1"
+                                    totalExits={data.exit_sessions}
+                                    empty="No finished visits yet. A visit counts once the visitor has been inactive for 5 minutes."
+                                    items={data.exit_pages.map((item) => ({ label: pageLabel(item.path), exits: item.exits, pageViews: item.page_views }))}
+                                />
+                            </section>
 
                             <section className="an-card">
                                 <div className="an-card-head">

@@ -62,6 +62,9 @@ export interface AnalyticsSummary {
     previous: AnalyticsTotals;
     daily: AnalyticsDay[];
     top_pages: Array<{ path: string; views: number; visitors: number }>;
+    /** Last page viewed in each finished session; page_views is that page's total views, for exit rate. */
+    exit_pages: Array<{ path: string; exits: number; page_views: number }>;
+    exit_sessions: number;
     top_sources: Array<{ source: string; visitors: number }>;
     top_clicks: Array<{ target: string; clicks: number }>;
     top_links: Array<{ link: string; visits: number; visitors: number }>;
@@ -130,6 +133,8 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
         previous: { ...emptyTotals(), ...(raw.previous || {}) },
         daily: fillMissingDays(raw.daily || [], from, days),
         top_pages: raw.top_pages || [],
+        exit_pages: raw.exit_pages || [],
+        exit_sessions: raw.exit_sessions || 0,
         top_sources: raw.top_sources || [],
         top_clicks: raw.top_clicks || [],
         top_links: raw.top_links || [],

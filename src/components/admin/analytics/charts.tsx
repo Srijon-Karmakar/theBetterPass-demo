@@ -272,6 +272,49 @@ export const Donut: React.FC<{ items: Array<{ label: string; value: number; colo
     );
 };
 
+/**
+ * Pages where sessions ended. Bar length is the number of exits; the pill is the exit rate
+ * (share of that page's own views that were the last page of a session).
+ */
+export const ExitPageList: React.FC<{
+    items: Array<{ label: string; exits: number; pageViews: number }>;
+    totalExits: number;
+    color: string;
+    empty: string;
+}> = ({ items, totalExits, color, empty }) => {
+    if (items.length === 0) return <p className="an-empty">{empty}</p>;
+    const max = Math.max(...items.map((item) => item.exits), 1);
+    const percent = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
+
+    return (
+        <ul className="an-bars">
+            {items.map((item, index) => {
+                const share = percent(item.exits, totalExits);
+                const exitRate = Math.min(percent(item.exits, item.pageViews), 100);
+                return (
+                    <li
+                        key={`${item.label}-${index}`}
+                        title={`${item.label}: ${formatFull(item.exits)} of ${formatFull(totalExits)} visits ended here (${share}%). `
+                            + `${exitRate}% of this page's ${formatFull(item.pageViews)} views were the last page seen.`}
+                    >
+                        <div className="an-bar-head">
+                            <span>{item.label}</span>
+                            <em className="an-exit-rate">{exitRate}% exit rate</em>
+                            <b>{formatCompact(item.exits)}</b>
+                            <small className="an-exit-share">{share}%</small>
+                        </div>
+                        <div className="an-bar-track">
+                            <span
+                                style={{ width: `${Math.max((item.exits / max) * 100, 2)}%`, background: color, animationDelay: `${index * 50}ms` }}
+                            />
+                        </div>
+                    </li>
+                );
+            })}
+        </ul>
+    );
+};
+
 export const BarList: React.FC<{
     items: Array<{ label: string; value: number; hint?: string }>;
     color: string;
