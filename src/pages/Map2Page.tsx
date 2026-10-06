@@ -1,19 +1,35 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { divIcon, latLngBounds, point } from 'leaflet';
-import { MapContainer, Marker, Polyline, TileLayer, useMap, ZoomControl } from 'react-leaflet';
+import { Link } from 'react-router-dom';
+import { divIcon, latLngBounds, point, type Map as LeafletMap, type Marker as LeafletMarker } from 'leaflet';
+import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   Compass,
   LocateFixed,
   MapPinned,
+  MapPinPlus,
   Menu,
   Navigation,
   Pause,
   Play,
   Route,
   Search,
+  Star,
+  Trash2,
   X,
 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import {
+  buildPinIcon,
+  categoryFromLabel,
+  createMapPin,
+  deleteMapPin,
+  fetchMapPins,
+  getPinCategory,
+  PIN_CATEGORIES,
+  type MapPinRecord,
+  type PinCategory,
+} from '../lib/mapPins';
 import {
   buildSmartRoute,
   fetchRouteTouristPlaces,
@@ -268,12 +284,27 @@ const createFallbackRoute = (start: Map2Attraction, end: Map2Attraction, travelM
   };
 };
 
-const buildAttractionIcon = (active: boolean, inRoute: boolean) => divIcon({
-  className: '',
-  iconSize: point(active ? 42 : 34, active ? 52 : 44),
-  iconAnchor: point(active ? 21 : 17, active ? 48 : 40),
-  html: `<span class="map2-pin${active ? ' is-active' : ''}${inRoute ? ' is-route' : ''}"><span></span></span>`,
-});
+const StarRating: React.FC<{ value: number; size?: number }> = ({ value, size = 15 }) => (
+  <span className="map2-stars" aria-label={`${value} out of 5 stars`}>
+    {[1, 2, 3, 4, 5].map((star) => (
+      <Star key={star} size={size} className={star <= value ? 'is-on' : ''} aria-hidden="true" />
+    ))}
+  </span>
+);
+
+/** Gives the page the Leaflet map instance and routes map taps to pin placement. */
+const Map2Bridge: React.FC<{
+  mapRef: React.MutableRefObject<LeafletMap | null>;
+  onMapClick?: (position: { lat: number; lng: number }) => void;
+}> = ({ mapRef, onMapClick }) => {
+  const map = useMapEvents({
+    click: (event) => onMapClick?.({ lat: event.latlng.lat, lng: event.latlng.lng }),
+  });
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map, mapRef]);
+  return null;
+};
 
 const userLocationIcon = divIcon({
   className: '',
@@ -284,7 +315,7 @@ const userLocationIcon = divIcon({
 
 const Map2Viewport: React.FC<{
   routePoints: Array<[number, number]>;
-  selectedPoint?: Map2Attraction | null;
+  selectedPoint?: { lat: number; lng: number } | null;
   userLocation?: { lat: number; lng: number } | null;
 }> = ({ routePoints, selectedPoint, userLocation }) => {
   const map = useMap();
@@ -327,6 +358,18 @@ export const Map2Page: React.FC = () => {
   const [locating, setLocating] = useState(false);
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const { user, profile } = useAuth();
+  const mapRef = useRef<LeafletMap | null>(null);
+  const [pins, setPins] = useState<MapPinRecord[]>([]);
+  const [selectedPin, setSelectedPin] = useState<MapPinRecord | null>(null);
+  const [pinFormOpen, setPinFormOpen] = useState(false);
+  const [draftPin, setDraftPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [pinCategory, setPinCategory] = useState<PinCategory>('temple');
+  const [pinTitle, setPinTitle] = useState('');
+  const [pinReview, setPinReview] = useState('');
+  const [pinRating, setPinRating] = useState(5);
+  const [pinStatus, setPinStatus] = useState('');
+  const [pinSaving, setPinSaving] = useState(false);
 
   const startPoint = useMemo(
     () => MAP2_ATTRACTIONS.find((item) => item.id === startId) || MAP2_ATTRACTIONS[0],
@@ -364,9 +407,90 @@ export const Map2Page: React.FC = () => {
     return () => window.clearTimeout(timeoutId);
   }, [searchOpen]);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchMapPins()
+      .then((rows) => { if (!cancelled) setPins(rows); })
+      .catch(() => { /* Pins are optional; the curated map still works without them. */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const handlePointClick = (pointItem: Map2Attraction) => {
     setSelectedPoint(pointItem);
+    setSelectedPin(null);
+    setPinFormOpen(false);
     setRouteOpen(false);
+  };
+
+  const handlePinClick = (pin: MapPinRecord) => {
+    setSelectedPin(pin);
+    setSelectedPoint(null);
+    setPinFormOpen(false);
+    setRouteOpen(false);
+  };
+
+  const closePinForm = () => {
+    setPinFormOpen(false);
+    setDraftPin(null);
+    setPinStatus('');
+  };
+
+  /** Opens the pin form with the draft pin on the user's location, or the map centre if that is unavailable. */
+  const handleStartPin = async () => {
+    setSelectedPoint(null);
+    setSelectedPin(null);
+    setRouteOpen(false);
+    setPinTitle('');
+    setPinReview('');
+    setPinRating(5);
+    setPinStatus(user ? 'Finding your location...' : '');
+    setPinFormOpen(true);
+    if (!user) return;
+
+    const center = mapRef.current?.getCenter();
+    setDraftPin(center ? { lat: center.lat, lng: center.lng } : { lat: MAP2_CENTER[0], lng: MAP2_CENTER[1] });
+    try {
+      const location = await getCurrentDevicePosition();
+      setUserLocation({ lat: location.lat, lng: location.lng });
+      setDraftPin({ lat: location.lat, lng: location.lng });
+      setPinStatus('Pinned at your location. Drag the pin or tap the map to move it.');
+    } catch {
+      setPinStatus('Could not get your location. Drag the pin or tap the map to place it.');
+    }
+  };
+
+  const handleSavePin = async () => {
+    if (!user || !draftPin) return;
+    if (pinTitle.trim().length < 2) {
+      setPinStatus('Give the place a name.');
+      return;
+    }
+    setPinSaving(true);
+    setPinStatus('Saving pin...');
+    try {
+      const saved = await createMapPin(
+        { ...draftPin, category: pinCategory, title: pinTitle, review: pinReview, rating: pinRating },
+        user.id,
+        profile?.full_name || user.email?.split('@')[0] || 'Traveller',
+      );
+      setPins((current) => [saved, ...current]);
+      closePinForm();
+      setSelectedPin(saved);
+    } catch (error) {
+      setPinStatus(error instanceof Error ? error.message : 'Could not save the pin.');
+    } finally {
+      setPinSaving(false);
+    }
+  };
+
+  const handleDeletePin = async (pin: MapPinRecord) => {
+    try {
+      await deleteMapPin(pin.id);
+      setPins((current) => current.filter((item) => item.id !== pin.id));
+      setSelectedPin(null);
+    } catch {
+      // Keep the sheet open; the pin is still there.
+    }
   };
 
   const stopSpeechKeepAlive = () => {
@@ -545,8 +669,12 @@ export const Map2Page: React.FC = () => {
         <ZoomControl position="bottomright" />
         <Map2Viewport
           routePoints={plannedRoute?.route_points || []}
-          selectedPoint={selectedPoint}
+          selectedPoint={selectedPoint || selectedPin}
           userLocation={userLocation}
+        />
+        <Map2Bridge
+          mapRef={mapRef}
+          onMapClick={pinFormOpen && user ? (position) => setDraftPin(position) : undefined}
         />
 
         {plannedRoute?.route_points.length ? (
@@ -563,12 +691,41 @@ export const Map2Page: React.FC = () => {
         {MAP2_ATTRACTIONS.map((pointItem) => (
           <Marker
             key={pointItem.id}
-            icon={buildAttractionIcon(selectedPoint?.id === pointItem.id, routePointIds.has(pointItem.id))}
+            icon={buildPinIcon(categoryFromLabel(pointItem.category), {
+              active: selectedPoint?.id === pointItem.id,
+              route: routePointIds.has(pointItem.id),
+            })}
             position={[pointItem.lat, pointItem.lng]}
             eventHandlers={{ click: () => handlePointClick(pointItem) }}
             title={pointItem.name}
           />
         ))}
+
+        {pins.map((pin) => (
+          <Marker
+            key={pin.id}
+            icon={buildPinIcon(pin.category, { active: selectedPin?.id === pin.id })}
+            position={[pin.lat, pin.lng]}
+            eventHandlers={{ click: () => handlePinClick(pin) }}
+            title={pin.title}
+          />
+        ))}
+
+        {pinFormOpen && draftPin ? (
+          <Marker
+            icon={buildPinIcon(pinCategory, { draft: true })}
+            position={[draftPin.lat, draftPin.lng]}
+            draggable
+            zIndexOffset={1000}
+            eventHandlers={{
+              dragend: (event) => {
+                const { lat, lng } = (event.target as LeafletMarker).getLatLng();
+                setDraftPin({ lat, lng });
+              },
+            }}
+            title="New pin - drag to move"
+          />
+        ) : null}
       </MapContainer>
 
       <div className="map2-top-controls">
@@ -597,10 +754,21 @@ export const Map2Page: React.FC = () => {
         <div className="map2-toolbar" aria-label="Map controls">
           <button
             type="button"
+            className={`map2-tool${pinFormOpen ? ' is-active' : ''}`}
+            onClick={() => (pinFormOpen ? closePinForm() : void handleStartPin())}
+            aria-label="Pin a place"
+            title="Pin a place"
+          >
+            <MapPinPlus size={19} />
+          </button>
+          <button
+            type="button"
             className={`map2-tool${routeOpen ? ' is-active' : ''}`}
             onClick={() => {
               setRouteOpen((current) => !current);
               setSelectedPoint(null);
+              setSelectedPin(null);
+              closePinForm();
             }}
             aria-label="Route creator"
             title="Route creator"
@@ -740,7 +908,157 @@ export const Map2Page: React.FC = () => {
         </aside>
       ) : null}
 
-      {selectedPoint && !routeOpen ? (
+      {pinFormOpen ? (
+        <aside className="map2-detail-sheet map2-pin-form" aria-label="Pin a place">
+          <div className="map2-panel-head">
+            <div>
+              <span>New pin</span>
+              <h1>Share a place</h1>
+            </div>
+            <button type="button" className="map2-icon-btn" onClick={closePinForm} aria-label="Close pin form">
+              <X size={18} />
+            </button>
+          </div>
+
+          {!user ? (
+            <>
+              <p>Log in to pin places on the map and share a review with other travellers.</p>
+              <Link to="/login" className="map2-route-primary">Log in to pin</Link>
+            </>
+          ) : (
+            <form
+              className="map2-pin-fields"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleSavePin();
+              }}
+            >
+              <fieldset>
+                <legend>Category</legend>
+                <div className="map2-category-grid">
+                  {PIN_CATEGORIES.map(({ key, label, color, Icon }) => (
+                    <button
+                      type="button"
+                      key={key}
+                      className={pinCategory === key ? 'is-active' : ''}
+                      style={{ ['--pin-color' as string]: color }}
+                      aria-pressed={pinCategory === key}
+                      onClick={() => setPinCategory(key)}
+                    >
+                      <i aria-hidden="true"><Icon size={14} /></i>
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label>
+                <span>Place name</span>
+                <input
+                  value={pinTitle}
+                  onChange={(event) => setPinTitle(event.target.value)}
+                  placeholder="e.g. Bagbazar Sarbojanin pandal"
+                  maxLength={80}
+                  required
+                />
+              </label>
+
+              <fieldset>
+                <legend>Rating</legend>
+                <div className="map2-rating-input">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      className={star <= pinRating ? 'is-on' : ''}
+                      onClick={() => setPinRating(star)}
+                      aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                      aria-pressed={star === pinRating}
+                    >
+                      <Star size={22} />
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label>
+                <span>Review</span>
+                <textarea
+                  value={pinReview}
+                  onChange={(event) => setPinReview(event.target.value)}
+                  placeholder="What should others know about this place?"
+                  maxLength={1000}
+                  rows={3}
+                />
+              </label>
+
+              {draftPin ? (
+                <small className="map2-pin-coords">
+                  {draftPin.lat.toFixed(5)}, {draftPin.lng.toFixed(5)}
+                </small>
+              ) : null}
+
+              <button type="submit" className="map2-route-primary" disabled={pinSaving || !draftPin}>
+                <MapPinPlus size={18} />
+                <span>{pinSaving ? 'Saving pin' : 'Save pin'}</span>
+              </button>
+            </form>
+          )}
+
+          {pinStatus ? <p className="map2-status">{pinStatus}</p> : null}
+        </aside>
+      ) : null}
+
+      {selectedPin && !routeOpen && !pinFormOpen ? (() => {
+        const category = getPinCategory(selectedPin.category);
+        const CategoryIcon = category.Icon;
+        return (
+          <aside className="map2-detail-sheet" aria-label={`${selectedPin.title} details`}>
+            <div className="map2-panel-head">
+              <div>
+                <span className="map2-pin-category">
+                  <i style={{ ['--pin-color' as string]: category.color }} aria-hidden="true"><CategoryIcon size={12} /></i>
+                  {category.label}
+                </span>
+                <h1>{selectedPin.title}</h1>
+              </div>
+              <button type="button" className="map2-icon-btn" onClick={() => setSelectedPin(null)} aria-label="Close pin details">
+                <X size={18} />
+              </button>
+            </div>
+
+            <StarRating value={selectedPin.rating} />
+            {selectedPin.review ? <p>{selectedPin.review}</p> : null}
+
+            <small className="map2-best-time">
+              Pinned by {selectedPin.user_id === user?.id ? 'you' : selectedPin.author_name}
+              {' · '}
+              {new Date(selectedPin.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </small>
+            <small className="map2-pin-coords">{selectedPin.lat.toFixed(5)}, {selectedPin.lng.toFixed(5)}</small>
+
+            <div className="map2-detail-actions">
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${selectedPin.lat},${selectedPin.lng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="map2-audio-btn"
+              >
+                <Navigation size={17} />
+                <span>Directions</span>
+              </a>
+              {selectedPin.user_id === user?.id ? (
+                <button type="button" onClick={() => void handleDeletePin(selectedPin)}>
+                  <Trash2 size={16} />
+                  <span>Remove</span>
+                </button>
+              ) : null}
+            </div>
+          </aside>
+        );
+      })() : null}
+
+      {selectedPoint && !routeOpen && !pinFormOpen ? (
         <aside className="map2-detail-sheet" aria-label={`${selectedPoint.name} details`}>
           <div className="map2-panel-head">
             <div>
