@@ -358,6 +358,7 @@ export const Navbar: React.FC = () => {
                 ) : (
                     <div className="nbr-guest-actions">
                         <Link to="/blogs" className={`nbr-guest-link${location.pathname.startsWith('/blogs') ? ' is-active' : ''}`}>Blogs</Link>
+                        <Link to="/map" className={`nbr-guest-link${location.pathname === '/map' ? ' is-active' : ''}`}>Map</Link>
                         <Link to="/faq" className={`nbr-guest-link${location.pathname === '/faq' ? ' is-active' : ''}`}>FAQ</Link>
                         <Link to="/signup" className="nbr-join nbr-join--desktop">Join</Link>
                     </div>
@@ -513,12 +514,10 @@ export const Navbar: React.FC = () => {
                                 <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
                             </Link>
                         )}
-                        {user && (
-                            <Link to="/map" className="nbr-drop-item nbr-drop-item--main" onClick={() => setShowMenu(false)}>
-                                <span>Map</span>
-                                <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
-                            </Link>
-                        )}
+                        <Link to="/map" className="nbr-drop-item nbr-drop-item--main" onClick={() => setShowMenu(false)}>
+                            <span>Map</span>
+                            <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
+                        </Link>
                         {!user && (
                             <Link to="/blogs" className="nbr-drop-item nbr-drop-item--main" onClick={() => setShowMenu(false)}>
                                 <span>Blogs</span>

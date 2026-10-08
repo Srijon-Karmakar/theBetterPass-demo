@@ -14,11 +14,14 @@ import {
   Play,
   Route,
   Search,
+  Sparkles,
   Star,
   Trash2,
   X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { PujaGuidePanel } from '../components/map/PujaGuidePanel';
+import { getPandal, loadPandalPlan, PUJA_PANDALS, savePandalPlan } from '../lib/pujaGuide';
 import {
   buildPinIcon,
   categoryFromLabel,
@@ -370,6 +373,12 @@ export const Map2Page: React.FC = () => {
   const [pinRating, setPinRating] = useState(5);
   const [pinStatus, setPinStatus] = useState('');
   const [pinSaving, setPinSaving] = useState(false);
+  const [pujaOpen, setPujaOpen] = useState(false);
+  const [pandalPlan, setPandalPlan] = useState<string[]>([]);
+  const [selectedPandalId, setSelectedPandalId] = useState<string | null>(null);
+  const [pujaRoute, setPujaRoute] = useState<PlannedRoute | null>(null);
+  const selectedPandal = selectedPandalId ? getPandal(selectedPandalId) : null;
+  const userId = user?.id || null;
 
   const startPoint = useMemo(
     () => MAP2_ATTRACTIONS.find((item) => item.id === startId) || MAP2_ATTRACTIONS[0],
@@ -414,6 +423,26 @@ export const Map2Page: React.FC = () => {
       .catch(() => { /* Pins are optional; the curated map still works without them. */ });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadPandalPlan(userId).then((ids) => { if (!cancelled) setPandalPlan(ids); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  const handlePlanChange = (ids: string[]) => {
+    setPandalPlan(ids);
+    void savePandalPlan(userId, ids).catch(() => undefined);
+  };
+
+  const togglePuja = () => {
+    setPujaOpen((current) => !current);
+    setSelectedPandalId(null);
+    setSelectedPoint(null);
+    setSelectedPin(null);
+    setRouteOpen(false);
+    closePinForm();
+  };
 
   const handlePointClick = (pointItem: Map2Attraction) => {
     setSelectedPoint(pointItem);
@@ -668,8 +697,8 @@ export const Map2Page: React.FC = () => {
         />
         <ZoomControl position="bottomright" />
         <Map2Viewport
-          routePoints={plannedRoute?.route_points || []}
-          selectedPoint={selectedPoint || selectedPin}
+          routePoints={(pujaOpen ? pujaRoute : plannedRoute)?.route_points || []}
+          selectedPoint={pujaOpen ? selectedPandal : selectedPoint || selectedPin}
           userLocation={userLocation}
         />
         <Map2Bridge
@@ -677,18 +706,38 @@ export const Map2Page: React.FC = () => {
           onMapClick={pinFormOpen && user ? (position) => setDraftPin(position) : undefined}
         />
 
-        {plannedRoute?.route_points.length ? (
+        {!pujaOpen && plannedRoute?.route_points.length ? (
           <Polyline
             pathOptions={{ color: '#ff741d', weight: 6, opacity: 0.92, lineCap: 'round', lineJoin: 'round' }}
             positions={plannedRoute.route_points}
           />
         ) : null}
 
+        {pujaOpen && pujaRoute?.route_points.length ? (
+          <Polyline
+            pathOptions={{ color: '#e11d48', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
+            positions={pujaRoute.route_points}
+          />
+        ) : null}
+
+        {pujaOpen ? PUJA_PANDALS.map((pandal) => (
+          <Marker
+            key={pandal.id}
+            icon={buildPinIcon('durga_puja', {
+              active: selectedPandalId === pandal.id,
+              route: pandalPlan.includes(pandal.id),
+            })}
+            position={[pandal.lat, pandal.lng]}
+            eventHandlers={{ click: () => setSelectedPandalId(pandal.id) }}
+            title={pandal.name}
+          />
+        )) : null}
+
         {userLocation ? (
           <Marker icon={userLocationIcon} position={[userLocation.lat, userLocation.lng]} />
         ) : null}
 
-        {MAP2_ATTRACTIONS.map((pointItem) => (
+        {!pujaOpen && MAP2_ATTRACTIONS.map((pointItem) => (
           <Marker
             key={pointItem.id}
             icon={buildPinIcon(categoryFromLabel(pointItem.category), {
@@ -701,7 +750,7 @@ export const Map2Page: React.FC = () => {
           />
         ))}
 
-        {pins.map((pin) => (
+        {!pujaOpen && pins.map((pin) => (
           <Marker
             key={pin.id}
             icon={buildPinIcon(pin.category, { active: selectedPin?.id === pin.id })}
@@ -755,7 +804,11 @@ export const Map2Page: React.FC = () => {
           <button
             type="button"
             className={`map2-tool${pinFormOpen ? ' is-active' : ''}`}
-            onClick={() => (pinFormOpen ? closePinForm() : void handleStartPin())}
+            onClick={() => {
+              setPujaOpen(false);
+              if (pinFormOpen) closePinForm();
+              else void handleStartPin();
+            }}
             aria-label="Pin a place"
             title="Pin a place"
           >
@@ -768,6 +821,7 @@ export const Map2Page: React.FC = () => {
               setRouteOpen((current) => !current);
               setSelectedPoint(null);
               setSelectedPin(null);
+              setPujaOpen(false);
               closePinForm();
             }}
             aria-label="Route creator"
@@ -795,7 +849,30 @@ export const Map2Page: React.FC = () => {
             <Menu size={19} />
           </button>
         </div>
+        <button
+          type="button"
+          className={`map2-puja-toggle${pujaOpen ? ' is-active' : ''}`}
+          onClick={togglePuja}
+          aria-pressed={pujaOpen}
+        >
+          <Sparkles size={16} />
+          <span>{pujaOpen ? 'Exit Puja guide' : 'Puja guide'}</span>
+        </button>
       </div>
+
+      {pujaOpen ? (
+        <PujaGuidePanel
+          userId={userId}
+          plan={pandalPlan}
+          onPlanChange={handlePlanChange}
+          selectedPandalId={selectedPandalId}
+          onSelectPandal={setSelectedPandalId}
+          route={pujaRoute}
+          onRouteChange={setPujaRoute}
+          userLocation={userLocation}
+          onClose={togglePuja}
+        />
+      ) : null}
 
       {searchOpen && query.trim() && (
         <section className="map2-search-results" aria-label="Matching tourist places">

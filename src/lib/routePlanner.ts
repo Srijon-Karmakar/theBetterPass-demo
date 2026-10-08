@@ -727,17 +727,17 @@ export const buildSmartRoute = async (input: {
   city?: string;
   start: RoutePlace;
   destination: RoutePlace;
+  /** Optional stops visited in order between start and destination. */
+  stops?: RoutePlace[];
   travelerLocation?: DeviceLocation | null;
   travelMode: TravelMode;
 }): Promise<PlannedRoute> => {
   const city = (input.city || '').trim();
-  const baseRoute = await buildOsrmRoute([input.start, input.destination], input.travelMode);
+  const orderedPlaces = [input.start, ...(input.stops || []), input.destination];
+  const baseRoute = await buildOsrmRoute(orderedPlaces, input.travelMode);
   const suggestedPlaces: RoutePlace[] = [];
 
-  const routeWaypoints: RoutePlace[] = [
-    { ...input.start, kind: 'route_waypoint' },
-    { ...input.destination, kind: 'route_waypoint' },
-  ];
+  const routeWaypoints: RoutePlace[] = orderedPlaces.map((place) => ({ ...place, kind: 'route_waypoint' }));
 
   return {
     client_route_id: createClientRouteId(),

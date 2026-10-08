@@ -767,6 +767,357 @@
   color: rgba(248, 250, 252, 0.3);
 }
 
+/* Durga Puja guide ------------------------------------------------------- */
+.map2-puja-toggle {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e11d48, #f97316);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(190, 18, 60, 0.3);
+}
+
+.map2-puja-toggle.is-active {
+  background: #111111;
+  box-shadow: 0 12px 26px rgba(20, 20, 20, 0.28);
+}
+
+.map2-puja-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.map2-puja-tabs button {
+  text-transform: none;
+}
+
+.map2-puja-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.map2-puja-chips button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  color: #111111;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.map2-puja-chips button.is-active {
+  border-color: #111111;
+  background: #111111;
+  color: #ffffff;
+}
+
+.map2-puja-list,
+.map2-puja-plan {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.map2-puja-list > li {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+.map2-puja-list > li.is-selected {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 2px #e11d48;
+}
+
+.map2-puja-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: #111111;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map2-puja-row > span:not(.map2-puja-avatar),
+.map2-puja-plan-name {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.map2-puja-row strong,
+.map2-puja-plan-name strong {
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map2-puja-row small,
+.map2-puja-plan-name small,
+.map2-puja-request small {
+  color: rgba(17, 17, 17, 0.58);
+  font-size: 0.76rem;
+}
+
+.map2-puja-badge,
+.map2-puja-price {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #ffe4e6;
+  color: #9f1239;
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.map2-puja-price {
+  background: rgba(17, 17, 17, 0.06);
+  color: #111111;
+}
+
+.map2-puja-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fde68a;
+  color: #111111;
+  font-weight: 800;
+  object-fit: cover;
+}
+
+.map2-puja-detail {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.map2-puja-detail p {
+  margin: 0;
+  color: rgba(17, 17, 17, 0.72);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.map2-puja-plan-btn,
+.map2-puja-secondary,
+.map2-puja-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  border-radius: 13px;
+  background: #ffffff;
+  color: #111111;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.map2-puja-plan-btn.is-in {
+  border-color: #e11d48;
+  color: #9f1239;
+}
+
+.map2-puja-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px;
+}
+
+.map2-puja-actions .map2-route-primary,
+.map2-puja-detail > .map2-route-primary {
+  text-decoration: none;
+}
+
+.map2-puja-facts {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: rgba(17, 17, 17, 0.72);
+  font-size: 0.8rem;
+}
+
+.map2-puja-facts li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map2-puja-plan li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.map2-puja-plan b {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 0.78rem;
+}
+
+.map2-puja-plan-name {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #111111;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map2-puja-plan-actions {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+}
+
+.map2-puja-plan-actions button,
+.map2-puja-plan-actions a {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #111111;
+  cursor: pointer;
+}
+
+.map2-puja-plan-actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.map2-puja-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.map2-puja-requests {
+  display: grid;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.map2-puja-request {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 6px 8px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.map2-puja-request > span:first-child {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.map2-puja-status {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.06);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.map2-puja-status.is-accepted { background: #dcfce7; color: #166534; }
+.map2-puja-status.is-declined,
+.map2-puja-status.is-cancelled { color: rgba(17, 17, 17, 0.5); }
+
+:root[data-theme='dark'] .map2-puja-list > li,
+:root[data-theme='dark'] .map2-puja-plan li,
+:root[data-theme='dark'] .map2-puja-request,
+:root[data-theme='dark'] .map2-puja-chips button,
+:root[data-theme='dark'] .map2-puja-plan-btn,
+:root[data-theme='dark'] .map2-puja-secondary,
+:root[data-theme='dark'] .map2-puja-link {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .map2-puja-list > li.is-selected {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+:root[data-theme='dark'] .map2-puja-row,
+:root[data-theme='dark'] .map2-puja-plan-name,
+:root[data-theme='dark'] .map2-puja-plan-actions button,
+:root[data-theme='dark'] .map2-puja-plan-actions a,
+:root[data-theme='dark'] .map2-puja-price {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .map2-puja-chips button.is-active {
+  background: #f8fafc;
+  color: #111111;
+}
+
+:root[data-theme='dark'] .map2-puja-row small,
+:root[data-theme='dark'] .map2-puja-plan-name small,
+:root[data-theme='dark'] .map2-puja-request small,
+:root[data-theme='dark'] .map2-puja-detail p,
+:root[data-theme='dark'] .map2-puja-facts {
+  color: rgba(248, 250, 252, 0.72);
+}
+
+:root[data-theme='dark'] .map2-puja-price,
+:root[data-theme='dark'] .map2-puja-status {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 @media (min-width: 768px) {
   .map2-top-controls {
     top: 28px;

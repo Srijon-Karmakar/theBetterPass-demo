@@ -35,6 +35,7 @@ import {
     Users,
     XCircle,
     type LucideIcon,
+    Sparkles,
 } from 'lucide-react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { LogoutConfirmModal } from '../components/LogoutConfirmModal';
@@ -143,7 +144,8 @@ type SidebarKey =
     | 'map'
     | 'audits'
     | 'newsletter'
-    | 'analytics';
+    | 'analytics'
+    | 'puja';
 
 type AdminProfileRow = {
     id: string;
@@ -565,6 +567,7 @@ const parseProviderSection = (value: string | null): SidebarKey | null => {
     if (normalized === 'manage_posts' || normalized === 'manage-posts' || normalized === 'posts') return 'studio';
     if (normalized === 'messages') return 'messages';
     if (normalized === 'analytics' || normalized === 'performance' || normalized === 'insights') return 'analytics';
+    if (normalized === 'puja' || normalized === 'puja-guide' || normalized === 'durga-puja') return 'puja';
     return null;
 };
 
@@ -587,6 +590,7 @@ const parseAdminSection = (value: string | null): SidebarKey | null => {
     if (normalized === 'audits' || normalized === 'audit') return 'audits';
     if (normalized === 'newsletter') return 'newsletter';
     if (normalized === 'analytics' || normalized === 'traffic' || normalized === 'insights') return 'analytics';
+    if (normalized === 'puja' || normalized === 'puja-guides' || normalized === 'durga-puja') return 'puja';
     return null;
 };
 
@@ -664,6 +668,16 @@ const ADMIN_REFRESH_INTERVAL_STORAGE_KEY = 'tbp.dashboard.admin.refresh-interval
 const LazyAdminAccountMap = lazy(async () => {
     const module = await import('../components/admin/AdminAccountMap');
     return { default: module.AdminAccountMap };
+});
+
+const LazyProviderPujaGuide = lazy(async () => {
+    const module = await import('../components/puja/ProviderPujaGuidePanel');
+    return { default: module.ProviderPujaGuidePanel };
+});
+
+const LazyAdminPujaGuides = lazy(async () => {
+    const module = await import('../components/puja/AdminPujaGuidesPanel');
+    return { default: module.AdminPujaGuidesPanel };
 });
 
 const LazyAdminAnalytics = lazy(async () => {
@@ -1354,6 +1368,7 @@ export const RoleDashboard: React.FC = () => {
                 { key: 'users', label: 'Users', icon: Users },
                 { key: 'newsletter', label: 'Newsletter', icon: Rss },
                 { key: 'map', label: 'Map', icon: MapPin },
+                { key: 'puja', label: 'Puja Guides', icon: Sparkles },
                 { key: 'audits', label: 'Settings', icon: Settings2 },
                 { key: 'rejected', label: 'Rejected', icon: Shield },
             ];
@@ -1366,6 +1381,7 @@ export const RoleDashboard: React.FC = () => {
                 ...(VIRTUAL_TOURS_ENABLED ? [{ key: 'virtualTours' as SidebarKey, label: 'Live Tours', icon: RadioTower, iconSrc: MOBILE_NAV_ICON_SRC.virtualTours }] : []),
                 { key: 'revenue', label: 'Revenue', icon: CalendarDays, iconSrc: MOBILE_NAV_ICON_SRC.revenue },
                 { key: 'studio', label: 'Studio', icon: SquarePen },
+                { key: 'puja', label: 'Puja Guide', icon: Sparkles },
                 { key: 'listings', label: 'Listings', icon: Package },
                 { key: 'advertisements', label: 'Advertisements', icon: Megaphone },
                 { key: 'messages', label: 'Messages', icon: MessageSquare },
@@ -2927,6 +2943,16 @@ export const RoleDashboard: React.FC = () => {
     };
 
     const renderProviderSection = () => {
+        if (activeSection === 'puja' && user) {
+            return (
+                <section className="rdb-panel rdb-panel-wide">
+                    <Suspense fallback={<div className="rdb-loading"><Loader2 size={32} className="animate-spin" /><p>Loading Puja guide…</p></div>}>
+                        <LazyProviderPujaGuide userId={user.id} defaultName={profile?.full_name || ''} />
+                    </Suspense>
+                </section>
+            );
+        }
+
         if (activeSection === 'analytics') {
             return (
                 <section className="rdb-panel rdb-panel-wide">
@@ -3933,6 +3959,16 @@ export const RoleDashboard: React.FC = () => {
     };
 
     const renderAdminSection = () => {
+        if (activeSection === 'puja') {
+            return (
+                <section className="rdb-panel rdb-panel-wide">
+                    <Suspense fallback={<div className="rdb-loading"><Loader2 size={32} className="animate-spin" /><p>Loading Puja guides…</p></div>}>
+                        <LazyAdminPujaGuides />
+                    </Suspense>
+                </section>
+            );
+        }
+
         if (activeSection === 'content') {
             return <MarketingContentEditor userId={user?.id} mode="contact" />;
         }

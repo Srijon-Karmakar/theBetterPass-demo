@@ -3770,6 +3770,31 @@ export const getConversationEligibility = async (
     const currentIsProvider = isProviderRole(currentRole);
     const otherIsProvider = isProviderRole(otherRole);
 
+    // Durga Puja guides can be messaged before any booking, so tourists can plan the day with them.
+    if ((currentIsTourist && otherIsProvider) || (currentIsProvider && otherIsTourist)) {
+        const guideId = currentIsProvider ? currentUserId : otherUserId;
+        const touristId = currentIsTourist ? currentUserId : otherUserId;
+        const { data: pujaGuide } = await supabase
+            .from('puja_guides')
+            .select('user_id')
+            .eq('user_id', guideId)
+            .eq('status', 'approved')
+            .maybeSingle();
+        if (pujaGuide && currentIsTourist) {
+            return { allowed: true, reason: null, currentRole, otherRole };
+        }
+        if (pujaGuide) {
+            const { data: pujaRequest } = await supabase
+                .from('puja_guide_requests')
+                .select('id')
+                .eq('guide_id', guideId)
+                .eq('tourist_id', touristId)
+                .limit(1)
+                .maybeSingle();
+            if (pujaRequest) return { allowed: true, reason: null, currentRole, otherRole };
+        }
+    }
+
     if (currentIsTourist && otherIsProvider) {
         const { data: eligibleBooking, error: bookingCheckError } = await supabase
             .from('bookings')
