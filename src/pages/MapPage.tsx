@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { divIcon, latLngBounds } from 'leaflet';
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
-import OsmBrightLayer from '../components/map/OsmBrightLayer';
+import BasemapLayer from '../components/map/BasemapLayer';
 import 'leaflet/dist/leaflet.css';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -461,7 +461,7 @@ export const MapPage: React.FC = () => {
             worldCopyJump
             className="map-page-leaflet"
           >
-            <OsmBrightLayer />
+            <BasemapLayer />
             <RouteViewport points={visibleMapPoints} focus={currentLocation} />
 
             {currentLocation ? (
