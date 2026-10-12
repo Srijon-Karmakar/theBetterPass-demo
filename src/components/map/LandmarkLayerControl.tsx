@@ -1,5 +1,6 @@
 import React from 'react';
-import { ChevronDown, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
+import { ThumbtackList } from 'reicon-react';
 import { PLACE_CATEGORIES } from '../../lib/providerPlaces';
 import {
     LANDMARK_CATEGORIES,
@@ -24,7 +25,6 @@ interface LandmarkLayerControlProps {
     /** True while a detail sheet or panel is open; on phones the control steps aside so it never covers the sheet. */
     covered: boolean;
     /** Extra buttons shown next to the toggle (the map download). */
-    actions?: React.ReactNode;
     /** Provider business pins (restaurants, hotels, workshops). */
     placesEnabled: boolean;
     onPlacesEnabledChange: (enabled: boolean) => void;
@@ -45,7 +45,6 @@ export const LandmarkLayerControl: React.FC<LandmarkLayerControlProps> = ({
     categoryCounts,
     total,
     covered,
-    actions,
     placesEnabled,
     onPlacesEnabledChange,
     placesCount,
@@ -136,16 +135,15 @@ export const LandmarkLayerControl: React.FC<LandmarkLayerControlProps> = ({
         <div className="map2-landmarks-row">
             <button
                 type="button"
-                className="map2-landmarks-toggle"
+                className={`map2-landmarks-toggle is-round${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}`}
                 onClick={() => onOpenChange(!open)}
                 aria-expanded={open}
+                aria-label={`Famous places${enabled ? `, ${total} shown` : ', off'}`}
+                title="Famous places"
             >
-                <span aria-hidden="true">📍</span>
-                <span>Famous places</span>
-                <small>{enabled ? total : 'off'}</small>
-                <ChevronDown size={15} className={open ? 'is-open' : ''} aria-hidden="true" />
+                <ThumbtackList size={24} color="#ff741d" aria-hidden="true" />
+                {enabled ? <small>{total}</small> : null}
             </button>
-            {actions}
         </div>
     </section>
 );

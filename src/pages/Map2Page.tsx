@@ -360,12 +360,18 @@ const Map2Bridge: React.FC<{
   onMapClick?: (position: { lat: number; lng: number }) => void;
   onMoveEnd?: () => void;
 }> = ({ mapRef, onMapClick, onMoveEnd }) => {
+  const syncLabels = (target: LeafletMap) => {
+    // Pin names only appear once zoomed in; at city zoom ~120 labels would pile up on each other.
+    target.getContainer().classList.toggle('map2-show-labels', target.getZoom() >= 14);
+  };
   const map = useMapEvents({
     click: (event) => onMapClick?.({ lat: event.latlng.lat, lng: event.latlng.lng }),
     moveend: () => onMoveEnd?.(),
+    zoomend: () => syncLabels(map),
   });
   useEffect(() => {
     mapRef.current = map;
+    syncLabels(map);
   }, [map, mapRef]);
   return null;
 };
@@ -377,7 +383,7 @@ const PUJA_ROUTE_GLOW_STYLE = { color: PLAN_COLOR, weight: 18, opacity: 0.4, lin
 const PUJA_ROUTE_EDGE_STYLE = { color: '#ca8a04', weight: 9, opacity: 0.85, lineCap: 'round', lineJoin: 'round' } as const;
 const PUJA_ROUTE_STYLE = { color: PLAN_COLOR, weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' } as const;
 const TRAIL_CASING_STYLE = { color: '#ffffff', weight: 9, opacity: 0.85, lineCap: 'round', lineJoin: 'round' } as const;
-const TRAIL_LINE_STYLE = { color: '#0ea5e9', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' } as const;
+const TRAIL_LINE_STYLE = { color: '#16a34a', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' } as const;
 
 /**
  * The walked trail. Segments are immutable, so each segment's coordinate array is built once and reused; handing
@@ -1208,6 +1214,7 @@ export const Map2Page: React.FC = () => {
                 icon={buildDurgaPandalIcon({
                   active: selectedPandalId === pandal.id,
                   planNumber: planIndex >= 0 ? planIndex + 1 : undefined,
+                  label: pandal.name,
                 })}
                 zIndexOffset={planIndex >= 0 ? 500 : 0}
                 onSelect={onPandalSelect}
@@ -1222,7 +1229,7 @@ export const Map2Page: React.FC = () => {
             item={restaurant}
             lat={restaurant.lat}
             lng={restaurant.lng}
-            icon={buildRestaurantIcon({ active: selectedRestaurantId === restaurant.id })}
+            icon={buildRestaurantIcon({ active: selectedRestaurantId === restaurant.id, label: restaurant.name })}
             zIndexOffset={selectedRestaurantId === restaurant.id ? 450 : -100}
             onSelect={onRestaurantSelect}
             title={`${restaurant.name} · ${restaurant.cuisine}`}
@@ -1808,13 +1815,7 @@ export const Map2Page: React.FC = () => {
         />
       ) : null}
 
-      {pujaOpen || exploreOpen ? (
-        <section className="map2-landmarks is-covered" aria-label="Map download">
-          <div className="map2-landmarks-row">
-            <MapDownloadButton getMap={() => mapRef.current} />
-          </div>
-        </section>
-      ) : (
+      {pujaOpen || exploreOpen ? null : (
         <LandmarkLayerControl
           open={landmarkPanelOpen}
           onOpenChange={setLandmarkPanelOpen}
@@ -1832,9 +1833,10 @@ export const Map2Page: React.FC = () => {
           placesEnabled={placesOn}
           onPlacesEnabledChange={setPlacesOn}
           placesCount={places.length}
-          actions={<MapDownloadButton getMap={() => mapRef.current} />}
         />
       )}
+
+      <MapDownloadButton getMap={() => mapRef.current} />
 
       {selectedPoint && !routeOpen && !pinFormOpen ? (
         <aside className="map2-detail-sheet" aria-label={`${selectedPoint.name} details`}>

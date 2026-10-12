@@ -105,7 +105,7 @@ const TIP = { x: 12, y: 22.75 };
 
 const iconCache = new Map<string, DivIcon>();
 
-export type TackOptions = { active?: boolean; draft?: boolean; route?: boolean; planNumber?: number; small?: boolean };
+export type TackOptions = { active?: boolean; draft?: boolean; route?: boolean; planNumber?: number; small?: boolean; label?: string };
 
 /** Planned stops (and their route) are drawn in a soft, glowing yellow so they stand out from the other pins. */
 export const PLAN_COLOR = '#fde047';
@@ -114,7 +114,7 @@ export const RESTAURANT_COLOR = '#22c55e';
 
 /** The tack-shaped map pin: a head colour plus a glyph. `key` identifies the colour/glyph pair for caching. */
 export const buildTackIcon = (key: string, color: string, Icon: LucideIcon, options: TackOptions = {}): DivIcon => {
-    const cacheKey = `${key}:${options.active ? 1 : 0}:${options.draft ? 1 : 0}:${options.route ? 1 : 0}:${options.planNumber || 0}:${options.small ? 1 : 0}`;
+    const cacheKey = `${key}:${options.active ? 1 : 0}:${options.draft ? 1 : 0}:${options.route ? 1 : 0}:${options.planNumber || 0}:${options.small ? 1 : 0}:${options.label || ''}`;
     const cached = iconCache.get(cacheKey);
     if (cached) return cached;
 
@@ -149,7 +149,7 @@ export const buildTackIcon = (key: string, color: string, Icon: LucideIcon, opti
     <path d="${PIN_BODY_PATH}" fill="${bodyFill}" />
     <path d="${PIN_RING_PATH}" fill="${ringFill}" fill-rule="evenodd" clip-rule="evenodd" />
     ${centre}
-  </svg>
+  </svg>${options.label ? `<span class="map2-tack-label">${escapeHtml(options.label)}</span>` : ''}
 </span>`;
 
     const icon = divIcon({
@@ -168,8 +168,8 @@ export const buildPinIcon = (category: PinCategory, options: TackOptions = {}): 
 };
 
 /** Small green pin for restaurants shown beside the pandals. */
-export const buildRestaurantIcon = (options: { active?: boolean } = {}): DivIcon => (
-    buildTackIcon('restaurant', RESTAURANT_COLOR, UtensilsCrossed, { small: true, active: options.active })
+export const buildRestaurantIcon = (options: { active?: boolean; label?: string } = {}): DivIcon => (
+    buildTackIcon('restaurant', RESTAURANT_COLOR, UtensilsCrossed, { small: true, active: options.active, label: options.label })
 );
 
 /** Circular Durga-face badge used for Durga Puja pandal stops, in place of the generic tack pin. */

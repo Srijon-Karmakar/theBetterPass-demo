@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import type { Map as LeafletMap } from 'leaflet';
 import { downloadMapAsPdf, downloadMapAsPng } from '../../lib/mapExport';
 
@@ -7,11 +7,19 @@ interface MapDownloadButtonProps {
     getMap: () => LeafletMap | null;
 }
 
-/** "Download map": saves what the map shows right now as a PNG or PDF, with a restaurant legend added to the file. */
+/** "Download map": saves what the map shows right now as a PNG or PDF, with a restaurant legend added to the file.
+ *  It has no button of its own: the hamburger menu opens it. */
 export const MapDownloadButton: React.FC<MapDownloadButtonProps> = ({ getMap }) => {
     const [open, setOpen] = useState(false);
     const [busy, setBusy] = useState<'png' | 'pdf' | null>(null);
     const [message, setMessage] = useState('');
+
+    // The "Download map" item in the hamburger menu asks the map to open this chooser.
+    useEffect(() => {
+        const onOpen = () => { setMessage(''); setOpen(true); };
+        window.addEventListener('tbp:open-map-download', onOpen);
+        return () => window.removeEventListener('tbp:open-map-download', onOpen);
+    }, []);
 
     useEffect(() => {
         if (!open) return undefined;
@@ -65,16 +73,6 @@ export const MapDownloadButton: React.FC<MapDownloadButtonProps> = ({ getMap }) 
                     {message ? <p className="map2-download-error" role="alert">{message}</p> : null}
                 </div>
             ) : null}
-            <button
-                type="button"
-                className="map2-landmarks-toggle map2-download-toggle"
-                onClick={() => { setOpen((current) => !current); setMessage(''); }}
-                aria-expanded={open}
-                aria-haspopup="menu"
-            >
-                <Download size={16} aria-hidden="true" />
-                <span>Download map</span>
-            </button>
         </div>
     );
 };

@@ -5,6 +5,7 @@ import {
     ArrowUp,
     CalendarDays,
     Check,
+    ChevronDown,
     ChevronUp,
     ChevronsRight,
     Languages,
@@ -12,6 +13,7 @@ import {
     MessageSquare,
     Navigation,
     Plus,
+    Search,
     Trash2,
     UtensilsCrossed,
     Users,
@@ -45,6 +47,14 @@ import {
 import { googleMapsDirectionsUrl } from '../../lib/walkTrail';
 
 type PujaTab = 'pandals' | 'plan' | 'guides';
+
+/** One colour per area; the same dots appear on the filter chips and on each pandal row. */
+const ZONE_COLORS: Record<PandalZone, string> = {
+    North: '#38bdf8',
+    Central: '#fbbf24',
+    East: '#c084fc',
+    South: '#fb7185',
+};
 
 const toRoutePlace = (pandal: PujaPandal): RoutePlace => ({
     id: pandal.id,
@@ -116,6 +126,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     const [collapsed, setCollapsed] = useState(false);
     const dragStartY = useRef<number | null>(null);
     const [zone, setZone] = useState<PandalZone | 'All'>('All');
+    const [search, setSearch] = useState('');
     const [travelMode, setTravelMode] = useState<TravelMode>('walking');
     const [startFromMe, setStartFromMe] = useState(false);
     const [routeLoading, setRouteLoading] = useState(false);
@@ -134,11 +145,17 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     const [myRequests, setMyRequests] = useState<PujaGuideRequest[]>([]);
 
     const planOnly = showPlanOnly && plan.length > 0;
+    const searchTerms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const visiblePandals = useMemo(
-        () => PUJA_PANDALS.filter((item) => (
-            (zone === 'All' || item.zone === zone) && (!planOnly || plan.includes(item.id))
-        )),
-        [plan, planOnly, zone],
+        () => PUJA_PANDALS.filter((item) => {
+            if (zone !== 'All' && item.zone !== zone) return false;
+            if (planOnly && !plan.includes(item.id)) return false;
+            if (!searchTerms.length) return true;
+            const haystack = `${item.name} ${item.area} ${item.zone}`.toLowerCase();
+            return searchTerms.every((term) => haystack.includes(term));
+        }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [plan, planOnly, zone, search],
     );
     const planPandals = useMemo(() => plan.map(getPandal).filter((item): item is PujaPandal => Boolean(item)), [plan]);
     const selectedGuide = guides.find((item) => item.user_id === selectedGuideId) || null;
@@ -295,7 +312,6 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                 }}
             >
                 <span aria-hidden="true" />
-                <ChevronUp size={14} className="map2-sheet-chevron" aria-hidden="true" />
             </button>
 
             <div className="map2-panel-head">
@@ -305,7 +321,8 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                 </div>
                 <div className="map2-puja-head-actions">
                     <button type="button" className="map2-icon-btn" onClick={() => setCollapsed(true)} aria-label="Collapse the Puja guide" title="Collapse">
-                        <ChevronsRight size={18} />
+                        <ChevronsRight size={18} className="map2-collapse-side" />
+                        <ChevronDown size={18} className="map2-collapse-down" />
                     </button>
                     <button type="button" className="map2-icon-btn" onClick={onClose} aria-label="Close Puja guide">
                         <X size={18} />
@@ -314,6 +331,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
             </div>
 
             <div className="map2-puja-body">
+                <div className="map2-puja-switches">
                 <label className={`map2-puja-switch${plan.length ? '' : ' is-disabled'}`}>
                     <input
                         type="checkbox"
@@ -324,8 +342,8 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                     />
                     <span className="map2-puja-switch-track" aria-hidden="true"><span /></span>
                     <span>
-                        Show only my pandals on the map
-                        <small>{plan.length ? `${plan.length} in your plan` : 'Add pandals to your plan first'}</small>
+                        My pandals only
+                        <small>{plan.length ? `${plan.length} in your plan` : 'Plan is empty'}</small>
                     </span>
                 </label>
 
@@ -341,10 +359,11 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                     />
                     <span className="map2-puja-switch-track" aria-hidden="true"><span /></span>
                     <span>
-                        Show top restaurants on the map
-                        <small>{PUJA_RESTAURANTS.length} places near the busiest pandal clusters</small>
+                        Restaurants
+                        <small>{PUJA_RESTAURANTS.length} nearby places</small>
                     </span>
                 </label>
+                </div>
 
                 {showRestaurants && selectedRestaurant ? (
                     <div className="map2-puja-restaurant" role="status">
@@ -388,6 +407,30 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
 
                 {tab === 'pandals' && (
                     <>
+                        <form
+                            className="map2-puja-search"
+                            role="search"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                // Enter jumps to the first match on the map.
+                                if (visiblePandals[0]) onSelectPandal(visiblePandals[0].id);
+                            }}
+                        >
+                            <Search size={16} aria-hidden="true" />
+                            <input
+                                type="search"
+                                value={search}
+                                onChange={(event) => setSearch(event.target.value)}
+                                placeholder="Search pandals or areas"
+                                aria-label="Search pandals"
+                                enterKeyHint="search"
+                                autoComplete="off"
+                            />
+                            {search ? (
+                                <button type="button" onClick={() => setSearch('')} aria-label="Clear search"><X size={15} /></button>
+                            ) : null}
+                        </form>
+
                         <div className="map2-puja-chips" role="group" aria-label="Filter by area">
                             {(['All', ...PANDAL_ZONES] as Array<PandalZone | 'All'>).map((item) => (
                                 <button
@@ -397,10 +440,17 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                                     aria-pressed={zone === item}
                                     onClick={() => setZone(item)}
                                 >
+                                    {item !== 'All' ? <i className="map2-zone-dot" style={{ background: ZONE_COLORS[item] }} aria-hidden="true" /> : null}
                                     {item}
                                 </button>
                             ))}
                         </div>
+
+                        {!visiblePandals.length ? (
+                            <p className="map2-status">
+                                {search ? `No pandals match "${search.trim()}".` : 'No pandals in this area.'}
+                            </p>
+                        ) : null}
 
                         <ul className="map2-puja-list">
                             {visiblePandals.map((pandal) => {
@@ -409,11 +459,19 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                                 return (
                                     <li key={pandal.id} id={`puja-pandal-${pandal.id}`} className={selected ? 'is-selected' : ''}>
                                         <button type="button" className="map2-puja-row" onClick={() => onSelectPandal(selected ? null : pandal.id)}>
-                                            <span>
+                                            <img src="/icons/puja.png" alt="" className="map2-puja-row-icon" draggable={false} />
+                                            <span className="map2-puja-row-text">
                                                 <strong>{pandal.name}</strong>
-                                                <small>{pandal.area} · {pandal.zone}</small>
+                                                <small>{pandal.area}</small>
                                             </span>
                                             {inPlan ? <em className="map2-puja-badge">#{plan.indexOf(pandal.id) + 1}</em> : null}
+                                            <i
+                                                className="map2-zone-dot is-row"
+                                                style={{ background: ZONE_COLORS[pandal.zone] }}
+                                                title={`${pandal.zone} Kolkata`}
+                                                role="img"
+                                                aria-label={`${pandal.zone} Kolkata`}
+                                            />
                                         </button>
                                         {selected && (
                                             <div className="map2-puja-detail">

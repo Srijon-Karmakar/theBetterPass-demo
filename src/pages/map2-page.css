@@ -815,12 +815,12 @@
 /* Durga Puja guide ------------------------------------------------------- */
 .map2-puja-toggle {
   position: absolute;
-  top: calc(100% + 12px);
-  right: 2px;
+  top: calc(100% + 10px);
+  right: 1px;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   padding: 0;
   border: 2px solid #ffffff;
   border-radius: 50%;
@@ -832,8 +832,8 @@
 
 .map2-puja-toggle img {
   display: block;
-  width: 42px;
-  height: 42px;
+  width: 35px;
+  height: 35px;
   pointer-events: none;
   user-select: none;
 }
@@ -907,12 +907,12 @@
 /* "Puja guide" hint: a label and a curved arrow that point at the button */
 .map2-puja-hint {
   position: absolute;
-  top: calc(100% + 12px);
-  right: 64px;
+  top: calc(100% + 10px);
+  right: 56px;
   z-index: 1;
   display: flex;
   align-items: flex-start;
-  height: 54px;
+  height: 46px;
   pointer-events: none;
   opacity: 0;
   transform: translateX(8px);
@@ -969,7 +969,7 @@
 
 @media (max-width: 480px) {
   .map2-puja-hint {
-    right: 62px;
+    right: 54px;
   }
 
   .map2-puja-hint-text {
@@ -2484,7 +2484,7 @@
   height: 9px;
   border: 2px solid #ff741d;
   border-radius: 50%;
-  background: #0ea5e9;
+  background: #22c55e;
   animation: map2-trail-blink 1.4s ease-in-out infinite;
 }
 
@@ -2511,7 +2511,7 @@
 }
 
 .map2-trail-card.is-live {
-  box-shadow: 0 14px 30px rgba(20, 20, 20, 0.34), 0 0 0 2px rgba(14, 165, 233, 0.55);
+  box-shadow: 0 14px 30px rgba(20, 20, 20, 0.34), 0 0 0 2px rgba(34, 197, 94, 0.55);
 }
 
 .map2-trail-card header {
@@ -2538,8 +2538,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #0ea5e9;
-  color: #0b1b24;
+  background: #22c55e;
+  color: #052e16;
 }
 
 .map2-trail-stats {
@@ -2606,8 +2606,8 @@
 }
 
 .map2-trail-actions button.is-primary {
-  background: #0ea5e9;
-  color: #08202c;
+  background: #22c55e;
+  color: #052e16;
 }
 
 .map2-trail-actions button.is-danger {
@@ -2637,13 +2637,6 @@
   margin-top: 6px;
   padding: 0 12px;
   font-size: 0.78rem;
-}
-
-@media (min-width: 768px) {
-  .map2-trail-card,
-  .map2-trail-pill {
-    top: 96px;
-  }
 }
 
 @media (max-width: 767px) {
@@ -2694,7 +2687,7 @@
 }
 
 .map2-trail-pill.is-live {
-  box-shadow: 0 10px 24px rgba(20, 20, 20, 0.3), 0 0 0 2px rgba(14, 165, 233, 0.6);
+  box-shadow: 0 10px 24px rgba(20, 20, 20, 0.3), 0 0 0 2px rgba(34, 197, 94, 0.6);
 }
 
 .map2-trail-pill span {
@@ -2704,4 +2697,497 @@
 
 .map2-trail-pill-chevron {
   transform: rotate(180deg);
+}
+
+/* Compact card, kept clear of the Puja button on phones */
+.map2-trail-card {
+  top: calc(env(safe-area-inset-top) + 148px);
+  gap: 8px;
+  width: min(272px, calc(100vw - 24px));
+  padding: 10px 12px 12px;
+  border-radius: 18px;
+}
+
+.map2-trail-pill {
+  top: calc(env(safe-area-inset-top) + 148px);
+}
+
+.map2-trail-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.map2-trail-card header {
+  gap: 8px;
+}
+
+.map2-trail-card header strong {
+  font-size: 0.92rem;
+}
+
+.map2-trail-card header small {
+  font-size: 0.7rem;
+}
+
+.map2-trail-collapse {
+  width: 28px;
+  height: 28px;
+}
+
+.map2-trail-stats {
+  gap: 5px;
+}
+
+.map2-trail-stats > div {
+  padding: 6px 8px 7px;
+  border-radius: 10px;
+}
+
+.map2-trail-stats dt {
+  font-size: 0.64rem;
+}
+
+.map2-trail-stats dd {
+  font-size: 0.9rem;
+}
+
+.map2-trail-note {
+  font-size: 0.7rem;
+}
+
+.map2-trail-actions button {
+  min-height: 34px;
+  font-size: 0.8rem;
+}
+
+@media (min-width: 768px) {
+  .map2-trail-card,
+  .map2-trail-pill {
+    top: 96px;
+  }
+}
+
+/* Top shadow: a soft dark fade at the top edge so the toolbar and logo stay readable over any map tile,
+   the same treatment the hero sections on the other pages use. */
+.map2-page::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 2;
+  height: calc(env(safe-area-inset-top) + 150px);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.22) 45%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+}
+
+/* Pin names */
+.map2-tack-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  display: none;
+  max-width: 130px;
+  margin-top: 1px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  color: #171717;
+  font-family: 'Onest', 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 0 2px #ffffff, 0 0 3px #ffffff, 0 0 4px #ffffff;
+  pointer-events: none;
+}
+
+.map2-tack {
+  position: relative;
+}
+
+.map2-show-labels .map2-tack-label,
+.map2-tack.is-active .map2-tack-label,
+.map2-tack.is-planned .map2-tack-label {
+  display: block;
+}
+
+.map2-tack.is-small .map2-tack-label {
+  max-width: 110px;
+  color: #14532d;
+  font-size: 10px;
+}
+
+.map2-tack.is-active .map2-tack-label {
+  max-width: 180px;
+  font-size: 12px;
+}
+
+/* Puja guide panel: compact, and the filter rows keep their full height */
+.map2-page .map2-puja-body {
+  grid-auto-rows: max-content;
+  gap: 8px;
+  padding-bottom: 14px;
+}
+
+.map2-page .map2-puja-body > * {
+  min-height: min-content;
+}
+
+.map2-page .map2-puja-panel .map2-panel-head {
+  padding: 2px 0 8px;
+  align-items: center;
+}
+
+.map2-page .map2-puja-panel .map2-panel-head span {
+  font-size: 0.62rem;
+}
+
+.map2-page .map2-puja-panel .map2-panel-head h1 {
+  font-size: clamp(1.05rem, 4.6vw, 1.3rem);
+  line-height: 1.15;
+}
+
+.map2-page .map2-puja-panel .map2-icon-btn {
+  width: 34px;
+  height: 34px;
+}
+
+.map2-puja-switches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.map2-page .map2-puja-panel .map2-puja-switches .map2-puja-switch {
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+}
+
+.map2-page .map2-puja-panel .map2-puja-switch small {
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.map2-puja-switches .map2-puja-switch-track {
+  width: 34px;
+  height: 20px;
+}
+
+.map2-puja-switches .map2-puja-switch-track span {
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+}
+
+.map2-puja-switches .map2-puja-switch input:checked + .map2-puja-switch-track span {
+  transform: translateX(14px);
+}
+
+.map2-page .map2-puja-panel .map2-mode-row {
+  padding: 3px;
+}
+
+.map2-page .map2-puja-panel .map2-mode-row button {
+  padding: 7px 4px;
+  font-size: 0.82rem;
+}
+
+.map2-page .map2-puja-panel .map2-puja-chips {
+  flex: none;
+  min-height: 34px;
+  padding-top: 1px;
+}
+
+.map2-page .map2-puja-panel .map2-puja-chips button {
+  flex: none;
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 0.78rem;
+}
+
+.map2-page .map2-puja-panel .map2-puja-row {
+  padding: 8px 10px;
+}
+
+.map2-page .map2-puja-panel .map2-puja-row strong {
+  font-size: 0.88rem;
+}
+
+.map2-page .map2-puja-panel .map2-puja-row small {
+  font-size: 0.72rem;
+}
+
+@media (max-width: 767px) {
+  .map2-page .map2-puja-panel.is-half { height: 52dvh; }
+  .map2-page:has(.map2-puja-panel.is-half) .leaflet-bottom { bottom: calc(52dvh + 10px); }
+}
+
+/* One-line pandal rows: puja icon, name and area, zone dot */
+.map2-zone-dot {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.map2-zone-dot.is-row {
+  width: 10px;
+  height: 10px;
+  margin: 0 2px 0 0;
+}
+
+.map2-page .map2-puja-panel .map2-puja-chips button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.map2-page .map2-puja-panel .map2-puja-chips button .map2-zone-dot {
+  margin-right: 6px;
+}
+
+.map2-page .map2-puja-panel .map2-puja-list {
+  gap: 4px;
+}
+
+.map2-page .map2-puja-panel .map2-puja-list > li {
+  border-radius: 999px;
+}
+
+.map2-page .map2-puja-panel .map2-puja-list > li.is-selected {
+  border-radius: 20px;
+}
+
+.map2-page .map2-puja-panel .map2-puja-row {
+  gap: 8px;
+  padding: 5px 14px 5px 6px;
+  min-height: 40px;
+}
+
+.map2-puja-row-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff7e0;
+  object-fit: contain;
+  padding: 2px;
+  pointer-events: none;
+}
+
+.map2-page .map2-puja-panel .map2-puja-row-text {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.map2-page .map2-puja-panel .map2-puja-row-text strong {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map2-page .map2-puja-panel .map2-puja-row-text small {
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map2-page .map2-puja-panel .map2-puja-detail {
+  padding: 0 14px 12px 14px;
+}
+
+/* One collapse control: a down arrow on the phone sheet, a double arrow on the desktop card */
+.map2-collapse-down {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .map2-collapse-side {
+    display: none;
+  }
+
+  .map2-collapse-down {
+    display: block;
+  }
+}
+
+/* Pandal search */
+.map2-page .map2-puja-panel .map2-puja-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 6px 0 12px;
+  border-radius: 999px;
+  background: var(--pj-card);
+  color: var(--pj-muted);
+}
+
+.map2-page .map2-puja-panel .map2-puja-search input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--pj-text);
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.map2-page .map2-puja-panel .map2-puja-search input::placeholder {
+  color: var(--pj-muted);
+}
+
+.map2-page .map2-puja-panel .map2-puja-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.map2-page .map2-puja-panel .map2-puja-search button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pj-card-strong);
+  color: var(--pj-text);
+  cursor: pointer;
+}
+
+.map2-page .map2-puja-panel .map2-puja-search:focus-within {
+  box-shadow: inset 0 0 0 2px var(--pj-accent);
+}
+
+/* Phones: a slimmer toolbar keeps the site logo clear, and an open search drops below it as a full-width bar
+   instead of growing leftwards over the logo and off the screen. */
+@media (max-width: 767px) {
+  .map2-search.is-open {
+    position: absolute;
+    top: 56px;
+    right: 0;
+    z-index: 2;
+    width: calc(100vw - 20px);
+    padding-right: 12px;
+    box-shadow: 0 12px 28px rgba(20, 20, 20, 0.3);
+  }
+
+  .map2-search-results {
+    top: calc(env(safe-area-inset-top) + 136px);
+    right: 10px;
+    left: 10px;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .map2-toolbar {
+    gap: 2px;
+    padding: 5px;
+  }
+
+  .map2-toolbar .map2-tool {
+    width: 32px;
+    height: 32px;
+  }
+
+  .map2-search {
+    width: 40px;
+    min-height: 40px;
+  }
+
+  .map2-search-toggle {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* Famous places: a minimal pill */
+.map2-landmarks-toggle {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 0;
+  background: rgba(17, 17, 17, 0.88);
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(20, 20, 20, 0.22);
+}
+
+.map2-landmarks-toggle small {
+  padding: 1px 6px;
+  font-size: 0.68rem;
+}
+
+/* Download chooser, opened from the hamburger menu */
+.map2-download {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: end center;
+  padding: 0 12px calc(env(safe-area-inset-bottom) + 84px);
+  pointer-events: none;
+}
+
+.map2-download-menu {
+  position: static;
+  pointer-events: auto;
+  width: min(260px, 100%);
+}
+
+/* Famous places: round button with the orange Reicon thumbtack-list icon */
+.map2-landmarks-toggle.is-round {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  min-height: 0;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(20, 20, 20, 0.26);
+}
+
+.map2-landmarks-toggle.is-round.is-off {
+  opacity: 0.8;
+}
+
+.map2-landmarks-toggle.is-round.is-open {
+  box-shadow: 0 0 0 3px rgba(255, 116, 29, 0.45), 0 8px 20px rgba(20, 20, 20, 0.26);
+}
+
+.map2-landmarks-toggle.is-round small {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  padding: 1px 5px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
 }
