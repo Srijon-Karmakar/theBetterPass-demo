@@ -173,13 +173,13 @@
 
 .dh-hero-title {
   margin: 0;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Onest', sans-serif;
   font-size: clamp(2rem, 4.4vw, 3.35rem);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.08;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.05em;
   word-spacing: -0.06em;
-  color: #0b0b0f;
+  color: #9a9ca3;
   text-wrap: balance;
 }
 
@@ -190,7 +190,7 @@
 .dh-hero-greeting {
   margin-bottom: 0.35em;
   width: fit-content;
-  font-size: 0.34em;
+  font-size: 0.42em;
   line-height: 1.28;
   letter-spacing: 0;
   word-spacing: -0.04em;
@@ -204,7 +204,7 @@
 }
 
 :root[data-theme='dark'] .dh-hero-title {
-  color: #f8fafc;
+  color: #8b93a1;
 }
 
 :root[data-theme='dark'] .dh-hero-greeting {
@@ -1159,11 +1159,11 @@
   .dh-hero-title {
     font-size: clamp(1.55rem, 8vw, 2.2rem);
     line-height: 1.12;
-    letter-spacing: 0;
+    letter-spacing: -0.05em;
   }
 
   .dh-hero-greeting {
-    font-size: 0.36em;
+    font-size: 0.44em;
     line-height: 1.28;
   }
 

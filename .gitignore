@@ -32,3 +32,6 @@ tools/
 .claude/
 android/wrapper/dists/
 android/.gradle-user-home/
+
+# Release build artifacts (too large for GitHub)
+release-builds/

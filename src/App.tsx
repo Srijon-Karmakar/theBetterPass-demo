@@ -1,7 +1,8 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { useAuth } from './hooks/useAuth';
@@ -260,6 +261,7 @@ function App() {
           <CouponLinkCapture />
           <AnalyticsTracker />
           <NativeDeepLinkHandler />
+          <NativeSplashGate />
           <AppNavbar />
           <Suspense fallback={isNativePlatform ? <AppSplashScreen /> : null}>
             <Routes>
@@ -314,6 +316,74 @@ function App() {
     </Router>
   );
 }
+
+const INTRO_SEEN_KEY = 'tbp_intro_seen';
+const SPLASH_MIN_MS = 1200;
+const SPLASH_MAX_MS = 6000;
+const SPLASH_EXIT_MS = 300;
+
+type SplashPhase = 'loading' | 'intro' | 'exiting' | 'done';
+
+const NativeSplashGate: React.FC = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isNative = Capacitor.isNativePlatform();
+  const [phase, setPhase] = useState<SplashPhase>(isNative ? 'loading' : 'done');
+  const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+  const [minElapsed, setMinElapsed] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const launchPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    if (!isNative) return;
+    let mounted = true;
+    Preferences.get({ key: INTRO_SEEN_KEY })
+      .then(({ value }) => { if (mounted) setIntroSeen(value === '1'); })
+      .catch(() => { if (mounted) setIntroSeen(true); });
+    const minTimer = window.setTimeout(() => setMinElapsed(true), SPLASH_MIN_MS);
+    const maxTimer = window.setTimeout(() => setTimedOut(true), SPLASH_MAX_MS);
+    return () => {
+      mounted = false;
+      window.clearTimeout(minTimer);
+      window.clearTimeout(maxTimer);
+    };
+  }, [isNative]);
+
+  const ready = timedOut || (!loading && introSeen !== null && minElapsed);
+
+  useEffect(() => {
+    if (phase !== 'loading' || !ready) return;
+    const launchedAtHome = launchPathRef.current === '/';
+    if (!user && introSeen === false && launchedAtHome) {
+      setPhase('intro');
+      return;
+    }
+    setPhase('exiting');
+  }, [phase, ready, user, introSeen, navigate]);
+
+  useEffect(() => {
+    if (phase !== 'exiting') return;
+    const timer = window.setTimeout(() => setPhase('done'), SPLASH_EXIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  const handleStart = () => {
+    void Preferences.set({ key: INTRO_SEEN_KEY, value: '1' }).catch(() => undefined);
+    navigate('/login', { replace: true });
+    setPhase('exiting');
+  };
+
+  if (phase === 'done') return null;
+
+  return (
+    <AppSplashScreen
+      lightweight={phase === 'loading'}
+      exiting={phase === 'exiting'}
+      onAction={phase === 'intro' ? handleStart : undefined}
+    />
+  );
+};
 
 const NativeLoadingFallback: React.FC = () => (
   Capacitor.isNativePlatform() ? <AppSplashScreen lightweight /> : null

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { divIcon, latLngBounds, point, type Map as LeafletMap, type Marker as LeafletMarker } from 'leaflet';
-import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
+import { MapContainer, Marker, Polyline, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
+import OsmBrightLayer from '../components/map/OsmBrightLayer';
 import 'leaflet/dist/leaflet.css';
 import {
   Compass,
@@ -1125,13 +1126,7 @@ export const Map2Page: React.FC = () => {
         zoomControl={false}
         className="map2-leaflet"
       >
-        <TileLayer
-          attribution='Tiles &copy; Esri'
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={19}
-          crossOrigin="anonymous"
-          updateWhenZooming={false}
-        />
+        <OsmBrightLayer />
         <ZoomControl position="bottomright" />
         <Map2Viewport
           routePoints={(exploreOpen ? exploreRoute : pujaOpen ? pujaRoute : landmarkRoute || plannedRoute)?.route_points || NO_ROUTE_POINTS}

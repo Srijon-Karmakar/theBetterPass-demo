@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { divIcon, latLngBounds } from 'leaflet';
-import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
+import { CircleMarker, MapContainer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
+import OsmBrightLayer from '../components/map/OsmBrightLayer';
 import 'leaflet/dist/leaflet.css';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -460,11 +461,7 @@ export const MapPage: React.FC = () => {
             worldCopyJump
             className="map-page-leaflet"
           >
-            <TileLayer
-              attribution='Tiles &copy; Esri'
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={19}
-            />
+            <OsmBrightLayer />
             <RouteViewport points={visibleMapPoints} focus={currentLocation} />
 
             {currentLocation ? (

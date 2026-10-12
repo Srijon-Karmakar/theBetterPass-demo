@@ -134,6 +134,9 @@
 
 .app-splash-action {
   position: absolute;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
   left: 50%;
   bottom: clamp(8.6rem, 31vw, 12rem);
   z-index: 5;
@@ -261,4 +264,8 @@
     animation: none;
     transition: none;
   }
+}
+
+body.app-splash-active .nbr-bar {
+  display: none !important;
 }

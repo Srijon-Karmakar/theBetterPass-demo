@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './app-splash-screen.css';
 
@@ -10,6 +10,7 @@ type AppSplashScreenProps = {
   exiting?: boolean;
   lightweight?: boolean;
   actionHref?: string;
+  onAction?: () => void;
   actionLabel?: string;
 };
 
@@ -17,8 +18,15 @@ export const AppSplashScreen: React.FC<AppSplashScreenProps> = ({
   exiting = false,
   lightweight = false,
   actionHref,
+  onAction,
   actionLabel = 'Lets go',
-}) => (
+}) => {
+  useEffect(() => {
+    document.body.classList.add('app-splash-active');
+    return () => document.body.classList.remove('app-splash-active');
+  }, []);
+
+  return (
   <div
     className={`app-splash-screen${exiting ? ' is-exiting' : ''}${
       lightweight ? ' is-lightweight' : ''
@@ -82,9 +90,19 @@ export const AppSplashScreen: React.FC<AppSplashScreenProps> = ({
         >
           <span>{actionLabel}</span>
         </Link>
+      ) : onAction ? (
+        <button
+          type="button"
+          className="app-splash-action"
+          onClick={onAction}
+          aria-label={actionLabel}
+        >
+          <span>{actionLabel}</span>
+        </button>
       ) : null}
 
       <div className="app-splash-globe-fade" />
     </div>
   </div>
 );
+};

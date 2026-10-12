@@ -101,7 +101,12 @@ const drawMap = async (ctx: CanvasRenderingContext2D, map: LeafletMap, offsetY: 
         .filter((tile) => tile.complete && tile.naturalWidth > 0)
         .map((tile) => ({ tile, z: Number((tile.closest('.leaflet-tile-container') as HTMLElement | null)?.style.zIndex) || 0 }))
         .sort((a, b) => a.z - b.z);
-    if (!tiles.length) throw new MapExportError('The map tiles are still loading. Try again in a moment.');
+    const vectorCanvas = container.querySelector<HTMLCanvasElement>('canvas.maplibregl-canvas');
+    if (!tiles.length && !vectorCanvas) throw new MapExportError('The map tiles are still loading. Try again in a moment.');
+    if (vectorCanvas) {
+        const rect = vectorCanvas.getBoundingClientRect();
+        ctx.drawImage(vectorCanvas, (rect.left - box.left) * SCALE, (rect.top - box.top) * SCALE, rect.width * SCALE, rect.height * SCALE);
+    }
     for (const { tile } of tiles) {
         const rect = tile.getBoundingClientRect();
         ctx.drawImage(tile, (rect.left - box.left) * SCALE, (rect.top - box.top) * SCALE, rect.width * SCALE, rect.height * SCALE);

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import OsmBrightLayer from './OsmBrightLayer';
 import type { Marker as LeafletMarker } from 'leaflet';
 import { Crosshair, Loader2, Search } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
@@ -143,12 +144,7 @@ export const PlacePicker: React.FC<PlacePickerProps> = ({ value, category, onCha
 
             <div className="pp-map">
                 <MapContainer center={initialCenter.current} zoom={value ? PICKED_ZOOM : 12} minZoom={4} maxZoom={19} scrollWheelZoom className="pp-leaflet">
-                    <TileLayer
-                        attribution='Tiles &copy; Esri'
-                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
-                        maxZoom={19}
-                        updateWhenZooming={false}
-                    />
+                    <OsmBrightLayer />
                     <SizeWatcher />
                     <ClickToPlace disabled={disabled} onPick={(position) => pick(position)} />
                     <FlyTo target={value} token={flyToken} />
