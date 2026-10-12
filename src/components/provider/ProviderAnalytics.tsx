@@ -59,6 +59,7 @@ export const ProviderAnalytics: React.FC<ProviderAnalyticsProps> = ({ fetchSumma
         return () => { cancelled = true; };
     }, [range, reloadKey, fetchSummary]);
 
+    const isToday = range === 'today';
     const rangeDays = ANALYTICS_RANGES.find((item) => item.key === range)?.days ?? 30;
     const activeMetric = METRICS.find((item) => item.key === metric) || METRICS[0];
 
@@ -151,33 +152,35 @@ export const ProviderAnalytics: React.FC<ProviderAnalyticsProps> = ({ fetchSumma
                                 })}
                             </section>
 
-                            <section className="an-card an-trend">
-                                <div className="an-card-head">
-                                    <div>
-                                        <h3>{activeMetric.label} over time</h3>
-                                        <p>{rangeDays} day trend across all listings</p>
+                            {!isToday && (
+                                <section className="an-card an-trend">
+                                    <div className="an-card-head">
+                                        <div>
+                                            <h3>{activeMetric.label} over time</h3>
+                                            <p>{rangeDays} day trend across all listings</p>
+                                        </div>
+                                        <div className="an-chips" role="group" aria-label="Chart metric">
+                                            {METRICS.map((item) => (
+                                                <button key={item.key} type="button" className={item.key === metric ? 'is-active' : ''} style={{ ['--kpi' as string]: item.color }} aria-pressed={item.key === metric} onClick={() => setMetric(item.key)}>
+                                                    {item.label}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="an-chips" role="group" aria-label="Chart metric">
-                                        {METRICS.map((item) => (
-                                            <button key={item.key} type="button" className={item.key === metric ? 'is-active' : ''} style={{ ['--kpi' as string]: item.color }} aria-pressed={item.key === metric} onClick={() => setMetric(item.key)}>
-                                                {item.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <TrendChart
-                                    days={data.daily}
-                                    metric={metric}
-                                    color={activeMetric.color}
-                                    label={activeMetric.label}
-                                    formatValue={activeMetric.money ? formatCompactRupees : formatCompact}
-                                    tooltipMetrics={[
-                                        { key: 'views', label: 'Views', color: '#0ea5e9' },
-                                        { key: 'favorites', label: 'Favorites', color: '#ec4899' },
-                                        { key: 'bookings', label: 'Bookings', color: '#8b5cf6' },
-                                    ]}
-                                />
-                            </section>
+                                    <TrendChart
+                                        days={data.daily}
+                                        metric={metric}
+                                        color={activeMetric.color}
+                                        label={activeMetric.label}
+                                        formatValue={activeMetric.money ? formatCompactRupees : formatCompact}
+                                        tooltipMetrics={[
+                                            { key: 'views', label: 'Views', color: '#0ea5e9' },
+                                            { key: 'favorites', label: 'Favorites', color: '#ec4899' },
+                                            { key: 'bookings', label: 'Bookings', color: '#8b5cf6' },
+                                        ]}
+                                    />
+                                </section>
+                            )}
 
                             <div className="an-grid an-grid--2">
                                 <section className="an-card">
@@ -202,7 +205,7 @@ export const ProviderAnalytics: React.FC<ProviderAnalyticsProps> = ({ fetchSumma
                                     <div className="an-card-head"><div><h3>Top listings</h3><p>Ranked by views, then revenue</p></div></div>
                                     <BarList
                                         color="#0ea5e9"
-                                        empty="No listing activity yet in this period."
+                                        empty={isToday ? 'No listing activity yet today.' : 'No listing activity yet in this period.'}
                                         items={data.listings.slice(0, 8).map((listing) => ({
                                             label: listing.title || 'Untitled listing',
                                             value: listing.views,
@@ -213,7 +216,7 @@ export const ProviderAnalytics: React.FC<ProviderAnalyticsProps> = ({ fetchSumma
                             </div>
 
                             <section className="an-card">
-                                <div className="an-card-head"><div><h3>Per-listing breakdown</h3><p>Every listing with activity in this period</p></div></div>
+                                <div className="an-card-head"><div><h3>Per-listing breakdown</h3><p>Every listing with activity {isToday ? 'today' : 'in this period'}</p></div></div>
                                 {data.listings.length === 0 ? (
                                     <p className="an-empty">No listings with activity yet.</p>
                                 ) : (

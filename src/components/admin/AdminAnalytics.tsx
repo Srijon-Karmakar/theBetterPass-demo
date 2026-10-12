@@ -4,6 +4,7 @@ import {
     ANALYTICS_RANGES,
     AnalyticsNotReadyError,
     buildAnalyticsCsv,
+    buildHourlyCsv,
     fetchAdminAnalyticsSummary,
     formatCompact,
     formatFull,
@@ -12,7 +13,8 @@ import {
     type AnalyticsSummary,
     type AnalyticsTotals,
 } from '../../lib/adminAnalytics';
-import { BarList, Donut, ExitPageList,Funnel, Heatmap, TrendChart, type DailyMetricKey } from './analytics/charts';
+import { formatHourLabel } from '../../lib/analyticsShared';
+import { BarList, Donut, ExitPageList, Funnel, Heatmap, HourlyChart, TrendChart, type DailyMetricKey } from './analytics/charts';
 import './admin-analytics.css';
 
 type KpiKey = Exclude<DailyMetricKey, never> & keyof AnalyticsTotals;
@@ -101,14 +103,16 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
     }, []);
 
     const { data, loading, error, notReady, updatedAt } = state;
+    const isToday = range === 'today';
     const rangeDays = ANALYTICS_RANGES.find((item) => item.key === range)?.days ?? 7;
-    const previousLabel = `the previous ${rangeDays} days`;
+    const previousLabel = isToday ? 'yesterday at this time' : `the previous ${rangeDays} days`;
     const activeKpi = KPIS.find((item) => item.key === metric) || KPIS[0];
 
 
     const exportCsv = () => {
         if (!data) return;
-        const blob = new Blob([buildAnalyticsCsv(data.daily)], { type: 'text/csv;charset=utf-8' });
+        const csv = isToday && data.hourly ? buildHourlyCsv(data.hourly) : buildAnalyticsCsv(data.daily);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -121,6 +125,10 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
     const returning = totals?.returning_visitors ?? 0;
     const newVisitors = Math.max((totals?.visitors ?? 0) - returning, 0);
     const hasNoTraffic = Boolean(data) && (totals?.visitors ?? 0) === 0;
+    const busiestHour = data?.hourly?.reduce<{ hour: number; page_views: number } | null>(
+        (best, item) => (item.page_views > 0 && (!best || item.page_views > best.page_views) ? item : best),
+        null,
+    ) ?? null;
 
     return (
         <div className="an" aria-busy={loading}>
@@ -191,7 +199,7 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                         <>
                             {hasNoTraffic && (
                                 <section className="an-card an-state an-state--soft">
-                                    <h3>No visits recorded in this period</h3>
+                                    <h3>{isToday ? 'No visits recorded yet today' : 'No visits recorded in this period'}</h3>
                                     <p>Data appears here as people browse the site. Visits to admin, provider and dashboard pages are never counted.</p>
                                 </section>
                             )}
@@ -219,35 +227,50 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                                 })}
                             </section>
 
-                            <section className="an-card an-trend">
-                                <div className="an-card-head">
-                                    <div>
-                                        <h3>{activeKpi.label} over time</h3>
-                                        <p>{formatFull(totals[activeKpi.key] ?? 0)} in the last {rangeDays} days</p>
+                            {isToday && data.hourly ? (
+                                <section className="an-card an-trend">
+                                    <div className="an-card-head">
+                                        <div>
+                                            <h3>Today by hour</h3>
+                                            <p>
+                                                {formatFull(totals.page_views)} page views so far
+                                                {busiestHour ? ` · busiest at ${formatHourLabel(busiestHour.hour)}` : ''}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="an-chips" role="group" aria-label="Chart metric">
-                                        {KPIS.map((kpi) => (
-                                            <button
-                                                key={kpi.key}
-                                                type="button"
-                                                className={kpi.key === metric ? 'is-active' : ''}
-                                                style={{ ['--kpi' as string]: kpi.color }}
-                                                aria-pressed={kpi.key === metric}
-                                                onClick={() => setMetric(kpi.key)}
-                                            >
-                                                {kpi.label}
-                                            </button>
-                                        ))}
+                                    <HourlyChart hours={data.hourly} color="#0ea5e9" label="Page views" />
+                                </section>
+                            ) : (
+                                <section className="an-card an-trend">
+                                    <div className="an-card-head">
+                                        <div>
+                                            <h3>{activeKpi.label} over time</h3>
+                                            <p>{formatFull(totals[activeKpi.key] ?? 0)} in the last {rangeDays} days</p>
+                                        </div>
+                                        <div className="an-chips" role="group" aria-label="Chart metric">
+                                            {KPIS.map((kpi) => (
+                                                <button
+                                                    key={kpi.key}
+                                                    type="button"
+                                                    className={kpi.key === metric ? 'is-active' : ''}
+                                                    style={{ ['--kpi' as string]: kpi.color }}
+                                                    aria-pressed={kpi.key === metric}
+                                                    onClick={() => setMetric(kpi.key)}
+                                                >
+                                                    {kpi.label}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                                <TrendChart
-                                    days={data.daily}
-                                    metric={metric}
-                                    color={activeKpi.color}
-                                    label={activeKpi.label}
-                                    tooltipMetrics={TOOLTIP_METRICS}
-                                />
-                            </section>
+                                    <TrendChart
+                                        days={data.daily}
+                                        metric={metric}
+                                        color={activeKpi.color}
+                                        label={activeKpi.label}
+                                        tooltipMetrics={TOOLTIP_METRICS}
+                                    />
+                                </section>
+                            )}
 
                             <div className="an-grid an-grid--2">
                                 <section className="an-card">
@@ -344,15 +367,17 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                                 />
                             </section>
 
-                            <section className="an-card">
-                                <div className="an-card-head">
-                                    <div>
-                                        <h3>Peak hours</h3>
-                                        <p>Page views by day and hour (your local time)</p>
+                            {!isToday && (
+                                <section className="an-card">
+                                    <div className="an-card-head">
+                                        <div>
+                                            <h3>Peak hours</h3>
+                                            <p>Page views by day and hour (your local time)</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <Heatmap cells={data.heatmap} />
-                            </section>
+                                    <Heatmap cells={data.heatmap} />
+                                </section>
+                            )}
 
                             {(data.newsletter || data.crm_funnel) && (
                                 <div className="an-grid an-grid--2">
@@ -361,19 +386,21 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                                             <div className="an-card-head">
                                                 <div>
                                                     <h3>Newsletter growth</h3>
-                                                    <p>{formatFull(data.newsletter.totals.new_subscribers)} new in this period</p>
+                                                    <p>{formatFull(data.newsletter.totals.new_subscribers)} new {isToday ? 'today' : 'in this period'}</p>
                                                 </div>
                                             </div>
-                                            <TrendChart
-                                                days={data.newsletter.daily}
-                                                metric="subscribers"
-                                                color="#8b5cf6"
-                                                label="New subscribers"
-                                                tooltipMetrics={[{ key: 'subscribers', label: 'New subscribers', color: '#8b5cf6' }]}
-                                            />
+                                            {!isToday && (
+                                                <TrendChart
+                                                    days={data.newsletter.daily}
+                                                    metric="subscribers"
+                                                    color="#8b5cf6"
+                                                    label="New subscribers"
+                                                    tooltipMetrics={[{ key: 'subscribers', label: 'New subscribers', color: '#8b5cf6' }]}
+                                                />
+                                            )}
                                             <div className="an-split">
                                                 <div><span>Active subscribers</span><b>{formatFull(data.newsletter.totals.active_subscribers)}</b></div>
-                                                <div><span>New this period</span><b>{formatFull(data.newsletter.totals.new_subscribers)}</b></div>
+                                                <div><span>{isToday ? 'New today' : 'New this period'}</span><b>{formatFull(data.newsletter.totals.new_subscribers)}</b></div>
                                             </div>
                                         </section>
                                     )}

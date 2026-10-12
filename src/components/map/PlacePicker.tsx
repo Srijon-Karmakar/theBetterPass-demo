@@ -144,8 +144,9 @@ export const PlacePicker: React.FC<PlacePickerProps> = ({ value, category, onCha
             <div className="pp-map">
                 <MapContainer center={initialCenter.current} zoom={value ? PICKED_ZOOM : 12} minZoom={4} maxZoom={19} scrollWheelZoom className="pp-leaflet">
                     <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='Tiles &copy; Esri'
+                        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+                        maxZoom={19}
                         updateWhenZooming={false}
                     />
                     <SizeWatcher />

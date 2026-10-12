@@ -76,33 +76,7 @@
     drop-shadow(0 6px 8px rgba(20, 20, 20, 0.28));
 }
 
-/* Planned pandals glow a soft, slightly bloomy yellow. */
-.map2-tack.is-planned {
-  filter:
-    drop-shadow(0 0 1.5px #fef08a)
-    drop-shadow(0 0 7px rgba(253, 224, 71, 0.95))
-    drop-shadow(0 0 16px rgba(250, 204, 21, 0.6))
-    drop-shadow(0 5px 6px rgba(20, 20, 20, 0.28));
-}
-
-/* Restaurants are small and green so they read as secondary to the pandals. */
-.map2-tack.is-small {
-  filter:
-    drop-shadow(0 0 1px #ffffff)
-    drop-shadow(0 3px 4px rgba(20, 20, 20, 0.3));
-}
-
-.map2-tack.is-small.is-active {
-  filter:
-    drop-shadow(0 0 2px #ffffff)
-    drop-shadow(0 0 8px rgba(34, 197, 94, 0.7))
-    drop-shadow(0 5px 6px rgba(20, 20, 20, 0.3));
-}
-
-.leaflet-overlay-pane path.map2-puja-route-glow {
-  filter: blur(5px);
-  pointer-events: none;
-}
+/* Planned pandals glow yellow and restaurants carry a white outline: both are drawn inside the pin's SVG. */
 
 .map2-tack.is-active,
 .map2-tack.is-draft {
@@ -117,6 +91,52 @@
 @keyframes map2-tack-drop {
   from { opacity: 0; transform: translateY(-18px) scale(0.9); }
   to { opacity: 1; transform: none; }
+}
+
+.map2-durga-pin {
+  position: relative;
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2.5px #ffffff, 0 6px 10px rgba(20, 20, 20, 0.3);
+  transition: transform 0.18s ease;
+}
+
+.map2-durga-pin img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.map2-durga-pin:hover {
+  transform: scale(1.08);
+}
+
+.map2-durga-pin.is-active {
+  box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #fde047, 0 10px 14px rgba(20, 20, 20, 0.34);
+}
+
+.map2-durga-pin.is-planned {
+  box-shadow: 0 0 0 3px #fde047, 0 6px 10px rgba(20, 20, 20, 0.3);
+}
+
+.map2-durga-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #fde047;
+  color: #171717;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 .map2-user-dot {
@@ -315,10 +335,8 @@
   padding: 18px;
   border: 1px solid rgba(255, 255, 255, 0.86);
   border-radius: 28px;
-  background: rgba(232, 232, 232, 0.94);
+  background: rgb(232, 232, 232);
   box-shadow: 0 18px 36px rgba(20, 20, 20, 0.2);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .map2-panel-head {
@@ -818,7 +836,6 @@
   height: 42px;
   pointer-events: none;
   user-select: none;
-  animation: map2-puja-spin 18s linear infinite;
 }
 
 /* Two staggered rings radiate out from the button */
@@ -856,10 +873,6 @@
   animation: none;
 }
 
-.map2-puja-toggle.is-active img {
-  animation: none;
-}
-
 .map2-puja-toggle.is-active::before,
 .map2-puja-toggle.is-active::after {
   display: none;
@@ -875,13 +888,8 @@
   50% { transform: scale(1.06); }
 }
 
-@keyframes map2-puja-spin {
-  to { transform: rotate(360deg); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .map2-puja-toggle,
-  .map2-puja-toggle img {
+  .map2-puja-toggle {
     animation: none;
   }
 
@@ -1660,10 +1668,8 @@
   overflow-y: auto;
   border: 1px solid rgba(255, 255, 255, 0.86);
   border-radius: 22px;
-  background: rgba(232, 232, 232, 0.95);
+  background: rgb(232, 232, 232);
   box-shadow: 0 18px 36px rgba(20, 20, 20, 0.2);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .map2-landmarks-head {
@@ -2487,18 +2493,15 @@
   50% { opacity: 0.35; }
 }
 
-.leaflet-overlay-pane path.map2-trail-line {
-  filter: drop-shadow(0 0 3px rgba(14, 165, 233, 0.7));
-}
-
 .map2-trail-card {
   position: absolute;
   z-index: 950;
   top: calc(env(safe-area-inset-top) + 84px);
-  left: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   display: grid;
   gap: 10px;
-  width: min(280px, calc(100vw - 24px));
+  width: min(300px, calc(100vw - 24px));
   padding: 12px 14px 14px;
   border-radius: 20px;
   background: #171717;
@@ -2637,9 +2640,9 @@
 }
 
 @media (min-width: 768px) {
-  .map2-trail-card {
+  .map2-trail-card,
+  .map2-trail-pill {
     top: 96px;
-    left: 30px;
   }
 }
 
@@ -2648,4 +2651,57 @@
   .map2-search.is-open {
     width: min(190px, calc(100vw - 218px));
   }
+}
+
+.map2-trail-card header {
+  position: relative;
+}
+
+.map2-trail-collapse {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 50%;
+  background: #2f2f2f;
+  color: #f5f5f5;
+  cursor: pointer;
+}
+
+.map2-trail-pill {
+  position: absolute;
+  z-index: 950;
+  top: calc(env(safe-area-inset-top) + 84px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #171717;
+  color: #f5f5f5;
+  font: inherit;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(20, 20, 20, 0.3);
+}
+
+.map2-trail-pill.is-live {
+  box-shadow: 0 10px 24px rgba(20, 20, 20, 0.3), 0 0 0 2px rgba(14, 165, 233, 0.6);
+}
+
+.map2-trail-pill span {
+  color: rgba(245, 245, 245, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+.map2-trail-pill-chevron {
+  transform: rotate(180deg);
 }

@@ -1,6 +1,7 @@
-export type AnalyticsRangeKey = '7d' | '30d' | '90d';
+export type AnalyticsRangeKey = 'today' | '7d' | '30d' | '90d';
 
 export const ANALYTICS_RANGES: Array<{ key: AnalyticsRangeKey; label: string; days: number }> = [
+    { key: 'today', label: 'Today', days: 1 },
     { key: '7d', label: '7 days', days: 7 },
     { key: '30d', label: '30 days', days: 30 },
     { key: '90d', label: '90 days', days: 90 },
@@ -35,6 +36,22 @@ export const getAnalyticsRangeDates = (key: AnalyticsRangeKey): { from: Date; to
     return { from, to, days };
 };
 
+/**
+ * What each range is compared with. "Today" is only part-way through the day, so it is measured against yesterday
+ * up to the same time of day, not against a full day (which would always make today look like it is down).
+ */
+export const getPreviousRangeDates = (key: AnalyticsRangeKey): { from: Date; to: Date } | null => {
+    if (key !== 'today') return null;
+    const { from, to } = getAnalyticsRangeDates(key);
+    const previousFrom = new Date(from);
+    previousFrom.setDate(previousFrom.getDate() - 1);
+    const previousTo = new Date(to);
+    previousTo.setDate(previousTo.getDate() - 1);
+    return { from: previousFrom, to: previousTo };
+};
+
+export const isTodayRange = (key: AnalyticsRangeKey): boolean => key === 'today';
+
 const dayKey = (date: Date): string => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -68,6 +85,7 @@ const fullFormatter = new Intl.NumberFormat('en-IN');
 const currencyFormatter = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
 
 export const formatCompact = (value: number): string => (value < 10000 ? fullFormatter.format(value) : compactFormatter.format(value));
+export const formatHourLabel = (hour: number): string => `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`;
 export const formatFull = (value: number): string => fullFormatter.format(value);
 export const formatRupees = (value: number): string => `Rs ${currencyFormatter.format(value)}`;
 export const formatCompactRupees = (value: number): string => `Rs ${formatCompact(value)}`;

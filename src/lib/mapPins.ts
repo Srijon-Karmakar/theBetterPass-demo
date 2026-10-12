@@ -1,5 +1,3 @@
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { divIcon, point, type DivIcon } from 'leaflet';
 import {
     Castle,
@@ -17,6 +15,19 @@ import {
     UtensilsCrossed,
     type LucideIcon,
 } from 'lucide-react';
+import { __iconNode as flameNode } from 'lucide-react/dist/esm/icons/flame.js';
+import { __iconNode as tentNode } from 'lucide-react/dist/esm/icons/tent.js';
+import { __iconNode as landmarkNode } from 'lucide-react/dist/esm/icons/landmark.js';
+import { __iconNode as castleNode } from 'lucide-react/dist/esm/icons/castle.js';
+import { __iconNode as schoolNode } from 'lucide-react/dist/esm/icons/school.js';
+import { __iconNode as libraryNode } from 'lucide-react/dist/esm/icons/library.js';
+import { __iconNode as churchNode } from 'lucide-react/dist/esm/icons/church.js';
+import { __iconNode as moonNode } from 'lucide-react/dist/esm/icons/moon.js';
+import { __iconNode as treesNode } from 'lucide-react/dist/esm/icons/trees.js';
+import { __iconNode as shoppingBagNode } from 'lucide-react/dist/esm/icons/shopping-bag.js';
+import { __iconNode as mountainNode } from 'lucide-react/dist/esm/icons/mountain.js';
+import { __iconNode as mapPinNode } from 'lucide-react/dist/esm/icons/map-pin.js';
+import { __iconNode as utensilsCrossedNode } from 'lucide-react/dist/esm/icons/utensils-crossed.js';
 import { supabase } from './supabase';
 
 export type PinCategory =
@@ -59,12 +70,28 @@ export const categoryFromLabel = (label: string): PinCategory => {
     return 'other';
 };
 
+type IconNode = ReadonlyArray<readonly [string, Record<string, string | number>]>;
+
+/**
+ * Pin glyphs are written straight from lucide's icon data. Rendering them with `react-dom/server` instead pulled the
+ * whole server renderer (~190 KB) into the shared React chunk that every page downloads.
+ */
+const GLYPH_NODES: Record<string, IconNode> = {
+    Flame: flameNode, Tent: tentNode, Landmark: landmarkNode, Castle: castleNode, School: schoolNode,
+    Library: libraryNode, Church: churchNode, Moon: moonNode, Trees: treesNode, ShoppingBag: shoppingBagNode,
+    Mountain: mountainNode, MapPin: mapPinNode, UtensilsCrossed: utensilsCrossedNode,
+};
+
 const glyphCache = new Map<string, string>();
 
 const getGlyphMarkup = (glyphKey: string, Icon: LucideIcon): string => {
     const cached = glyphCache.get(glyphKey);
     if (cached) return cached;
-    const markup = renderToStaticMarkup(createElement(Icon, { size: 12, color: PIN_INK, strokeWidth: 2.6, 'aria-hidden': true }));
+    const node = GLYPH_NODES[Icon.displayName ?? ''] ?? mapPinNode;
+    const children = node.map(([tag, attrs]) => (
+        `<${tag} ${Object.entries(attrs).filter(([name]) => name !== 'key').map(([name, value]) => `${name}="${value}"`).join(' ')} />`
+    )).join('');
+    const markup = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${PIN_INK}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${children}</svg>`;
     glyphCache.set(glyphKey, markup);
     return markup;
 };
@@ -104,9 +131,21 @@ export const buildTackIcon = (key: string, color: string, Icon: LucideIcon, opti
     <text x="12" y="10" text-anchor="middle" dominant-baseline="central" font-family="Inter, system-ui, sans-serif" font-size="${options.planNumber! > 9 ? 5 : 6.2}" font-weight="800" fill="${PIN_INK}">${options.planNumber}</text>`
         : `<circle cx="12" cy="10" r="4.6" fill="#ffffff" stroke="${PIN_INK}" stroke-width="1.5" />
     <g transform="translate(9 7) scale(0.5)">${getGlyphMarkup(key, Icon)}</g>`;
+    // Glow and outline are vector shapes inside the SVG. CSS drop-shadow filters on every pin force the browser to
+    // re-rasterise each marker on every pan/zoom frame, which is what made the map stutter with ~120 pins.
+    const halo = planned
+        ? `<circle cx="12" cy="10" r="15" fill="${PLAN_COLOR}" fill-opacity="0.16" />
+    <circle cx="12" cy="10" r="12" fill="${PLAN_COLOR}" fill-opacity="0.26" />
+    <circle cx="12" cy="10" r="9.5" fill="${PLAN_COLOR}" fill-opacity="0.38" />`
+        : '';
+    const outline = options.small
+        ? `<path d="${PIN_BODY_PATH}" fill="#ffffff" stroke="#ffffff" stroke-width="2.6" stroke-linejoin="round" />`
+        : '';
     const html = `
 <span class="map2-tack${options.active ? ' is-active' : ''}${options.draft ? ' is-draft' : ''}${options.route ? ' is-route' : ''}${planned ? ' is-planned' : ''}${options.small ? ' is-small' : ''}">
-  <svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" style="overflow:visible">
+    ${halo}
+    ${outline}
     <path d="${PIN_BODY_PATH}" fill="${bodyFill}" />
     <path d="${PIN_RING_PATH}" fill="${ringFill}" fill-rule="evenodd" clip-rule="evenodd" />
     ${centre}
@@ -132,6 +171,32 @@ export const buildPinIcon = (category: PinCategory, options: TackOptions = {}): 
 export const buildRestaurantIcon = (options: { active?: boolean } = {}): DivIcon => (
     buildTackIcon('restaurant', RESTAURANT_COLOR, UtensilsCrossed, { small: true, active: options.active })
 );
+
+/** Circular Durga-face badge used for Durga Puja pandal stops, in place of the generic tack pin. */
+export const buildDurgaPandalIcon = (options: TackOptions = {}): DivIcon => {
+    const cacheKey = `durga:${options.active ? 1 : 0}:${options.planNumber || 0}`;
+    const cached = iconCache.get(cacheKey);
+    if (cached) return cached;
+
+    const size = options.active ? 56 : options.planNumber ? 50 : 44;
+    const badge = options.planNumber
+        ? `<span class="map2-durga-badge">${options.planNumber}</span>`
+        : '';
+    const html = `
+<span class="map2-durga-pin${options.active ? ' is-active' : ''}${options.planNumber ? ' is-planned' : ''}" style="width:${size}px;height:${size}px">
+  <img src="/icons/puja.png" alt="" width="${size}" height="${size}" />
+  ${badge}
+</span>`;
+
+    const icon = divIcon({
+        className: '',
+        html,
+        iconSize: point(size, size),
+        iconAnchor: point(size / 2, size - 4),
+    });
+    iconCache.set(cacheKey, icon);
+    return icon;
+};
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 

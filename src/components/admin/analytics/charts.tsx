@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { formatCompact, formatFull } from '../../../lib/analyticsShared';
+import { formatCompact, formatFull, formatHourLabel } from '../../../lib/analyticsShared';
 import type { AnalyticsDay } from '../../../lib/adminAnalytics';
 
 export type DailyMetricKey = Exclude<keyof AnalyticsDay, 'day'>;
@@ -193,6 +193,120 @@ export function TrendChart<T extends { day: string }>({ days, metric, color, lab
                             <b>{formatFull(hovered[item.key] as unknown as number)}</b>
                         </span>
                     ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+interface HourlyChartProps {
+    hours: Array<{ hour: number; page_views: number }>;
+    color: string;
+    label: string;
+}
+
+/** One bar per hour of today. Hours that have not happened yet stay empty, and the current hour is marked. */
+export const HourlyChart: React.FC<HourlyChartProps> = ({ hours, color, label }) => {
+    const [containerRef, width] = useContainerWidth();
+    const [hoverHour, setHoverHour] = useState<number | null>(null);
+    const currentHour = new Date().getHours();
+
+    const height = width < 520 ? 210 : 290;
+    const pad = { left: 40, right: 8, top: 16, bottom: 28 };
+    const innerW = Math.max(width - pad.left - pad.right, 10);
+    const innerH = height - pad.top - pad.bottom;
+    const max = Math.max(...hours.map((item) => item.page_views), 1);
+    const step = niceStep(max / 4);
+    const yMax = step * 4;
+    const slot = innerW / 24;
+    const barW = Math.max(Math.min(slot - 3, 26), 2);
+    const labelEvery = width < 520 ? 6 : 3;
+    const total = hours.reduce((sum, item) => sum + item.page_views, 0);
+
+    const handlePointer = (event: React.PointerEvent<SVGRectElement>) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const ratio = (event.clientX - rect.left) / rect.width;
+        setHoverHour(Math.min(23, Math.max(0, Math.floor(ratio * 24))));
+    };
+
+    const hovered = hoverHour !== null ? hours[hoverHour] : null;
+    const hoverX = hoverHour !== null ? pad.left + slot * hoverHour + slot / 2 : 0;
+
+    return (
+        <div ref={containerRef} className="an-chart" style={{ height }}>
+            {width > 0 && (
+                <svg
+                    width={width}
+                    height={height}
+                    viewBox={`0 0 ${width} ${height}`}
+                    role="img"
+                    aria-label={`${label} by hour today. ${formatFull(total)} in total so far.`}
+                >
+                    {[0, 1, 2, 3, 4].map((tick) => {
+                        const y = pad.top + innerH - (tick / 4) * innerH;
+                        return (
+                            <g key={tick}>
+                                <line x1={pad.left} x2={width - pad.right} y1={y} y2={y} className="an-grid-line" />
+                                <text x={pad.left - 8} y={y + 4} textAnchor="end" className="an-axis-text">
+                                    {formatCompact(step * tick)}
+                                </text>
+                            </g>
+                        );
+                    })}
+
+                    {hours.map((item) => {
+                        const x = pad.left + slot * item.hour + (slot - barW) / 2;
+                        const future = item.hour > currentHour;
+                        const barH = future ? 0 : Math.max((item.page_views / yMax) * innerH, item.page_views > 0 ? 3 : 0);
+                        return (
+                            <g key={item.hour}>
+                                {item.hour % labelEvery === 0 && (
+                                    <text x={x + barW / 2} y={height - 8} textAnchor="middle" className="an-axis-text">
+                                        {formatHourLabel(item.hour)}
+                                    </text>
+                                )}
+                                {future ? (
+                                    <rect x={x} y={pad.top + innerH - 2} width={barW} height={2} rx={1} fill={color} opacity={0.18} />
+                                ) : (
+                                    <rect
+                                        x={x}
+                                        y={pad.top + innerH - barH}
+                                        width={barW}
+                                        height={barH}
+                                        rx={Math.min(4, barW / 2)}
+                                        fill={color}
+                                        opacity={item.hour === currentHour ? 1 : hoverHour === item.hour ? 0.95 : 0.72}
+                                    />
+                                )}
+                            </g>
+                        );
+                    })}
+
+                    <rect
+                        x={pad.left}
+                        y={pad.top}
+                        width={innerW}
+                        height={innerH}
+                        fill="transparent"
+                        onPointerMove={handlePointer}
+                        onPointerDown={handlePointer}
+                        onPointerLeave={() => setHoverHour(null)}
+                        style={{ touchAction: 'pan-y' }}
+                    />
+                </svg>
+            )}
+
+            {hovered && (
+                <div
+                    className="an-tooltip"
+                    style={{ left: Math.min(Math.max(hoverX, 84), Math.max(width - 84, 84)), top: 4 }}
+                >
+                    <strong>{formatHourLabel(hovered.hour)} to {formatHourLabel((hovered.hour + 1) % 24)}</strong>
+                    <span>
+                        <i style={{ background: color }} />
+                        {label}
+                        <b>{hovered.hour > currentHour ? '--' : formatFull(hovered.page_views)}</b>
+                    </span>
                 </div>
             )}
         </div>

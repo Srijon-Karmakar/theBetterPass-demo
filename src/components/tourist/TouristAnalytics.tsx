@@ -61,6 +61,7 @@ export const TouristAnalytics: React.FC<TouristAnalyticsProps> = ({ fetchSummary
         return () => { cancelled = true; };
     }, [range, reloadKey, fetchSummary]);
 
+    const isToday = range === 'today';
     const rangeDays = ANALYTICS_RANGES.find((item) => item.key === range)?.days ?? 30;
     const activeMetric = METRICS.find((item) => item.key === metric) || METRICS[0];
 
@@ -128,39 +129,41 @@ export const TouristAnalytics: React.FC<TouristAnalyticsProps> = ({ fetchSummary
                         })}
                     </section>
 
-                    <section className="an-card an-trend">
-                        <div className="an-card-head">
-                            <div>
-                                <h3>{activeMetric.label} over time</h3>
-                                <p>{rangeDays} day trend</p>
+                    {!isToday && (
+                        <section className="an-card an-trend">
+                            <div className="an-card-head">
+                                <div>
+                                    <h3>{activeMetric.label} over time</h3>
+                                    <p>{rangeDays} day trend</p>
+                                </div>
+                                <div className="an-chips" role="group" aria-label="Chart metric">
+                                    {METRICS.map((item) => (
+                                        <button key={item.key} type="button" className={item.key === metric ? 'is-active' : ''} style={{ ['--kpi' as string]: item.color }} aria-pressed={item.key === metric} onClick={() => setMetric(item.key)}>
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="an-chips" role="group" aria-label="Chart metric">
-                                {METRICS.map((item) => (
-                                    <button key={item.key} type="button" className={item.key === metric ? 'is-active' : ''} style={{ ['--kpi' as string]: item.color }} aria-pressed={item.key === metric} onClick={() => setMetric(item.key)}>
-                                        {item.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <TrendChart
-                            days={data.daily}
-                            metric={metric}
-                            color={activeMetric.color}
-                            label={activeMetric.label}
-                            formatValue={activeMetric.money ? formatCompactRupees : formatCompact}
-                            tooltipMetrics={[
-                                { key: 'listings_viewed', label: 'Viewed', color: '#0ea5e9' },
-                                { key: 'logins', label: 'Logins', color: '#10b981' },
-                                { key: 'bookings', label: 'Bookings', color: '#8b5cf6' },
-                            ]}
-                        />
-                    </section>
+                            <TrendChart
+                                days={data.daily}
+                                metric={metric}
+                                color={activeMetric.color}
+                                label={activeMetric.label}
+                                formatValue={activeMetric.money ? formatCompactRupees : formatCompact}
+                                tooltipMetrics={[
+                                    { key: 'listings_viewed', label: 'Viewed', color: '#0ea5e9' },
+                                    { key: 'logins', label: 'Logins', color: '#10b981' },
+                                    { key: 'bookings', label: 'Bookings', color: '#8b5cf6' },
+                                ]}
+                            />
+                        </section>
+                    )}
 
                     <section className="an-card">
                         <div className="an-card-head">
                             <div>
                                 <h3><Flame size={16} className="ta-flame" /> Trending on The Better Pass</h3>
-                                <p>Most-viewed listings across the platform in this period</p>
+                                <p>Most-viewed listings across the platform {isToday ? 'today' : 'in this period'}</p>
                             </div>
                         </div>
                         {data.trending.length === 0 ? (
@@ -182,7 +185,7 @@ export const TouristAnalytics: React.FC<TouristAnalyticsProps> = ({ fetchSummary
 
                     {data.recentListings.length > 0 && (
                         <section className="an-card">
-                            <div className="an-card-head"><div><h3>Recently viewed</h3><p>Listings you opened in this period</p></div></div>
+                            <div className="an-card-head"><div><h3>Recently viewed</h3><p>Listings you opened {isToday ? 'today' : 'in this period'}</p></div></div>
                             <ul className="ta-recent-list">
                                 {data.recentListings.map((item) => (
                                     <li key={item.listing_id}>

@@ -3,8 +3,8 @@ import {
     loadTrail,
     saveTrail,
     shouldAppendPoint,
+    snapToStreets,
     trailDistance,
-    trailDuration,
     trailPointCount,
     type TrailPoint,
     type TrailSegment,
@@ -24,7 +24,8 @@ interface WakeLockSentinelLike {
 
 type WakeLockNavigator = Navigator & { wakeLock?: { request: (type: 'screen') => Promise<WakeLockSentinelLike> } };
 
-const SAVE_DELAY_MS = 2500;
+/** Saving serialises the whole trail, so while walking it runs at most this often (and again on pagehide/unmount). */
+const SAVE_INTERVAL_MS = 8000;
 
 const describeGeolocationError = (error: GeolocationPositionError): string => {
     if (error.code === error.PERMISSION_DENIED) return 'Location permission is blocked. Allow location for this site to track your walk.';
@@ -42,12 +43,15 @@ export const useWalkTrail = () => {
     const [position, setPosition] = useState<LivePosition | null>(null);
     const [error, setError] = useState('');
     const [keepAwake, setKeepAwake] = useState(false);
-    const [now, setNow] = useState(() => Date.now());
 
     const watchId = useRef<number | null>(null);
     const trackingRef = useRef(false);
     const lockRef = useRef<WakeLockSentinelLike | null>(null);
     const segmentsRef = useRef(segments);
+    const saveTimer = useRef<number | null>(null);
+    const snapBusy = useRef(false);
+    const snapFromT = useRef(0);
+    const alive = useRef(true);
 
     const acquireLock = useCallback(async () => {
         try {
@@ -98,9 +102,9 @@ export const useWalkTrail = () => {
             return;
         }
         trackingRef.current = true;
+        snapFromT.current = Date.now() - 1000;
         setTracking(true);
         setError('');
-        setNow(Date.now());
         // Each start opens a fresh segment so a gap between walks is never drawn as a line.
         setSegments((previous) => [...previous.filter((segment) => segment.length > 0), []]);
         watchId.current = navigator.geolocation.watchPosition(
@@ -121,11 +125,39 @@ export const useWalkTrail = () => {
         saveTrail([]);
     }, [stop]);
 
-    // Save shortly after the trail changes, and again when the page is hidden or closed.
+    // Snap new fixes to the street network, one lookup at a time, newest segment only.
+    useEffect(() => {
+        if (snapBusy.current || !tracking) return;
+        const segment = segments[segments.length - 1];
+        if (!segment) return;
+        const index = segment.findIndex((point, i) => i > 0 && point.path === undefined && point.t >= snapFromT.current);
+        if (index < 1) return;
+        const from = segment[index - 1];
+        const target = segment[index];
+        snapBusy.current = true;
+        void snapToStreets(from, target).then((path) => {
+            snapBusy.current = false;
+            if (!alive.current) return;
+            setSegments((previous) => {
+                const last = previous[previous.length - 1];
+                if (!last) return previous;
+                const at = last.findIndex((point) => point.t === target.t);
+                if (at < 0) return previous;
+                const next = last.slice();
+                next[at] = { ...next[at], path: path ?? [] };
+                return [...previous.slice(0, -1), next];
+            });
+        });
+    }, [segments, tracking]);
+
+    // Throttled save: the first change schedules one write, later changes ride along with it.
     useEffect(() => {
         segmentsRef.current = segments;
-        const timer = window.setTimeout(() => saveTrail(segments), SAVE_DELAY_MS);
-        return () => window.clearTimeout(timer);
+        if (saveTimer.current !== null) return;
+        saveTimer.current = window.setTimeout(() => {
+            saveTimer.current = null;
+            saveTrail(segmentsRef.current);
+        }, SAVE_INTERVAL_MS);
     }, [segments]);
 
     useEffect(() => {
@@ -133,13 +165,6 @@ export const useWalkTrail = () => {
         window.addEventListener('pagehide', flush);
         return () => window.removeEventListener('pagehide', flush);
     }, []);
-
-    // Tick the clock while tracking so the timer moves even when standing still.
-    useEffect(() => {
-        if (!tracking) return undefined;
-        const timer = window.setInterval(() => setNow(Date.now()), 1000);
-        return () => window.clearInterval(timer);
-    }, [tracking]);
 
     // Browsers release the wake lock when the tab is hidden; take it back when the user returns.
     useEffect(() => {
@@ -152,15 +177,16 @@ export const useWalkTrail = () => {
     }, [acquireLock]);
 
     useEffect(() => () => {
+        alive.current = false;
         if (watchId.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
             navigator.geolocation.clearWatch(watchId.current);
         }
+        if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
         saveTrail(segmentsRef.current);
         void lockRef.current?.release().catch(() => undefined);
     }, []);
 
     const distance = useMemo(() => trailDistance(segments), [segments]);
-    const duration = trailDuration(segments, tracking ? now : null);
 
     return {
         tracking,
@@ -169,7 +195,6 @@ export const useWalkTrail = () => {
         keepAwake,
         segments,
         distance,
-        duration,
         pointCount: trailPointCount(segments),
         start,
         stop,

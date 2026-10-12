@@ -30,6 +30,7 @@ import { MapMarker } from '../components/map/MapMarker';
 import { useStableCallback } from '../components/map/useStableCallback';
 import { useWalkTrail } from '../components/map/useWalkTrail';
 import { WalkTrailCard } from '../components/map/WalkTrailCard';
+import { trailRenderPositions, type TrailSegment } from '../lib/walkTrail';
 import {
   buildPlacePinIcon,
   fetchPublicPlaces,
@@ -50,6 +51,7 @@ import {
 } from '../lib/kolkataLandmarks';
 import { clampBounds, EXPLORE_GROUPS, fetchExplorePlaces, findExploreCategory, type ExplorePlace } from '../lib/placeExplorer';
 import {
+  buildDurgaPandalIcon,
   buildEmojiMarkerIcon,
   buildPinIcon,
   buildRestaurantIcon,
@@ -367,6 +369,50 @@ const Map2Bridge: React.FC<{
   }, [map, mapRef]);
   return null;
 };
+
+/* Leaflet re-styles a path whenever its `pathOptions` object changes identity, so these live at module level. */
+const ROUTE_BLUE_STYLE = { color: '#2563eb', weight: 6, opacity: 0.88, lineCap: 'round', lineJoin: 'round' } as const;
+const ROUTE_ORANGE_STYLE = { color: '#ff741d', weight: 6, opacity: 0.92, lineCap: 'round', lineJoin: 'round' } as const;
+const PUJA_ROUTE_GLOW_STYLE = { color: PLAN_COLOR, weight: 18, opacity: 0.4, lineCap: 'round', lineJoin: 'round' } as const;
+const PUJA_ROUTE_EDGE_STYLE = { color: '#ca8a04', weight: 9, opacity: 0.85, lineCap: 'round', lineJoin: 'round' } as const;
+const PUJA_ROUTE_STYLE = { color: PLAN_COLOR, weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' } as const;
+const TRAIL_CASING_STYLE = { color: '#ffffff', weight: 9, opacity: 0.85, lineCap: 'round', lineJoin: 'round' } as const;
+const TRAIL_LINE_STYLE = { color: '#0ea5e9', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' } as const;
+
+/**
+ * The walked trail. Segments are immutable, so each segment's coordinate array is built once and reused; handing
+ * Leaflet a fresh array on every render would make it re-project the whole line each time.
+ */
+const WalkTrailLines: React.FC<{ segments: TrailSegment[] }> = React.memo(({ segments }) => {
+  const lines = useMemo(
+    () => segments
+      .filter((segment) => segment.length > 1)
+      .map((segment) => ({
+        key: `${segment[0].t}`,
+        positions: trailRenderPositions(segment),
+      })),
+    [segments],
+  );
+  return (
+    <>
+      {lines.map((line) => (
+        <React.Fragment key={line.key}>
+          <Polyline
+            pathOptions={TRAIL_CASING_STYLE}
+            positions={line.positions}
+            interactive={false}
+          />
+          <Polyline
+            pathOptions={TRAIL_LINE_STYLE}
+            positions={line.positions}
+            interactive={false}
+          />
+        </React.Fragment>
+      ))}
+    </>
+  );
+});
+WalkTrailLines.displayName = 'WalkTrailLines';
 
 /** Shared empty route: a fresh `[]` each render would re-run the viewport effect and re-fly the map. */
 const NO_ROUTE_POINTS: Array<[number, number]> = [];
@@ -1074,8 +1120,9 @@ export const Map2Page: React.FC = () => {
         className="map2-leaflet"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='Tiles &copy; Esri'
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={19}
           crossOrigin="anonymous"
           updateWhenZooming={false}
         />
@@ -1093,7 +1140,7 @@ export const Map2Page: React.FC = () => {
 
         {exploreOpen && exploreRoute?.route_points.length ? (
           <Polyline
-            pathOptions={{ color: '#2563eb', weight: 6, opacity: 0.88, lineCap: 'round', lineJoin: 'round' }}
+            pathOptions={ROUTE_BLUE_STYLE}
             positions={exploreRoute.route_points}
           />
         ) : null}
@@ -1115,33 +1162,33 @@ export const Map2Page: React.FC = () => {
 
         {!exploreOpen && !pujaOpen && landmarkRoute?.route_points.length ? (
           <Polyline
-            pathOptions={{ color: '#2563eb', weight: 6, opacity: 0.88, lineCap: 'round', lineJoin: 'round' }}
+            pathOptions={ROUTE_BLUE_STYLE}
             positions={landmarkRoute.route_points}
           />
         ) : null}
 
         {!exploreOpen && !pujaOpen && plannedRoute?.route_points.length ? (
           <Polyline
-            pathOptions={{ color: '#ff741d', weight: 6, opacity: 0.92, lineCap: 'round', lineJoin: 'round' }}
+            pathOptions={ROUTE_ORANGE_STYLE}
             positions={plannedRoute.route_points}
           />
         ) : null}
 
         {pujaOpen && pujaRoute?.route_points.length ? (
           <>
-            {/* Soft yellow bloom, a thin gold edge for contrast on light tiles, then the yellow route itself. */}
+            {/* Wide soft yellow halo, a thin gold edge for contrast on light tiles, then the yellow route itself. */}
             <Polyline
-              pathOptions={{ color: PLAN_COLOR, weight: 18, opacity: 0.4, lineCap: 'round', lineJoin: 'round', className: 'map2-puja-route-glow' }}
+              pathOptions={PUJA_ROUTE_GLOW_STYLE}
               positions={pujaRoute.route_points}
               interactive={false}
             />
             <Polyline
-              pathOptions={{ color: '#ca8a04', weight: 9, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }}
+              pathOptions={PUJA_ROUTE_EDGE_STYLE}
               positions={pujaRoute.route_points}
               interactive={false}
             />
             <Polyline
-              pathOptions={{ color: PLAN_COLOR, weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round' }}
+              pathOptions={PUJA_ROUTE_STYLE}
               positions={pujaRoute.route_points}
               interactive={false}
             />
@@ -1158,7 +1205,7 @@ export const Map2Page: React.FC = () => {
                 item={pandal}
                 lat={pandal.lat}
                 lng={pandal.lng}
-                icon={buildPinIcon('durga_puja', {
+                icon={buildDurgaPandalIcon({
                   active: selectedPandalId === pandal.id,
                   planNumber: planIndex >= 0 ? planIndex + 1 : undefined,
                 })}
@@ -1182,20 +1229,7 @@ export const Map2Page: React.FC = () => {
           />
         )) : null}
 
-        {trail.segments.map((segment, index) => (segment.length > 1 ? (
-          <React.Fragment key={`trail-${index}-${segment[0].t}`}>
-            <Polyline
-              pathOptions={{ color: '#ffffff', weight: 9, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }}
-              positions={segment.map((point): [number, number] => [point.lat, point.lng])}
-              interactive={false}
-            />
-            <Polyline
-              pathOptions={{ color: '#0ea5e9', weight: 5, opacity: 1, lineCap: 'round', lineJoin: 'round', className: 'map2-trail-line' }}
-              positions={segment.map((point): [number, number] => [point.lat, point.lng])}
-              interactive={false}
-            />
-          </React.Fragment>
-        ) : null))}
+        <WalkTrailLines segments={trail.segments} />
 
         {locationDot ? (
           <Marker icon={userLocationIcon} position={[locationDot.lat, locationDot.lng]} zIndexOffset={1000} />
@@ -1397,7 +1431,7 @@ export const Map2Page: React.FC = () => {
         <WalkTrailCard
           tracking={trail.tracking}
           distance={trail.distance}
-          duration={trail.duration}
+          segments={trail.segments}
           pointCount={trail.pointCount}
           accuracy={trail.position ? trail.position.accuracy : null}
           keepAwake={trail.keepAwake}

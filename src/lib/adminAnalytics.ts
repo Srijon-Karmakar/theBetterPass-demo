@@ -3,6 +3,7 @@ import {
     AnalyticsNotReadyError,
     fillMissingDaysGeneric,
     getAnalyticsRangeDates,
+    getPreviousRangeDates,
     getTimeZone,
     isAnalyticsNotReadyError,
     type AnalyticsRangeKey,
@@ -44,6 +45,12 @@ export interface AnalyticsDay {
     booking_starts: number;
 }
 
+/** Page views in one hour of the day. Only filled for the "Today" range. */
+export interface AnalyticsHour {
+    hour: number;
+    page_views: number;
+}
+
 export interface NewsletterAnalytics {
     daily: Array<{ day: string; subscribers: number }>;
     totals: { active_subscribers: number; new_subscribers: number; prev_new_subscribers: number };
@@ -70,6 +77,7 @@ export interface AnalyticsSummary {
     top_links: Array<{ link: string; visits: number; visitors: number }>;
     devices: Array<{ device: string; visitors: number }>;
     heatmap: Array<{ dow: number; hour: number; events: number }>;
+    hourly?: AnalyticsHour[];
     funnel: { visited: number; viewed_listing: number; authenticated: number; started_booking: number };
     active_now: number;
     newsletter?: NewsletterAnalytics;
@@ -113,8 +121,14 @@ const fillNewsletterDays = (
     fillMissingDaysGeneric(daily, from, days, (day) => ({ day, subscribers: 0 }))
 );
 
-export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promise<AnalyticsSummary> => {
-    const { from, to, days } = getAnalyticsRangeDates(key);
+const buildHourly = (heatmap: AnalyticsSummary['heatmap']): AnalyticsHour[] => {
+    // The "Today" window only holds today's events, so the day-of-week in each heatmap cell is always today.
+    const byHour = new Map<number, number>();
+    for (const cell of heatmap) byHour.set(cell.hour, (byHour.get(cell.hour) || 0) + cell.events);
+    return Array.from({ length: 24 }, (_, hour) => ({ hour, page_views: byHour.get(hour) || 0 }));
+};
+
+const callAdminSummary = async (from: Date, to: Date): Promise<Partial<AnalyticsSummary>> => {
     const { data, error } = await supabase.rpc('admin_analytics_summary', {
         p_from: from.toISOString(),
         p_to: to.toISOString(),
@@ -126,11 +140,23 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
         throw new Error(error.message || 'Could not load analytics.');
     }
 
-    const raw = (data || {}) as Partial<AnalyticsSummary>;
+    return (data || {}) as Partial<AnalyticsSummary>;
+};
+
+export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promise<AnalyticsSummary> => {
+    const { from, to, days } = getAnalyticsRangeDates(key);
+    const comparison = getPreviousRangeDates(key);
+    // The database compares with the equally long window right before this one. For "Today" that would be the last
+    // few hours of yesterday, so ask for yesterday up to the same time of day and use its totals instead.
+    const [raw, comparisonRaw] = await Promise.all([
+        callAdminSummary(from, to),
+        comparison ? callAdminSummary(comparison.from, comparison.to) : Promise.resolve(null),
+    ]);
+
     return {
         range: raw.range || { from: from.toISOString(), to: to.toISOString(), tz: getTimeZone() },
         totals: { ...emptyTotals(), ...(raw.totals || {}) },
-        previous: { ...emptyTotals(), ...(raw.previous || {}) },
+        previous: { ...emptyTotals(), ...((comparisonRaw ? comparisonRaw.totals : raw.previous) || {}) },
         daily: fillMissingDays(raw.daily || [], from, days),
         top_pages: raw.top_pages || [],
         exit_pages: raw.exit_pages || [],
@@ -140,6 +166,7 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
         top_links: raw.top_links || [],
         devices: raw.devices || [],
         heatmap: raw.heatmap || [],
+        hourly: key === 'today' ? buildHourly(raw.heatmap || []) : undefined,
         funnel: raw.funnel || { visited: 0, viewed_listing: 0, authenticated: 0, started_booking: 0 },
         active_now: raw.active_now || 0,
         newsletter: raw.newsletter
@@ -156,4 +183,10 @@ export const buildAnalyticsCsv = (daily: AnalyticsDay[]): string => {
         row.day, row.visitors, row.page_views, row.link_visits, row.listing_views, row.clicks, row.logins, row.signups, row.booking_starts,
     ].join(','));
     return [header.join(','), ...rows].join('\n');
+};
+
+export const buildHourlyCsv = (hourly: AnalyticsHour[], date: Date = new Date()): string => {
+    const day = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const rows = hourly.map((row) => `${day},${String(row.hour).padStart(2, '0')}:00,${row.page_views}`);
+    return ['date,hour,page_views', ...rows].join('\n');
 };

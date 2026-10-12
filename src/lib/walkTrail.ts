@@ -3,6 +3,11 @@ export interface TrailPoint {
     lng: number;
     /** Epoch milliseconds of the GPS fix. */
     t: number;
+    /**
+     * The street route from the previous fix to this one, as [lat, lng] pairs. `undefined` means it has not been
+     * looked up yet; an empty array means the lookup failed, so a straight line is used.
+     */
+    path?: Array<[number, number]>;
 }
 
 /** A walk is a list of segments; pausing and resuming starts a new one so the map never draws a false straight line. */
@@ -26,12 +31,73 @@ export const distanceBetween = (a: { lat: number; lng: number }, b: { lat: numbe
     return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 };
 
+const pathLength = (path: Array<[number, number]>): number => {
+    let total = 0;
+    for (let index = 1; index < path.length; index += 1) {
+        total += distanceBetween({ lat: path[index - 1][0], lng: path[index - 1][1] }, { lat: path[index][0], lng: path[index][1] });
+    }
+    return total;
+};
+
 export const trailDistance = (segments: TrailSegment[]): number => {
     let total = 0;
     for (const segment of segments) {
-        for (let index = 1; index < segment.length; index += 1) total += distanceBetween(segment[index - 1], segment[index]);
+        for (let index = 1; index < segment.length; index += 1) {
+            const path = segment[index].path;
+            total += path && path.length >= 2 ? pathLength(path) : distanceBetween(segment[index - 1], segment[index]);
+        }
     }
     return total;
+};
+
+/** Vertices to draw for a segment: the street route between fixes where it is known, straight lines elsewhere. */
+export const trailRenderPositions = (segment: TrailSegment): Array<[number, number]> => {
+    const positions: Array<[number, number]> = [];
+    segment.forEach((point, index) => {
+        if (index > 0 && point.path && point.path.length >= 2) positions.push(...point.path.slice(1));
+        else positions.push([point.lat, point.lng]);
+        if (index === 0) positions[0] = [point.lat, point.lng];
+    });
+    return positions;
+};
+
+const OSRM_ROUTE_URL = 'https://router.project-osrm.org/route/v1/walking';
+const MAX_PATH_VERTICES = 40;
+
+/**
+ * Looks up the walkable street route between two GPS fixes so the trail follows roads instead of cutting corners.
+ * Returns null when the service is unreachable or the answer is implausible (a long detour), and the caller then
+ * keeps the straight line.
+ */
+export const snapToStreets = async (
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number },
+): Promise<Array<[number, number]> | null> => {
+    try {
+        const url = `${OSRM_ROUTE_URL}/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson&steps=false`;
+        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!response.ok) return null;
+        const payload = await response.json() as { routes?: Array<{ geometry?: { coordinates?: unknown } }> };
+        const coordinates = payload.routes?.[0]?.geometry?.coordinates;
+        if (!Array.isArray(coordinates)) return null;
+        let path = coordinates
+            .filter((item): item is [number, number] => Array.isArray(item) && Number.isFinite(item[0]) && Number.isFinite(item[1]))
+            .map((item): [number, number] => [item[1], item[0]]);
+        if (path.length < 2) return null;
+        // The route service may return a long way round (one-way streets); a real step is never that much longer.
+        const straight = distanceBetween(from, to);
+        if (pathLength(path) > straight * 3 + 60) return null;
+        if (path.length > MAX_PATH_VERTICES) {
+            const every = Math.ceil(path.length / MAX_PATH_VERTICES);
+            path = path.filter((_, index) => index % every === 0 || index === path.length - 1);
+        }
+        // Start and end on the real fixes so consecutive pieces join without gaps.
+        path[0] = [from.lat, from.lng];
+        path[path.length - 1] = [to.lat, to.lng];
+        return path;
+    } catch {
+        return null;
+    }
 };
 
 /** Time spent walking: first to last fix of each segment (to `now` for the segment still being recorded). */
@@ -66,13 +132,20 @@ const isPoint = (value: unknown): value is TrailPoint => {
     return Boolean(point) && Number.isFinite(point!.lat) && Number.isFinite(point!.lng) && Number.isFinite(point!.t);
 };
 
+const cleanPath = (path: unknown): Array<[number, number]> | undefined => {
+    if (!Array.isArray(path)) return undefined;
+    return path.filter((item): item is [number, number] => (
+        Array.isArray(item) && Number.isFinite(item[0]) && Number.isFinite(item[1])
+    ));
+};
+
 export const loadTrail = (): TrailSegment[] => {
     try {
         const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '[]') as unknown;
         if (!Array.isArray(parsed)) return [];
         return parsed
             .filter(Array.isArray)
-            .map((segment) => (segment as unknown[]).filter(isPoint))
+            .map((segment) => (segment as unknown[]).filter(isPoint).map((point) => ({ ...point, path: cleanPath(point.path) })))
             .filter((segment) => segment.length > 0);
     } catch {
         return [];
