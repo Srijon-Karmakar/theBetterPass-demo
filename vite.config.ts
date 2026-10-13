@@ -37,6 +37,12 @@ const threeVendorPackages = [
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    watch: {
+      // Gradle writes its docs/caches under android/ during native builds, which kept triggering full page reloads.
+      ignored: ['**/android/**', '**/ios/**', '**/release-builds/**', '**/dist/**'],
+    },
+  },
   build: {
     rollupOptions: {
       output: {

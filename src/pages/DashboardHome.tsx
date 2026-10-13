@@ -19,6 +19,7 @@ import { LiquidMobileNav, type LiquidNavItem } from '../components/ui/liquid-mob
 import { MOBILE_NAV_ICON_SRC } from '../components/ui/mobile-nav-icon-map';
 import { trackEvent } from '../lib/analytics';
 import { buildLoginPath } from '../lib/authRedirect';
+import { PujaGuideLauncher } from '../components/map/PujaGuideLauncher';
 import { useAuth } from '../hooks/useAuth';
 import {
   addListingFavorite,
@@ -1221,6 +1222,7 @@ export const DashboardHome: React.FC = () => {
                     <Search size={18} />
                   </button>
                 </form>
+                {!searchExpanded && !searchQuery ? <PujaGuideLauncher variant="hero" /> : null}
               </div>
             </div>
           </section>

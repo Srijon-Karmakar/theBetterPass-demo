@@ -2401,6 +2401,19 @@
   color: #171717;
 }
 
+.map2-page .map2-puja-panel .map2-puja-switch.is-blue input:checked + .map2-puja-switch-track { background: #3b82f6; }
+.map2-page .map2-puja-panel .map2-puja-switch.is-blue input:focus-visible + .map2-puja-switch-track { outline-color: #3b82f6; }
+.map2-page .map2-puja-panel .map2-puja-switch.is-red input:checked + .map2-puja-switch-track { background: #ef4444; }
+.map2-page .map2-puja-panel .map2-puja-switch.is-red input:focus-visible + .map2-puja-switch-track { outline-color: #ef4444; }
+
+/* Station and hospital cards reuse the restaurant card; only the accent colour changes. */
+.map2-page .map2-puja-panel .map2-puja-restaurant.is-metro { box-shadow: inset 0 0 0 2px #3b82f6; }
+.map2-page .map2-puja-panel .map2-puja-restaurant.is-metro .map2-puja-restaurant-dot { background: #3b82f6; }
+.map2-page .map2-puja-panel .map2-puja-restaurant.is-train { box-shadow: inset 0 0 0 2px #f97316; }
+.map2-page .map2-puja-panel .map2-puja-restaurant.is-train .map2-puja-restaurant-dot { background: #f97316; }
+.map2-page .map2-puja-panel .map2-puja-restaurant.is-hospital { box-shadow: inset 0 0 0 2px #ef4444; }
+.map2-page .map2-puja-panel .map2-puja-restaurant.is-hospital .map2-puja-restaurant-dot { background: #ef4444; }
+
 .map2-page .map2-puja-panel .map2-puja-restaurant > button {
   display: grid;
   flex: none;
@@ -2806,8 +2819,32 @@
 
 .map2-show-labels .map2-tack-label,
 .map2-tack.is-active .map2-tack-label,
-.map2-tack.is-planned .map2-tack-label {
+.map2-tack.is-planned .map2-tack-label,
+.map2-sign.is-active .map2-tack-label {
   display: block;
+}
+
+/* Metro and railway station signs */
+.map2-sign {
+  position: relative;
+  display: block;
+  transition: transform 0.18s ease;
+}
+
+.map2-sign img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: none;
+}
+
+.map2-sign:hover {
+  transform: scale(1.1);
+}
+
+.map2-sign.is-active img {
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px #fde047;
 }
 
 .map2-tack.is-small .map2-tack-label {

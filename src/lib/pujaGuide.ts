@@ -35,18 +35,18 @@ export const PUJA_PANDALS: PujaPandal[] = [
     { id: 'fd-block', name: 'FD Block Salt Lake', area: 'Salt Lake Sector III', zone: 'East', lat: 22.5886, lng: 88.4071, highlight: 'Well-known Salt Lake puja with spacious grounds.' },
     { id: 'bj-block', name: 'BJ Block Salt Lake', area: 'Salt Lake Sector II', zone: 'East', lat: 22.5834, lng: 88.4181, highlight: 'Popular Salt Lake theme pandal.' },
     { id: 'maddox-square', name: 'Maddox Square', area: 'Ballygunge', zone: 'South', lat: 22.5262, lng: 88.3631, highlight: 'A traditional puja famous as an evening adda spot on the open lawns.' },
-    { id: 'ekdalia-evergreen', name: 'Ekdalia Evergreen', area: 'Ballygunge', zone: 'South', lat: 22.5181, lng: 88.3701, highlight: 'Large South Kolkata pandal, often a replica of a famous monument.' },
-    { id: 'singhi-park', name: 'Singhi Park', area: 'Ballygunge', zone: 'South', lat: 22.5174, lng: 88.3661, highlight: 'Known for its traditional idol; walking distance from Ekdalia.' },
-    { id: 'hindustan-park', name: 'Hindustan Park Sarbojanin', area: 'Gariahat', zone: 'South', lat: 22.5191, lng: 88.3641, highlight: 'Art-led theme pandal near Gariahat.' },
-    { id: 'deshapriya-park', name: 'Deshapriya Park', area: 'Rashbehari', zone: 'South', lat: 22.5159, lng: 88.3521, highlight: 'Big park-side puja, a central stop on any South Kolkata route.' },
-    { id: 'tridhara-sammilani', name: 'Tridhara Sammilani', area: 'Rashbehari', zone: 'South', lat: 22.5148, lng: 88.3489, highlight: 'Known for elaborate lighting and design.' },
-    { id: '66-pally', name: '66 Pally', area: 'Kalighat', zone: 'South', lat: 22.5108, lng: 88.3542, highlight: 'Theme pandal close to Deshapriya Park and Tridhara.' },
+    { id: 'ekdalia-evergreen', name: 'Ekdalia Evergreen', area: 'Ballygunge', zone: 'South', lat: 22.5222, lng: 88.3662, highlight: 'Large South Kolkata pandal, often a replica of a famous monument.' },
+    { id: 'singhi-park', name: 'Singhi Park', area: 'Ballygunge', zone: 'South', lat: 22.5217, lng: 88.3626, highlight: 'Known for its traditional idol; walking distance from Ekdalia.' },
+    { id: 'hindustan-park', name: 'Hindusthan Club', area: 'Gariahat', zone: 'South', lat: 22.5209, lng: 88.3610, highlight: 'Art-led theme pandal near Gariahat.' },
+    { id: 'deshapriya-park', name: 'Deshapriya Park', area: 'Rashbehari', zone: 'South', lat: 22.5187, lng: 88.3534, highlight: 'Big park-side puja, a central stop on any South Kolkata route.' },
+    { id: 'tridhara-sammilani', name: 'Tridhara Sammilani', area: 'Rashbehari', zone: 'South', lat: 22.5196, lng: 88.3554, highlight: 'Known for elaborate lighting and design.' },
+    { id: '66-pally', name: '66 Pally', area: 'Kalighat', zone: 'South', lat: 22.5182, lng: 88.3427, highlight: 'Theme pandal close to Deshapriya Park and Tridhara.' },
     { id: 'mudiali-club', name: 'Mudiali Club', area: 'Mudiali', zone: 'South', lat: 22.5139, lng: 88.3401, highlight: 'Long-running South Kolkata theme puja.' },
-    { id: 'chetla-agrani', name: 'Chetla Agrani', area: 'Chetla', zone: 'South', lat: 22.5159, lng: 88.3359, highlight: 'Known for its striking idol and heavy evening crowds.' },
-    { id: 'badamtala-ashar-sangha', name: 'Badamtala Ashar Sangha', area: 'Kalighat', zone: 'South', lat: 22.5089, lng: 88.3441, highlight: 'Award-winning theme pandal in the Kalighat area.' },
+    { id: 'chetla-agrani', name: 'Chetla Agrani', area: 'Chetla', zone: 'South', lat: 22.5164, lng: 88.3371, highlight: 'Known for its striking idol and heavy evening crowds.' },
+    { id: 'badamtala-ashar-sangha', name: 'Badamtala Ashar Sangha', area: 'Kalighat', zone: 'South', lat: 22.5188, lng: 88.3435, highlight: 'Award-winning theme pandal in the Kalighat area.' },
     { id: 'jodhpur-park', name: 'Jodhpur Park Sarbojanin', area: 'Jodhpur Park', zone: 'South', lat: 22.5061, lng: 88.3651, highlight: 'Well-known theme pandal in a quieter residential area.' },
-    { id: 'suruchi-sangha', name: 'Suruchi Sangha', area: 'New Alipore', zone: 'South', lat: 22.4979, lng: 88.3409, highlight: 'Often built around a state or folk-art theme.' },
-    { id: 'naktala-udayan-sangha', name: 'Naktala Udayan Sangha', area: 'Naktala', zone: 'South', lat: 22.4719, lng: 88.3771, highlight: 'Far-south pandal known for thoughtful, award-winning themes.' },
+    { id: 'suruchi-sangha', name: 'Suruchi Sangha', area: 'New Alipore', zone: 'South', lat: 22.5090, lng: 88.3340, highlight: 'Often built around a state or folk-art theme.' },
+    { id: 'naktala-udayan-sangha', name: 'Naktala Udayan Sangha', area: 'Naktala', zone: 'South', lat: 22.4745, lng: 88.3666, highlight: 'Far-south pandal known for thoughtful, award-winning themes.' },
     { id: 'behala-notun-dal', name: 'Behala Notun Dal', area: 'Behala', zone: 'South', lat: 22.4981, lng: 88.3129, highlight: 'Popular Behala theme pandal.' },
     { id: 'barisha-club', name: 'Barisha Club', area: 'Behala', zone: 'South', lat: 22.4801, lng: 88.3101, highlight: 'Behala stop often paired with Notun Dal.' },
     { id: 'kashi-bose-lane', name: 'Kashi Bose Lane Sarbojanin', area: 'Shyambazar', zone: 'North', lat: 22.5925, lng: 88.3700, highlight: 'Well-known North Kolkata theme pandal close to Hatibagan.' },
@@ -72,7 +72,7 @@ export const PUJA_PANDALS: PujaPandal[] = [
     { id: 'kankurgachi-mitali', name: 'Kankurgachi Mitali', area: 'Kankurgachi', zone: 'East', lat: 22.5770, lng: 88.3910, highlight: 'Popular East Kolkata theme pandal.' },
     { id: 'beleghata-33-pally', name: 'Beleghata 33 Pally', area: 'Beleghata', zone: 'East', lat: 22.5640, lng: 88.3940, highlight: 'Beleghata stop, close to Beleghata Sandhani.' },
     { id: 'beleghata-sandhani', name: 'Beleghata Sandhani', area: 'Beleghata', zone: 'East', lat: 22.5660, lng: 88.3960, highlight: 'Beleghata theme pandal.' },
-    { id: 'ballygunge-cultural', name: 'Ballygunge Cultural Association', area: 'Ballygunge', zone: 'South', lat: 22.5200, lng: 88.3700, highlight: 'Large Ballygunge puja near Ekdalia and Singhi Park.' },
+    { id: 'ballygunge-cultural', name: 'Ballygunge Cultural Association', area: 'Ballygunge', zone: 'South', lat: 22.5163, lng: 88.3558, highlight: 'Large Ballygunge puja near Ekdalia and Singhi Park.' },
     { id: 'samaj-sebi', name: 'Samaj Sebi Sangha', area: 'Lake View Road', zone: 'South', lat: 22.5140, lng: 88.3560, highlight: 'Known for a traditional idol and decor.' },
     { id: 'shib-mandir', name: 'Shib Mandir Sarbojanin', area: 'Lake Market', zone: 'South', lat: 22.5170, lng: 88.3550, highlight: 'Lake Market puja close to Deshapriya Park.' },
     { id: 'sanghashree', name: 'Sanghashree', area: 'Kalighat', zone: 'South', lat: 22.5180, lng: 88.3510, highlight: 'Kalighat area theme pandal.' },
@@ -86,10 +86,22 @@ export const PUJA_PANDALS: PujaPandal[] = [
     { id: 'santoshpur-lake-pally', name: 'Santoshpur Lake Pally', area: 'Santoshpur', zone: 'South', lat: 22.4920, lng: 88.3890, highlight: 'Santoshpur theme pandal near the lake.' },
     { id: 'santoshpur-trikon-park', name: 'Santoshpur Trikon Park', area: 'Santoshpur', zone: 'South', lat: 22.4870, lng: 88.3850, highlight: 'Santoshpur theme pandal.' },
     { id: 'haridevpur-ajeya-sanghati', name: 'Haridevpur Ajeya Sanghati', area: 'Haridevpur', zone: 'South', lat: 22.4810, lng: 88.3310, highlight: 'South-west Kolkata theme pandal.' },
+    { id: 'haridevpur-41-pally', name: 'Haridevpur 41 Pally', area: 'Haridevpur', zone: 'South', lat: 22.4835, lng: 88.3387, highlight: 'Haridevpur neighbourhood theme pandal.' },
     { id: 'behala-club', name: 'Behala Club', area: 'Behala', zone: 'South', lat: 22.4960, lng: 88.3140, highlight: 'Behala puja near Notun Dal.' },
     { id: 'behala-friends', name: 'Behala Friends', area: 'Behala', zone: 'South', lat: 22.4890, lng: 88.3180, highlight: 'Behala theme pandal.' },
     { id: 'barisha-sarbojanin', name: 'Barisha Sarbojanin', area: 'Behala', zone: 'South', lat: 22.4780, lng: 88.3120, highlight: 'Behala stop close to Barisha Club.' },
     { id: 'sb-park', name: 'SB Park Sarbojanin', area: 'Thakurpukur', zone: 'South', lat: 22.4600, lng: 88.3070, highlight: 'Far-south Behala theme pandal.' },
+    // Added from OpenStreetMap place coordinates. Chorbagan is the club's own mapped spot; the rest are neighbourhood-level.
+    { id: 'chorbagan-sarbojanin', name: 'Chorbagan Sarbojanin', area: 'Chorbagan, Jorasanko', zone: 'North', lat: 22.5835, lng: 88.3632, highlight: 'Old North Kolkata community puja in the Jorasanko lanes, close to Tagore House and Burrabazar.' },
+    { id: 'kidderpore-25-pally', name: 'Kidderpore 25 Pally', area: 'Kidderpore', zone: 'South', lat: 22.5354, lng: 88.3206, highlight: 'Port-side neighbourhood puja known for large themed pandals; a good stop with the Khidirpur food lanes.' },
+    { id: 'hedua-park', name: 'Hedua Park Sarbojanin', area: 'Hedua, Bidhan Sarani', zone: 'Central', lat: 22.5877, lng: 88.3688, highlight: 'Park-side puja on Bidhan Sarani, easy to pair with Simla Byayam Samity and College Square.' },
+    { id: 'wellington-square', name: 'Wellington Square Sarbojanin', area: 'Wellington', zone: 'Central', lat: 22.5543, lng: 88.3593, highlight: 'Central Kolkata square-side puja near Wellington crossing and Park Street.' },
+    { id: 'aj-block-salt-lake', name: 'AJ Block Salt Lake', area: 'Salt Lake, Sector II', zone: 'East', lat: 22.5920, lng: 88.4293, highlight: 'One of the better-known Salt Lake block pujas, with neat park-side pandals.' },
+    { id: 'bd-block-salt-lake', name: 'BD Block Salt Lake', area: 'Salt Lake, Sector I', zone: 'East', lat: 22.5948, lng: 88.4081, highlight: 'Salt Lake Sector I block puja close to the Sector I and Bidhannagar stretch of pandals.' },
+    { id: 'kestopur-prafullakanan', name: 'Kestopur Prafullakanan', area: 'Kestopur', zone: 'East', lat: 22.5973, lng: 88.4339, highlight: 'Large Kestopur-area puja on the north-east edge of Salt Lake, usually with a big fair.' },
+    { id: 'new-town-sarbojanin', name: 'New Town Sarbojanin', area: 'New Town', zone: 'East', lat: 22.5883, lng: 88.4734, highlight: 'New Town housing-complex and action-area pujas, a cluster that works as a separate evening trip.' },
+    { id: 'lake-gardens', name: 'Lake Gardens Sarbojanin', area: 'Lake Gardens', zone: 'South', lat: 22.5081, lng: 88.3533, highlight: 'Residential-neighbourhood puja between Gariahat and Jodhpur Park, convenient with the south Kolkata circuit.' },
+    { id: 'garia-sarbojanin', name: 'Garia Sarbojanin', area: 'Garia', zone: 'South', lat: 22.4727, lng: 88.3978, highlight: 'Far-south Garia and New Garia pujas near the Kavi Subhash metro, usually less crowded than Gariahat.' },
 ];
 
 export interface PujaRestaurant {
@@ -139,10 +151,10 @@ export const PUJA_RESTAURANTS: PujaRestaurant[] = [
     { id: 'six-ballygunge-place', name: '6 Ballygunge Place', area: 'Ballygunge', zone: 'South', lat: 22.5278, lng: 88.3686, cuisine: 'Bengali fine dining', near: 'Maddox Square, Ekdalia and Singhi Park' },
     { id: 'kasturi-ballygunge', name: 'Kasturi', area: 'Ballygunge', zone: 'South', lat: 22.5272, lng: 88.3673, cuisine: 'Bengali, fish curry', near: 'Maddox Square, Ekdalia and Singhi Park' },
     { id: 'kolkata-tram-world', name: 'Kolkata Tram World', area: 'Ballygunge', zone: 'South', lat: 22.5253, lng: 88.3654, cuisine: 'Multi-cuisine in a restored tram', near: 'Maddox Square and Ekdalia Evergreen' },
-    { id: 'bhojohori-manna-hindustan-park', name: 'Bhojohori Manna', area: 'Hindustan Park', zone: 'South', lat: 22.5202, lng: 88.3609, cuisine: 'Bengali', near: 'Hindustan Park and Singhi Park' },
-    { id: 'azad-hind-dhaba', name: 'Azad Hind Dhaba', area: 'Gariahat', zone: 'South', lat: 22.5172, lng: 88.3614, cuisine: 'Punjabi dhaba food', near: 'Hindustan Park and Ballygunge pandals' },
-    { id: 'saptapadi', name: 'Saptapadi', area: 'Gariahat', zone: 'South', lat: 22.5192, lng: 88.3655, cuisine: 'Bengali, fish and prawn dishes', near: 'Hindustan Park and Ballygunge pandals' },
-    { id: 'aminia-gariahat', name: 'Aminia, Gariahat', area: 'Gariahat', zone: 'South', lat: 22.5168, lng: 88.3669, cuisine: 'Awadhi and Mughlai, biryani', near: 'Hindustan Park and Ballygunge pandals' },
+    { id: 'bhojohori-manna-hindustan-park', name: 'Bhojohori Manna', area: 'Hindustan Park', zone: 'South', lat: 22.5202, lng: 88.3609, cuisine: 'Bengali', near: 'Hindusthan Club and Singhi Park' },
+    { id: 'azad-hind-dhaba', name: 'Azad Hind Dhaba', area: 'Gariahat', zone: 'South', lat: 22.5172, lng: 88.3614, cuisine: 'Punjabi dhaba food', near: 'Hindusthan Club and Ballygunge pandals' },
+    { id: 'saptapadi', name: 'Saptapadi', area: 'Gariahat', zone: 'South', lat: 22.5192, lng: 88.3655, cuisine: 'Bengali, fish and prawn dishes', near: 'Hindusthan Club and Ballygunge pandals' },
+    { id: 'aminia-gariahat', name: 'Aminia, Gariahat', area: 'Gariahat', zone: 'South', lat: 22.5168, lng: 88.3669, cuisine: 'Awadhi and Mughlai, biryani', near: 'Hindusthan Club and Ballygunge pandals' },
     { id: 'potboiler-coffee-house', name: 'Potboiler Coffee House', area: 'Lake Market', zone: 'South', lat: 22.5175, lng: 88.3578, cuisine: 'Cafe and snacks', near: 'Shib Mandir and Deshapriya Park' },
     { id: 'cheese-cherry-pineapple', name: 'Cheese Cherry Pineapple', area: 'Deshapriya Park', zone: 'South', lat: 22.5144, lng: 88.3526, cuisine: 'Cafe, pizza and sandwiches', near: 'Deshapriya Park and 66 Pally' },
     { id: 'barbeque-nation-tridhara', name: 'Barbeque Nation', area: 'Rashbehari', zone: 'South', lat: 22.5165, lng: 88.3487, cuisine: 'Barbecue buffet', near: 'Tridhara Sammilani and Sanghashree' },
@@ -160,6 +172,137 @@ export const PUJA_RESTAURANTS: PujaRestaurant[] = [
     { id: 'bhatura-singh', name: 'Bhatura Singh', area: 'Kankurgachi', zone: 'East', lat: 22.5845, lng: 88.391, cuisine: 'Punjabi, chole bhature', near: 'Kankurgachi Mitali and Telengabagan' },
     { id: 'bean-stop-lake-town', name: 'Bean Stop', area: 'Lake Town', zone: 'East', lat: 22.6016, lng: 88.4073, cuisine: 'Cafe and sandwiches', near: 'Sreebhumi and Lake Town Adhibasi Brinda' },
 ];
+
+export type PujaTransitMode = 'metro' | 'train';
+
+export interface PujaTransit {
+    id: string;
+    name: string;
+    area: string;
+    lat: number;
+    lng: number;
+    mode: PujaTransitMode;
+    /** Metro line colour, or the kind of railway service. */
+    line: string;
+    /** The pandals closest to this station. */
+    near: string;
+}
+
+/**
+ * Metro and railway stations around the pandal clusters. Positions come from OpenStreetMap; "near" is worked out
+ * from the pandal coordinates above. Only the Blue, Green and Purple metro lines are listed. Check timings and
+ * Puja-special services before travelling.
+ */
+export const PUJA_TRANSIT: PujaTransit[] = [
+    { id: 'dum-dum-metro', name: 'Dum Dum', area: 'Dum Dum', lat: 22.6211, lng: 88.3929, mode: 'metro', line: 'Blue', near: 'Belgachia Sarbojanin (about 1.6 km)' },
+    { id: 'belgachia-metro', name: 'Belgachia', area: 'Belgachia', lat: 22.6059, lng: 88.3864, mode: 'metro', line: 'Blue', near: 'Belgachia Sarbojanin, Tala Barowari and Tala Prattoy' },
+    { id: 'shyambazar-metro', name: 'Shyambazar', area: 'Shyambazar', lat: 22.6013, lng: 88.3725, mode: 'metro', line: 'Blue', near: 'Sikdar Bagan Sadharan Durgotsav, Hatibagan Nabin Pally and Jagat Mukherjee Park' },
+    { id: 'shobhabazar-sutanuti-metro', name: 'Shobhabazar Sutanuti', area: 'Shobhabazar', lat: 22.5959, lng: 88.3652, mode: 'metro', line: 'Blue', near: 'Shobhabazar Rajbari, Kashi Bose Lane Sarbojanin and Ahiritola Sarbojanin' },
+    { id: 'girish-park-metro', name: 'Girish Park', area: 'Girish Park', lat: 22.5871, lng: 88.3629, mode: 'metro', line: 'Blue', near: 'Chaltabagan Lohapatty, Chorbagan Sarbojanin and Hedua Park Sarbojanin' },
+    { id: 'mahatma-gandhi-road-metro', name: 'Mahatma Gandhi Road', area: 'Burrabazar', lat: 22.5809, lng: 88.3613, mode: 'metro', line: 'Blue', near: 'Mohammad Ali Park, Chorbagan Sarbojanin and Chaltabagan Lohapatty' },
+    { id: 'central-metro', name: 'Central', area: 'College Street', lat: 22.5725, lng: 88.3587, mode: 'metro', line: 'Blue', near: 'College Square Sarbojanin, Mohammad Ali Park and Santosh Mitra Square' },
+    { id: 'chandni-chowk-metro', name: 'Chandni Chowk', area: 'New Market', lat: 22.5670, lng: 88.3542, mode: 'metro', line: 'Blue', near: 'College Square Sarbojanin (about 1.3 km)' },
+    { id: 'esplanade-metro', name: 'Esplanade', area: 'Esplanade', lat: 22.5636, lng: 88.3512, mode: 'metro', line: 'Blue and Green', near: 'Wellington Square Sarbojanin (about 1.3 km)' },
+    { id: 'park-street-metro', name: 'Park Street', area: 'Park Street', lat: 22.5552, lng: 88.3501, mode: 'metro', line: 'Blue', near: 'Wellington Square Sarbojanin' },
+    { id: 'maidan-metro', name: 'Maidan', area: 'Maidan', lat: 22.5495, lng: 88.3488, mode: 'metro', line: 'Blue', near: 'Wellington Square Sarbojanin (about 1.2 km)' },
+    { id: 'rabindra-sadan-metro', name: 'Rabindra Sadan', area: 'Rabindra Sadan', lat: 22.5415, lng: 88.3473, mode: 'metro', line: 'Blue', near: '75 Pally' },
+    { id: 'netaji-bhavan-metro', name: 'Netaji Bhavan', area: 'Bhowanipore', lat: 22.5332, lng: 88.3459, mode: 'metro', line: 'Blue', near: '75 Pally, Bakul Bagan Sarbojanin and Hazra Park Durgotsav' },
+    { id: 'jatin-das-park-metro', name: 'Jatin Das Park', area: 'Hazra', lat: 22.5242, lng: 88.3465, mode: 'metro', line: 'Blue', near: 'Hazra Park Durgotsav, Bakul Bagan Sarbojanin and Kalighat Milan Sangha' },
+    { id: 'kalighat-metro', name: 'Kalighat', area: 'Kalighat', lat: 22.5169, lng: 88.3458, mode: 'metro', line: 'Blue', near: 'Badamtala Ashar Sangha, 66 Pally and Kalighat Milan Sangha' },
+    { id: 'rabindra-sarobar-metro', name: 'Rabindra Sarobar', area: 'Lake Gardens', lat: 22.5079, lng: 88.3455, mode: 'metro', line: 'Blue', near: 'Lake Gardens Sarbojanin, Mudiali Club and 66 Pally' },
+    { id: 'mahanayak-uttam-kumar-tollygunge-metro', name: 'Mahanayak Uttam Kumar (Tollygunge)', area: 'Tollygunge', lat: 22.4948, lng: 88.3451, mode: 'metro', line: 'Blue', near: 'Haridevpur 41 Pally (about 1.4 km)' },
+    { id: 'netaji-metro', name: 'Netaji', area: 'Netaji Nagar', lat: 22.4809, lng: 88.3459, mode: 'metro', line: 'Blue', near: 'Haridevpur 41 Pally' },
+    { id: 'gitanjali-metro', name: 'Gitanjali', area: 'Naktala', lat: 22.4695, lng: 88.3698, mode: 'metro', line: 'Blue', near: 'Naktala Udayan Sangha' },
+    { id: 'kavi-nazrul-metro', name: 'Kavi Nazrul', area: 'Naktala', lat: 22.4643, lng: 88.3805, mode: 'metro', line: 'Blue', near: 'Naktala Udayan Sangha (about 1.8 km)' },
+    { id: 'howrah-maidan-metro', name: 'Howrah Maidan', area: 'Howrah', lat: 22.5839, lng: 88.3340, mode: 'metro', line: 'Green', near: 'Pathuriaghata Panchar Pally (about 2.4 km)' },
+    { id: 'howrah-metro', name: 'Howrah', area: 'Howrah', lat: 22.5834, lng: 88.3403, mode: 'metro', line: 'Green', near: 'Pathuriaghata Panchar Pally (about 1.8 km)' },
+    { id: 'mahakaran-metro', name: 'Mahakaran', area: 'BBD Bagh', lat: 22.5721, lng: 88.3505, mode: 'metro', line: 'Green', near: 'Mohammad Ali Park (about 1.3 km)' },
+    { id: 'sealdah-metro', name: 'Sealdah', area: 'Sealdah', lat: 22.5680, lng: 88.3711, mode: 'metro', line: 'Green', near: 'Santosh Mitra Square and College Square Sarbojanin' },
+    { id: 'phoolbagan-metro', name: 'Phoolbagan', area: 'Phoolbagan', lat: 22.5721, lng: 88.3902, mode: 'metro', line: 'Green', near: 'Kankurgachi Mitali, Beleghata Sandhani and Beleghata 33 Pally' },
+    { id: 'salt-lake-stadium-metro', name: 'Salt Lake Stadium', area: 'Salt Lake', lat: 22.5731, lng: 88.4031, mode: 'metro', line: 'Green', near: 'Beleghata Sandhani' },
+    { id: 'bengal-chemical-metro', name: 'Bengal Chemical', area: 'Salt Lake', lat: 22.5801, lng: 88.4013, mode: 'metro', line: 'Green', near: 'Telengabagan Sarbojanin, Kankurgachi Mitali and FD Block Salt Lake' },
+    { id: 'city-centre-metro', name: 'City Centre', area: 'Salt Lake', lat: 22.5871, lng: 88.4079, mode: 'metro', line: 'Green', near: 'FD Block Salt Lake, AE Block Salt Lake and Telengabagan Sarbojanin' },
+    { id: 'central-park-metro', name: 'Central Park', area: 'Salt Lake', lat: 22.5905, lng: 88.4156, mode: 'metro', line: 'Green', near: 'CK-CL Block Salt Lake, AE Block Salt Lake and BJ Block Salt Lake' },
+    { id: 'karunamoyee-metro', name: 'Karunamoyee', area: 'Salt Lake', lat: 22.5864, lng: 88.4215, mode: 'metro', line: 'Green', near: 'BJ Block Salt Lake, CK-CL Block Salt Lake and AJ Block Salt Lake' },
+    { id: 'salt-lake-sector-v-metro', name: 'Salt Lake Sector V', area: 'Salt Lake Sector V', lat: 22.5809, lng: 88.4291, mode: 'metro', line: 'Green', near: 'BJ Block Salt Lake' },
+    { id: 'majerhat-metro', name: 'Majerhat', area: 'Majerhat', lat: 22.5191, lng: 88.3237, mode: 'metro', line: 'Purple', near: 'Alipore Sarbojanin (about 1.4 km)' },
+    { id: 'taratala-metro', name: 'Taratala', area: 'Taratala', lat: 22.5077, lng: 88.3204, mode: 'metro', line: 'Purple', near: 'Behala Notun Dal (about 1.3 km)' },
+    { id: 'behala-bazar-metro', name: 'Behala Bazar', area: 'Behala', lat: 22.4988, lng: 88.3174, mode: 'metro', line: 'Purple', near: 'Behala Club, Behala Notun Dal and Behala Friends' },
+    { id: 'behala-chowrasta-metro', name: 'Behala Chowrasta', area: 'Behala', lat: 22.4874, lng: 88.3134, mode: 'metro', line: 'Purple', near: 'Behala Friends, Barisha Club and Behala Club' },
+    { id: 'sakher-bazar-metro', name: 'Sakher Bazar', area: 'Behala', lat: 22.4749, lng: 88.3100, mode: 'metro', line: 'Purple', near: 'Barisha Sarbojanin and Barisha Club' },
+    { id: 'thakurpukur-metro', name: 'Thakurpukur', area: 'Thakurpukur', lat: 22.4644, lng: 88.3075, mode: 'metro', line: 'Purple', near: 'SB Park Sarbojanin' },
+    { id: 'howrah-junction-rail', name: 'Howrah Junction', area: 'Howrah', lat: 22.5829, lng: 88.3428, mode: 'train', line: 'Main line and long-distance', near: 'Pathuriaghata Panchar Pally (about 1.6 km)' },
+    { id: 'sealdah-rail', name: 'Sealdah', area: 'Sealdah', lat: 22.5680, lng: 88.3711, mode: 'train', line: 'Main line and long-distance', near: 'Santosh Mitra Square and College Square Sarbojanin' },
+    { id: 'kolkata-chitpur-terminal-rail', name: 'Kolkata (Chitpur) Terminal', area: 'Chitpur', lat: 22.6013, lng: 88.3841, mode: 'train', line: 'Long-distance', near: 'Tala Prattoy, Tala Barowari and Jagat Mukherjee Park' },
+    { id: 'shalimar-rail', name: 'Shalimar', area: 'Howrah', lat: 22.5552, lng: 88.3154, mode: 'train', line: 'Long-distance', near: 'Kidderpore 25 Pally (about 2.3 km)' },
+    { id: 'sovabazar-ahiritola-rail', name: 'Sovabazar Ahiritola', area: 'Ahiritola', lat: 22.5975, lng: 88.3549, mode: 'train', line: 'Circular Railway', near: 'Ahiritola Jubak Brinda, Ahiritola Sarbojanin and Kumartuli Park Sarbojanin' },
+    { id: 'tala-rail', name: 'Tala', area: 'Tala', lat: 22.6064, lng: 88.3784, mode: 'train', line: 'Suburban', near: 'Tala Prattoy, Tala Barowari and Jagat Mukherjee Park' },
+    { id: 'bidhannagar-road-rail', name: 'Bidhannagar Road', area: 'Ultadanga', lat: 22.5913, lng: 88.3910, mode: 'train', line: 'Suburban', near: 'Telengabagan Sarbojanin' },
+    { id: 'park-circus-rail', name: 'Park Circus', area: 'Park Circus', lat: 22.5408, lng: 88.3739, mode: 'train', line: 'Suburban', near: 'Maddox Square (about 2.0 km)' },
+    { id: 'ballygunge-junction-rail', name: 'Ballygunge Junction', area: 'Ballygunge', lat: 22.5194, lng: 88.3721, mode: 'train', line: 'Suburban', near: 'Ekdalia Evergreen, Singhi Park and Hindusthan Club' },
+    { id: 'dhakuria-rail', name: 'Dhakuria', area: 'Dhakuria', lat: 22.5091, lng: 88.3711, mode: 'train', line: 'Suburban', near: 'Babubagan Sarbojanin, Selimpur Pally and Jodhpur Park Sarbojanin' },
+    { id: 'lake-gardens-rail', name: 'Lake Gardens', area: 'Lake Gardens', lat: 22.5081, lng: 88.3533, mode: 'train', line: 'Suburban', near: 'Lake Gardens Sarbojanin, Samaj Sebi Sangha and Ballygunge Cultural Association' },
+    { id: 'jadavpur-rail', name: 'Jadavpur', area: 'Jadavpur', lat: 22.4951, lng: 88.3750, mode: 'train', line: 'Suburban', near: 'Selimpur Pally' },
+    { id: 'tollygunge-rail', name: 'Tollygunge', area: 'Tollygunge', lat: 22.5078, lng: 88.3477, mode: 'train', line: 'Suburban', near: 'Lake Gardens Sarbojanin, Mudiali Club and Samaj Sebi Sangha' },
+    { id: 'baghajatin-rail', name: 'Baghajatin', area: 'Baghajatin', lat: 22.4827, lng: 88.3867, mode: 'train', line: 'Suburban', near: 'Santoshpur Trikon Park and Santoshpur Lake Pally' },
+    { id: 'garia-rail', name: 'Garia', area: 'Garia', lat: 22.4656, lng: 88.4055, mode: 'train', line: 'Suburban', near: 'Garia Sarbojanin' },
+    { id: 'bbd-bagh-rail', name: 'BBD Bagh', area: 'BBD Bagh', lat: 22.5768, lng: 88.3466, mode: 'train', line: 'Circular Railway', near: 'Mohammad Ali Park (about 1.4 km)' },
+    { id: 'prinsep-ghat-rail', name: 'Prinsep Ghat', area: 'Prinsep Ghat', lat: 22.5566, lng: 88.3314, mode: 'train', line: 'Circular Railway', near: 'Kidderpore 25 Pally (about 2.6 km)' },
+    { id: 'new-alipore-rail', name: 'New Alipore', area: 'New Alipore', lat: 22.5105, lng: 88.3354, mode: 'train', line: 'Suburban', near: 'Suruchi Sangha, Mudiali Club and Chetla Agrani' },
+];
+
+export type PujaHospitalType = 'Government' | 'Private' | 'Trust';
+
+export interface PujaHospital {
+    id: string;
+    name: string;
+    area: string;
+    lat: number;
+    lng: number;
+    type: PujaHospitalType;
+    /** The pandals closest to this hospital. */
+    near: string;
+}
+
+/**
+ * Larger hospitals near the pandal routes. Positions come from OpenStreetMap. Emergency services and bed
+ * availability are not tracked here, so call ahead; in an emergency dial 112 (ambulance 102 or 108).
+ */
+export const PUJA_HOSPITALS: PujaHospital[] = [
+    { id: 'rg-kar-medical-college-and-hospital', name: 'R.G. Kar Medical College and Hospital', area: 'Shyambazar', lat: 22.6044, lng: 88.3784, type: 'Government', near: 'Tala Prattoy, Tala Barowari and Jagat Mukherjee Park' },
+    { id: 'sterling-hospital', name: 'Sterling Hospital', area: 'Shyambazar', lat: 22.6000, lng: 88.3678, type: 'Private', near: 'Bagbazar Sarbojanin, Hatibagan Nabin Pally and Sikdar Bagan Sadharan Durgotsav' },
+    { id: 'marwari-relief-society-hospital', name: 'Marwari Relief Society Hospital', area: 'Burrabazar', lat: 22.5827, lng: 88.3573, type: 'Trust', near: 'Mohammad Ali Park, Chorbagan Sarbojanin and Pathuriaghata Panchar Pally' },
+    { id: 'dum-dum-municipal-specialized-hospital', name: 'Dum Dum Municipal Specialized Hospital', area: 'Dum Dum', lat: 22.6390, lng: 88.4151, type: 'Government', near: 'Dum Dum Park Sarbojanin (about 2.8 km)' },
+    { id: 'calcutta-medical-college-and-hospital', name: 'Calcutta Medical College and Hospital', area: 'College Street', lat: 22.5638, lng: 88.3685, type: 'Government', near: 'Santosh Mitra Square, College Square Sarbojanin and Wellington Square Sarbojanin' },
+    { id: 'nrs-medical-college-and-hospital', name: 'NRS Medical College and Hospital', area: 'Sealdah', lat: 22.5653, lng: 88.3692, type: 'Government', near: 'Santosh Mitra Square and College Square Sarbojanin' },
+    { id: 'lady-dufferin-victoria-hospital', name: 'Lady Dufferin Victoria Hospital', area: 'Sealdah', lat: 22.5691, lng: 88.3658, type: 'Government', near: 'Santosh Mitra Square, College Square Sarbojanin and Rammohan Sammilani' },
+    { id: 'b-r-singh-hospital-railway', name: 'B R Singh Hospital (Railway)', area: 'Sealdah', lat: 22.5654, lng: 88.3711, type: 'Government', near: 'Santosh Mitra Square and College Square Sarbojanin' },
+    { id: 'esi-hospital-maniktala', name: 'ESI Hospital Maniktala', area: 'Maniktala', lat: 22.5857, lng: 88.3925, type: 'Government', near: 'Kankurgachi Mitali and Telengabagan Sarbojanin' },
+    { id: 'north-city-hospital', name: 'North City Hospital', area: 'Ultadanga', lat: 22.5887, lng: 88.3935, type: 'Private', near: 'Telengabagan Sarbojanin, Kankurgachi Mitali and FD Block Salt Lake' },
+    { id: 'id-and-bg-hospital', name: 'I.D. and B.G. Hospital', area: 'Beliaghata', lat: 22.5645, lng: 88.3984, type: 'Government', near: 'Beleghata Sandhani and Beleghata 33 Pally' },
+    { id: 'sskm-ipgmer-hospital', name: 'SSKM (IPGMER) Hospital', area: 'Bhowanipore', lat: 22.5400, lng: 88.3424, type: 'Government', near: '75 Pally and Bakul Bagan Sarbojanin' },
+    { id: 'woodlands-multispeciality-hospital', name: 'Woodlands Multispeciality Hospital', area: 'Alipore', lat: 22.5323, lng: 88.3292, type: 'Private', near: 'Alipore Sarbojanin and Kidderpore 25 Pally' },
+    { id: 'cmri', name: 'CMRI', area: 'Alipore', lat: 22.5324, lng: 88.3279, type: 'Private', near: 'Alipore Sarbojanin and Kidderpore 25 Pally' },
+    { id: 'belle-vue-clinic', name: 'Belle Vue Clinic', area: 'Loudon Street', lat: 22.5425, lng: 88.3551, type: 'Private', near: 'Wellington Square Sarbojanin' },
+    { id: 'institute-of-neurosciences', name: 'Institute of Neurosciences', area: 'Park Street', lat: 22.5470, lng: 88.3621, type: 'Private', near: 'Wellington Square Sarbojanin' },
+    { id: 'calcutta-national-medical-college', name: 'Calcutta National Medical College', area: 'Park Circus', lat: 22.5461, lng: 88.3715, type: 'Government', near: 'Wellington Square Sarbojanin (about 1.5 km)' },
+    { id: 'chittaranjan-national-cancer-institute', name: 'Chittaranjan National Cancer Institute', area: 'Kalighat', lat: 22.5253, lng: 88.3466, type: 'Government', near: 'Hazra Park Durgotsav, Bakul Bagan Sarbojanin and Kalighat Milan Sangha' },
+    { id: 'apollo-gleneagles-hospital', name: 'Apollo Gleneagles Hospital', area: 'Canal Circular Road', lat: 22.5743, lng: 88.4016, type: 'Private', near: 'Beleghata Sandhani, Kankurgachi Mitali and Beleghata 33 Pally' },
+    { id: 'columbia-asia-hospital', name: 'Columbia Asia Hospital', area: 'Salt Lake', lat: 22.5723, lng: 88.4128, type: 'Private', near: 'BJ Block Salt Lake' },
+    { id: 'bidhannagar-state-general-hospital', name: 'Bidhannagar State General Hospital', area: 'Salt Lake', lat: 22.5912, lng: 88.4111, type: 'Government', near: 'AE Block Salt Lake, BD Block Salt Lake and FD Block Salt Lake' },
+    { id: 'fortis-hospital', name: 'Fortis Hospital', area: 'Anandapur', lat: 22.5203, lng: 88.4010, type: 'Private', near: 'Bosepukur Talbagan and Bosepukur Sitala Mandir' },
+    { id: 'ruby-general-hospital', name: 'Ruby General Hospital', area: 'Kasba', lat: 22.5135, lng: 88.4030, type: 'Private', near: 'Bosepukur Talbagan and Bosepukur Sitala Mandir' },
+    { id: 'amri-hospital-dhakuria', name: 'AMRI Hospital Dhakuria', area: 'Dhakuria', lat: 22.5125, lng: 88.3676, type: 'Private', near: 'Jodhpur Park Sarbojanin, Babubagan Sarbojanin and 95 Pally' },
+    { id: 'calcutta-heart-research-centre', name: 'Calcutta Heart Research Centre', area: 'Lake Market', lat: 22.5233, lng: 88.3526, type: 'Private', near: 'Hazra Park Durgotsav, Tridhara Sammilani and Deshapriya Park' },
+    { id: 'bp-poddar-hospital', name: 'B.P. Poddar Hospital', area: 'New Alipore', lat: 22.5118, lng: 88.3324, type: 'Private', near: 'Suruchi Sangha, Chetla Agrani and Mudiali Club' },
+    { id: 'mr-bangur-hospital', name: 'M.R. Bangur Hospital', area: 'Tollygunge', lat: 22.4992, lng: 88.3465, type: 'Government', near: 'Lake Gardens Sarbojanin' },
+    { id: 'peerless-hospital', name: 'Peerless Hospital', area: 'Panchasayar', lat: 22.4810, lng: 88.3938, type: 'Private', near: 'Garia Sarbojanin, Santoshpur Trikon Park and Santoshpur Lake Pally' },
+    { id: 'vidyasagar-state-general-hospital', name: 'Vidyasagar State General Hospital', area: 'Behala', lat: 22.4987, lng: 88.3163, type: 'Government', near: 'Behala Notun Dal, Behala Club and Behala Friends' },
+];
+
+export const getTransit = (id: string) => PUJA_TRANSIT.find((item) => item.id === id) || null;
+
+export const getHospital = (id: string) => PUJA_HOSPITALS.find((item) => item.id === id) || null;
 
 export const PANDAL_ZONES: PandalZone[] = ['North', 'Central', 'East', 'South'];
 

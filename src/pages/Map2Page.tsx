@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { divIcon, latLngBounds, point, type Map as LeafletMap, type Marker as LeafletMarker } from 'leaflet';
 import { MapContainer, Marker, Polyline, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import BasemapLayer from '../components/map/BasemapLayer';
@@ -22,8 +22,20 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { buildLoginPath } from '../lib/authRedirect';
 import { PujaGuidePanel } from '../components/map/PujaGuidePanel';
-import { getPandal, getRestaurant, loadPandalPlan, PUJA_PANDALS, PUJA_RESTAURANTS, savePandalPlan } from '../lib/pujaGuide';
+import {
+  getHospital,
+  getPandal,
+  getRestaurant,
+  getTransit,
+  loadPandalPlan,
+  PUJA_HOSPITALS,
+  PUJA_PANDALS,
+  PUJA_RESTAURANTS,
+  PUJA_TRANSIT,
+  savePandalPlan,
+} from '../lib/pujaGuide';
 import { ExplorePanel } from '../components/map/ExplorePanel';
 import { LandmarkLayerControl } from '../components/map/LandmarkLayerControl';
 import { LandmarkMarkers } from '../components/map/LandmarkMarkers';
@@ -55,7 +67,9 @@ import {
   buildDurgaPandalIcon,
   buildEmojiMarkerIcon,
   buildPinIcon,
+  buildHospitalIcon,
   buildRestaurantIcon,
+  buildTransitIcon,
   categoryFromLabel,
   createMapPin,
   deleteMapPin,
@@ -491,7 +505,9 @@ export const Map2Page: React.FC = () => {
   const [locating, setLocating] = useState(false);
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const mapRef = useRef<LeafletMap | null>(null);
   const [pins, setPins] = useState<MapPinRecord[]>([]);
   const [selectedPin, setSelectedPin] = useState<MapPinRecord | null>(null);
@@ -512,11 +528,15 @@ export const Map2Page: React.FC = () => {
   const [pujaRoute, setPujaRoute] = useState<PlannedRoute | null>(null);
   const [showPlanOnly, setShowPlanOnly] = useState(false);
   const [showRestaurants, setShowRestaurants] = useState(true);
+  const [showTransit, setShowTransit] = useState(false);
+  const [showHospitals, setShowHospitals] = useState(false);
   const [pujaHintOn, setPujaHintOn] = useState(false);
   const trail = useWalkTrail();
   const [trailCardOpen, setTrailCardOpen] = useState(false);
   const trailFlownRef = useRef(false);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
+  const [selectedTransitId, setSelectedTransitId] = useState<string | null>(null);
+  const [selectedHospitalId, setSelectedHospitalId] = useState<string | null>(null);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [exploreGroupKey, setExploreGroupKey] = useState(EXPLORE_GROUPS[0].key);
   const [exploreCategoryKey, setExploreCategoryKey] = useState<string | null>(null);
@@ -539,6 +559,8 @@ export const Map2Page: React.FC = () => {
   const exploreCategory = findExploreCategory(exploreCategoryKey);
   const selectedPandal = selectedPandalId ? getPandal(selectedPandalId) : null;
   const selectedRestaurant = selectedRestaurantId ? getRestaurant(selectedRestaurantId) : null;
+  const selectedTransit = selectedTransitId ? getTransit(selectedTransitId) : null;
+  const selectedHospital = selectedHospitalId ? getHospital(selectedHospitalId) : null;
   const userId = user?.id || null;
 
   const startPoint = useMemo(
@@ -750,6 +772,18 @@ export const Map2Page: React.FC = () => {
     };
   }, []);
 
+  // Arriving with ?puja=1 (home page button, or back from login) opens the guide, then drops the flag from the URL.
+  useEffect(() => {
+    if (authLoading || !new URLSearchParams(location.search).get('puja')) return;
+    if (user) {
+      navigate('/map', { replace: true });
+      setPujaOpen(true);
+      setPujaHintOn(false);
+    } else {
+      navigate(buildLoginPath('/map?puja=1'), { replace: true });
+    }
+  }, [authLoading, location.search, navigate, user]);
+
   // Bring the map to the walker once, on the first GPS fix after tracking starts (not on every fix, so panning still works).
   const trailLat = trail.position?.lat;
   const trailLng = trail.position?.lng;
@@ -774,11 +808,18 @@ export const Map2Page: React.FC = () => {
   };
 
   const togglePuja = () => {
+    // The Puja guide needs an account; the rest of the map stays open to everyone.
+    if (!pujaOpen && !user) {
+      navigate(buildLoginPath('/map?puja=1'));
+      return;
+    }
     closeExplore();
     clearLandmark();
     setPujaOpen((current) => !current);
     setSelectedPandalId(null);
     setSelectedRestaurantId(null);
+    setSelectedTransitId(null);
+    setSelectedHospitalId(null);
     setSelectedPoint(null);
     setSelectedPin(null);
     setRouteOpen(false);
@@ -878,10 +919,26 @@ export const Map2Page: React.FC = () => {
   const onPandalSelect = useStableCallback((pandal: (typeof PUJA_PANDALS)[number]) => {
     setSelectedPandalId(pandal.id);
     setSelectedRestaurantId(null);
+    setSelectedTransitId(null);
+    setSelectedHospitalId(null);
   });
   const onRestaurantSelect = useStableCallback((restaurant: (typeof PUJA_RESTAURANTS)[number]) => {
     setSelectedRestaurantId(restaurant.id);
     setSelectedPandalId(null);
+    setSelectedTransitId(null);
+    setSelectedHospitalId(null);
+  });
+  const onTransitSelect = useStableCallback((station: (typeof PUJA_TRANSIT)[number]) => {
+    setSelectedTransitId(station.id);
+    setSelectedPandalId(null);
+    setSelectedRestaurantId(null);
+    setSelectedHospitalId(null);
+  });
+  const onHospitalSelect = useStableCallback((hospital: (typeof PUJA_HOSPITALS)[number]) => {
+    setSelectedHospitalId(hospital.id);
+    setSelectedPandalId(null);
+    setSelectedRestaurantId(null);
+    setSelectedTransitId(null);
   });
 
   const closePinForm = () => {
@@ -1130,7 +1187,7 @@ export const Map2Page: React.FC = () => {
         <ZoomControl position="bottomright" />
         <Map2Viewport
           routePoints={(exploreOpen ? exploreRoute : pujaOpen ? pujaRoute : landmarkRoute || plannedRoute)?.route_points || NO_ROUTE_POINTS}
-          selectedPoint={exploreOpen ? selectedExplorePlace : pujaOpen ? selectedPandal || selectedRestaurant : selectedPoint || selectedPin || selectedPlace || selectedLandmark}
+          selectedPoint={exploreOpen ? selectedExplorePlace : pujaOpen ? selectedPandal || selectedRestaurant || selectedTransit || selectedHospital : selectedPoint || selectedPin || selectedPlace || selectedLandmark}
           userLocation={userLocation}
         />
         <Map2Bridge
@@ -1228,6 +1285,32 @@ export const Map2Page: React.FC = () => {
             zIndexOffset={selectedRestaurantId === restaurant.id ? 450 : -100}
             onSelect={onRestaurantSelect}
             title={`${restaurant.name} · ${restaurant.cuisine}`}
+          />
+        )) : null}
+
+        {pujaOpen && showTransit ? PUJA_TRANSIT.map((station) => (
+          <MapMarker
+            key={station.id}
+            item={station}
+            lat={station.lat}
+            lng={station.lng}
+            icon={buildTransitIcon({ mode: station.mode, active: selectedTransitId === station.id, label: station.name })}
+            zIndexOffset={selectedTransitId === station.id ? 450 : -90}
+            onSelect={onTransitSelect}
+            title={`${station.name} · ${station.mode === 'metro' ? `${station.line} Line metro` : 'Railway station'}`}
+          />
+        )) : null}
+
+        {pujaOpen && showHospitals ? PUJA_HOSPITALS.map((hospital) => (
+          <MapMarker
+            key={hospital.id}
+            item={hospital}
+            lat={hospital.lat}
+            lng={hospital.lng}
+            icon={buildHospitalIcon({ active: selectedHospitalId === hospital.id, label: hospital.name })}
+            zIndexOffset={selectedHospitalId === hospital.id ? 450 : -80}
+            onSelect={onHospitalSelect}
+            title={`${hospital.name} · ${hospital.type} hospital`}
           />
         )) : null}
 
@@ -1490,6 +1573,14 @@ export const Map2Page: React.FC = () => {
           onShowRestaurantsChange={setShowRestaurants}
           selectedRestaurantId={selectedRestaurantId}
           onSelectRestaurant={setSelectedRestaurantId}
+          showTransit={showTransit}
+          onShowTransitChange={setShowTransit}
+          selectedTransitId={selectedTransitId}
+          onSelectTransit={setSelectedTransitId}
+          showHospitals={showHospitals}
+          onShowHospitalsChange={setShowHospitals}
+          selectedHospitalId={selectedHospitalId}
+          onSelectHospital={setSelectedHospitalId}
           onClose={togglePuja}
         />
       ) : null}

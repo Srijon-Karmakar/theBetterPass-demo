@@ -8,6 +8,7 @@ import {
     ChevronDown,
     ChevronUp,
     ChevronsRight,
+    Hospital,
     Languages,
     MapPin,
     MessageSquare,
@@ -15,6 +16,7 @@ import {
     Plus,
     Search,
     Trash2,
+    TrainFront,
     UtensilsCrossed,
     Users,
     X,
@@ -32,11 +34,15 @@ import {
     fetchApprovedPujaGuides,
     fetchPujaRequests,
     formatRupees,
+    getHospital,
     getPandal,
     getRestaurant,
+    getTransit,
     PANDAL_ZONES,
+    PUJA_HOSPITALS,
     PUJA_PANDALS,
     PUJA_RESTAURANTS,
+    PUJA_TRANSIT,
     PUJA_REQUEST_LABELS,
     updatePujaRequestStatus,
     type PandalZone,
@@ -100,8 +106,44 @@ interface PujaGuidePanelProps {
     onShowRestaurantsChange: (value: boolean) => void;
     selectedRestaurantId: string | null;
     onSelectRestaurant: (id: string | null) => void;
+    showTransit: boolean;
+    onShowTransitChange: (value: boolean) => void;
+    selectedTransitId: string | null;
+    onSelectTransit: (id: string | null) => void;
+    showHospitals: boolean;
+    onShowHospitalsChange: (value: boolean) => void;
+    selectedHospitalId: string | null;
+    onSelectHospital: (id: string | null) => void;
     onClose: () => void;
 }
+
+type AmenityTone = 'restaurant' | 'metro' | 'train' | 'hospital';
+
+interface AmenityCardProps {
+    tone: AmenityTone;
+    icon: React.ReactNode;
+    title: string;
+    lines: string[];
+    href: string;
+    closeLabel: string;
+    onClose: () => void;
+}
+
+/** Detail card for a selected restaurant, station or hospital; the border colour matches its map pin. */
+const AmenityCard: React.FC<AmenityCardProps> = ({ tone, icon, title, lines, href, closeLabel, onClose }) => (
+    <div className={`map2-puja-restaurant is-${tone}`} role="status">
+        <span className="map2-puja-restaurant-dot" aria-hidden="true">{icon}</span>
+        <span>
+            <strong>{title}</strong>
+            {lines.map((line) => <small key={line}>{line}</small>)}
+            <a className="map2-puja-directions is-compact" href={href} target="_blank" rel="noopener noreferrer">
+                <Navigation size={14} aria-hidden="true" />
+                <span>Directions in Google Maps</span>
+            </a>
+        </span>
+        <button type="button" onClick={onClose} aria-label={closeLabel}><X size={15} /></button>
+    </div>
+);
 
 export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     userId,
@@ -118,6 +160,14 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     onShowRestaurantsChange,
     selectedRestaurantId,
     onSelectRestaurant,
+    showTransit,
+    onShowTransitChange,
+    selectedTransitId,
+    onSelectTransit,
+    showHospitals,
+    onShowHospitalsChange,
+    selectedHospitalId,
+    onSelectHospital,
     onClose,
 }) => {
     const [tab, setTab] = useState<PujaTab>('pandals');
@@ -160,6 +210,8 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     const planPandals = useMemo(() => plan.map(getPandal).filter((item): item is PujaPandal => Boolean(item)), [plan]);
     const selectedGuide = guides.find((item) => item.user_id === selectedGuideId) || null;
     const selectedRestaurant = selectedRestaurantId ? getRestaurant(selectedRestaurantId) : null;
+    const selectedTransit = selectedTransitId ? getTransit(selectedTransitId) : null;
+    const selectedHospital = selectedHospitalId ? getHospital(selectedHospitalId) : null;
 
     // Selecting a pandal on the map jumps back to the pandal list so its card is visible.
     useEffect(() => {
@@ -174,10 +226,10 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
         return () => window.clearTimeout(timer);
     }, [selectedPandalId]);
 
-    // Tapping a restaurant pin brings its card up, even if the guide was collapsed.
+    // Tapping a restaurant, station or hospital pin brings its card up, even if the guide was collapsed.
     useEffect(() => {
-        if (selectedRestaurantId) setCollapsed(false);
-    }, [selectedRestaurantId]);
+        if (selectedRestaurantId || selectedTransitId || selectedHospitalId) setCollapsed(false);
+    }, [selectedRestaurantId, selectedTransitId, selectedHospitalId]);
 
     useEffect(() => {
         if (tab !== 'guides' || guides.length || guidesLoading) return;
@@ -363,27 +415,83 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                         <small>{PUJA_RESTAURANTS.length} nearby places</small>
                     </span>
                 </label>
+
+                <label className="map2-puja-switch is-blue">
+                    <input
+                        type="checkbox"
+                        role="switch"
+                        checked={showTransit}
+                        onChange={(event) => {
+                            onShowTransitChange(event.target.checked);
+                            if (!event.target.checked) onSelectTransit(null);
+                        }}
+                    />
+                    <span className="map2-puja-switch-track" aria-hidden="true"><span /></span>
+                    <span>
+                        Metro and trains
+                        <small>{PUJA_TRANSIT.length} stations</small>
+                    </span>
+                </label>
+
+                <label className="map2-puja-switch is-red">
+                    <input
+                        type="checkbox"
+                        role="switch"
+                        checked={showHospitals}
+                        onChange={(event) => {
+                            onShowHospitalsChange(event.target.checked);
+                            if (!event.target.checked) onSelectHospital(null);
+                        }}
+                    />
+                    <span className="map2-puja-switch-track" aria-hidden="true"><span /></span>
+                    <span>
+                        Hospitals
+                        <small>{PUJA_HOSPITALS.length} nearby</small>
+                    </span>
+                </label>
                 </div>
 
                 {showRestaurants && selectedRestaurant ? (
-                    <div className="map2-puja-restaurant" role="status">
-                        <span className="map2-puja-restaurant-dot" aria-hidden="true"><UtensilsCrossed size={14} /></span>
-                        <span>
-                            <strong>{selectedRestaurant.name}</strong>
-                            <small>{selectedRestaurant.cuisine}</small>
-                            <small>{selectedRestaurant.area} · near {selectedRestaurant.near}</small>
-                            <a
-                                className="map2-puja-directions is-compact"
-                                href={googleMapsDirectionsUrl(selectedRestaurant, travelMode)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <Navigation size={14} aria-hidden="true" />
-                                <span>Directions in Google Maps</span>
-                            </a>
-                        </span>
-                        <button type="button" onClick={() => onSelectRestaurant(null)} aria-label="Close restaurant details"><X size={15} /></button>
-                    </div>
+                    <AmenityCard
+                        tone="restaurant"
+                        icon={<UtensilsCrossed size={14} />}
+                        title={selectedRestaurant.name}
+                        lines={[selectedRestaurant.cuisine, `${selectedRestaurant.area} · near ${selectedRestaurant.near}`]}
+                        href={googleMapsDirectionsUrl(selectedRestaurant, travelMode)}
+                        closeLabel="Close restaurant details"
+                        onClose={() => onSelectRestaurant(null)}
+                    />
+                ) : null}
+
+                {showTransit && selectedTransit ? (
+                    <AmenityCard
+                        tone={selectedTransit.mode}
+                        icon={<TrainFront size={14} />}
+                        title={`${selectedTransit.name} ${selectedTransit.mode === 'metro' ? 'metro' : 'station'}`}
+                        lines={[
+                            selectedTransit.mode === 'metro' ? `${selectedTransit.line} Line` : selectedTransit.line,
+                            `${selectedTransit.area} · near ${selectedTransit.near}`,
+                        ]}
+                        href={googleMapsDirectionsUrl(selectedTransit, travelMode)}
+                        closeLabel="Close station details"
+                        onClose={() => onSelectTransit(null)}
+                    />
+                ) : null}
+
+                {showHospitals && selectedHospital ? (
+                    <AmenityCard
+                        tone="hospital"
+                        icon={<Hospital size={14} />}
+                        title={selectedHospital.name}
+                        lines={[
+                            `${selectedHospital.type} hospital`,
+                            `${selectedHospital.area} · near ${selectedHospital.near}`,
+                            'Emergency: dial 112 (ambulance 102 or 108). Call ahead to confirm services.',
+                        ]}
+                        href={googleMapsDirectionsUrl(selectedHospital, travelMode)}
+                        closeLabel="Close hospital details"
+                        onClose={() => onSelectHospital(null)}
+                    />
                 ) : null}
 
                 <div className="map2-mode-row map2-puja-tabs" role="tablist" aria-label="Puja guide sections">

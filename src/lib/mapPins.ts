@@ -3,6 +3,7 @@ import {
     Castle,
     Church,
     Flame,
+    Hospital,
     Landmark,
     Library,
     MapPin,
@@ -28,6 +29,7 @@ import { __iconNode as shoppingBagNode } from 'lucide-react/dist/esm/icons/shopp
 import { __iconNode as mountainNode } from 'lucide-react/dist/esm/icons/mountain.js';
 import { __iconNode as mapPinNode } from 'lucide-react/dist/esm/icons/map-pin.js';
 import { __iconNode as utensilsCrossedNode } from 'lucide-react/dist/esm/icons/utensils-crossed.js';
+import { __iconNode as hospitalNode } from 'lucide-react/dist/esm/icons/hospital.js';
 import { supabase } from './supabase';
 
 export type PinCategory =
@@ -80,6 +82,7 @@ const GLYPH_NODES: Record<string, IconNode> = {
     Flame: flameNode, Tent: tentNode, Landmark: landmarkNode, Castle: castleNode, School: schoolNode,
     Library: libraryNode, Church: churchNode, Moon: moonNode, Trees: treesNode, ShoppingBag: shoppingBagNode,
     Mountain: mountainNode, MapPin: mapPinNode, UtensilsCrossed: utensilsCrossedNode,
+    Hospital: hospitalNode,
 };
 
 const glyphCache = new Map<string, string>();
@@ -110,7 +113,7 @@ export type TackOptions = { active?: boolean; draft?: boolean; route?: boolean; 
 /** Planned stops (and their route) are drawn in a soft, glowing yellow so they stand out from the other pins. */
 export const PLAN_COLOR = '#fde047';
 
-export const RESTAURANT_COLOR = '#22c55e';
+export const HOSPITAL_COLOR = '#ef4444';
 
 /** The tack-shaped map pin: a head colour plus a glyph. `key` identifies the colour/glyph pair for caching. */
 export const buildTackIcon = (key: string, color: string, Icon: LucideIcon, options: TackOptions = {}): DivIcon => {
@@ -167,9 +170,39 @@ export const buildPinIcon = (category: PinCategory, options: TackOptions = {}): 
     return buildTackIcon(`pin:${category}`, color, Icon, options);
 };
 
-/** Small green pin for restaurants shown beside the pandals. */
+/** Restaurants, metro and railway stations are flat road-style signs (fork and knife, "M", train), not tack pins. */
+const buildSignIcon = (sign: 'restaurant' | 'metro' | 'train', options: { active?: boolean; label?: string }): DivIcon => {
+    const cacheKey = `sign:${sign}:${options.active ? 1 : 0}:${options.label || ''}`;
+    const cached = iconCache.get(cacheKey);
+    if (cached) return cached;
+
+    const size = options.active ? 40 : 30;
+    const html = `
+<span class="map2-sign${options.active ? ' is-active' : ''}" style="width:${size}px;height:${size}px">
+  <img src="/icons/${sign}-sign.svg" alt="" width="${size}" height="${size}" draggable="false" />${options.label ? `<span class="map2-tack-label">${escapeHtml(options.label)}</span>` : ''}
+</span>`;
+
+    const icon = divIcon({
+        className: '',
+        html,
+        iconSize: point(size, size),
+        iconAnchor: point(size / 2, size / 2),
+    });
+    iconCache.set(cacheKey, icon);
+    return icon;
+};
+
 export const buildRestaurantIcon = (options: { active?: boolean; label?: string } = {}): DivIcon => (
-    buildTackIcon('restaurant', RESTAURANT_COLOR, UtensilsCrossed, { small: true, active: options.active, label: options.label })
+    buildSignIcon('restaurant', options)
+);
+
+export const buildTransitIcon = (options: { mode: 'metro' | 'train'; active?: boolean; label?: string }): DivIcon => (
+    buildSignIcon(options.mode, options)
+);
+
+/** Small red pin for hospitals. */
+export const buildHospitalIcon = (options: { active?: boolean; label?: string } = {}): DivIcon => (
+    buildTackIcon('hospital', HOSPITAL_COLOR, Hospital, { small: true, active: options.active, label: options.label })
 );
 
 /** Circular Durga-face badge used for Durga Puja pandal stops, in place of the generic tack pin. */

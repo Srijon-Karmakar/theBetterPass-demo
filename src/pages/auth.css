@@ -926,7 +926,7 @@
     .auth-page {
         padding-top: 68px;
         padding-bottom: 16px;
-        align-items: flex-start;
+        align-items: safe center;
     }
 
     .auth-shell {
@@ -981,15 +981,19 @@
 
 @media (max-width: 520px) {
     .auth-page {
-        padding: 56px 10px 12px;
+        padding: 68px 10px 12px;
     }
 
     .auth-back-link {
         top: 14px;
         left: 10px;
+        width: 40px;
+        height: 40px;
     }
 
     .auth-shell {
+        width: 100%;
+        max-width: 480px;
         border-radius: 20px;
         border-width: 3px;
     }
@@ -1072,7 +1076,7 @@
 
 @media (max-width: 380px) {
     .auth-page {
-        padding: 50px 6px 8px;
+        padding: 66px 6px 8px;
     }
 
     .auth-shell {
@@ -1133,7 +1137,8 @@
 /* Tourist / vendor role switch */
 .auth-role-choice {
     position: relative;
-    width: min(100%, 214px);
+    width: fit-content;
+    max-width: 100%;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0;
@@ -1215,14 +1220,21 @@
 
 @media (max-width: 520px) {
     .auth-role-choice {
-        width: min(100%, 206px);
-        padding: 4px;
-        margin: 0 auto 14px;
+        padding: 3px;
+        margin: 0 auto 12px;
+    }
+
+    .auth-role-choice::before {
+        top: 3px;
+        left: 3px;
+        width: calc((100% - 6px) / 2);
+        height: calc(100% - 6px);
     }
 
     .auth-role-choice-btn {
-        min-height: 34px;
-        font-size: clamp(0.86rem, 4.2vw, 1rem);
-        padding: 0 8px;
+        min-height: 28px;
+        font-size: 0.78rem;
+        padding: 0 14px;
+        white-space: nowrap;
     }
 }

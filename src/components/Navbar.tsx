@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Download, Menu, Moon, Sun, X } from 'lucide-react';
+import { PujaGuideLauncher } from './map/PujaGuideLauncher';
 import { useAppTutorial } from '../context/app-tutorial-context-value';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
@@ -434,6 +435,7 @@ export const Navbar: React.FC = () => {
 
                 {!user && (
                     <div className="nbr-right-actions">
+                        {location.pathname === '/' && <PujaGuideLauncher variant="desktop" />}
                         <Link to="/signup" className="nbr-join nbr-join--desktop">Join</Link>
                     </div>
                 )}
@@ -441,6 +443,7 @@ export const Navbar: React.FC = () => {
                 {/* Right: map shortcut and user chip (outside the pill) */}
                 {user && (
                     <div className="nbr-right-actions">
+                        {location.pathname === '/' && <PujaGuideLauncher variant="desktop" />}
                         <button
                             type="button"
                             className="nbr-theme-button"

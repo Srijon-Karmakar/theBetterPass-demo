@@ -1047,7 +1047,7 @@ export const Auth: React.FC = () => {
                                     }}
                                 >
                                     <Building2 size={16} />
-                                    <span>Vendor</span>
+                                    <span>Tour provider</span>
                                 </button>
                             </div>
 
