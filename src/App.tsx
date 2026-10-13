@@ -355,18 +355,23 @@ const NativeSplashGate: React.FC = () => {
   useEffect(() => {
     if (phase !== 'loading' || !ready) return;
     const launchedAtHome = launchPathRef.current === '/';
-    if (!user && introSeen === false && launchedAtHome) {
+    // First launch of the app, signed out: hold the splash until "Lets go" is pressed. A timeout while auth is
+    // still loading must never open the intro (the user may be signed in), so it needs a finished auth check.
+    if (!loading && !user && introSeen === false && launchedAtHome) {
       setPhase('intro');
       return;
     }
     setPhase('exiting');
-  }, [phase, ready, user, introSeen, navigate]);
+  }, [phase, ready, user, loading, introSeen]);
+
+  // Signing in while the intro is up (for example a restored session) finishes it.
+  const shownPhase: SplashPhase = phase === 'intro' && user ? 'exiting' : phase;
 
   useEffect(() => {
-    if (phase !== 'exiting') return;
+    if (shownPhase !== 'exiting') return;
     const timer = window.setTimeout(() => setPhase('done'), SPLASH_EXIT_MS);
     return () => window.clearTimeout(timer);
-  }, [phase]);
+  }, [shownPhase]);
 
   const handleStart = () => {
     void Preferences.set({ key: INTRO_SEEN_KEY, value: '1' }).catch(() => undefined);
@@ -378,9 +383,9 @@ const NativeSplashGate: React.FC = () => {
 
   return (
     <AppSplashScreen
-      lightweight={phase === 'loading'}
-      exiting={phase === 'exiting'}
-      onAction={phase === 'intro' ? handleStart : undefined}
+      lightweight={shownPhase === 'loading'}
+      exiting={shownPhase === 'exiting'}
+      onAction={shownPhase === 'intro' ? handleStart : undefined}
     />
   );
 };

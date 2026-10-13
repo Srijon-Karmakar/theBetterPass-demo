@@ -208,7 +208,7 @@ export const buildDurgaPandalIcon = (options: TackOptions = {}): DivIcon => {
     const cached = iconCache.get(cacheKey);
     if (cached) return cached;
 
-    const size = options.active ? 56 : options.planNumber ? 50 : 44;
+    const size = options.active ? 40 : options.planNumber ? 36 : 30;
     const badge = options.planNumber
         ? `<span class="map2-durga-badge">${options.planNumber}</span>`
         : '';

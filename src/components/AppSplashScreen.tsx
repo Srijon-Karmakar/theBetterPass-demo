@@ -6,6 +6,8 @@ const LazyGlobe = lazy(async () => ({
   default: (await import('./ui/globe')).Globe,
 }));
 
+let activeSplashes = 0;
+
 type AppSplashScreenProps = {
   exiting?: boolean;
   lightweight?: boolean;
@@ -22,8 +24,14 @@ export const AppSplashScreen: React.FC<AppSplashScreenProps> = ({
   actionLabel = 'Lets go',
 }) => {
   useEffect(() => {
+    // Several splash screens can be mounted at once (the gate and the loading fallbacks); count them so one
+    // unmounting does not strip the class while another is still showing.
+    activeSplashes += 1;
     document.body.classList.add('app-splash-active');
-    return () => document.body.classList.remove('app-splash-active');
+    return () => {
+      activeSplashes -= 1;
+      if (activeSplashes <= 0) document.body.classList.remove('app-splash-active');
+    };
   }, []);
 
   return (

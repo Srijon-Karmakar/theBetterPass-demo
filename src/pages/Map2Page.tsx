@@ -7,7 +7,6 @@ import 'leaflet/dist/leaflet.css';
 import {
   Compass,
   Footprints,
-  LayoutGrid,
   LocateFixed,
   MapPinned,
   MapPinPlus,
@@ -37,7 +36,7 @@ import {
   savePandalPlan,
 } from '../lib/pujaGuide';
 import { ExplorePanel } from '../components/map/ExplorePanel';
-import { LandmarkLayerControl } from '../components/map/LandmarkLayerControl';
+import { LandmarkLayerControl, LandmarkToggleButton } from '../components/map/LandmarkLayerControl';
 import { LandmarkMarkers } from '../components/map/LandmarkMarkers';
 import { MapMarker } from '../components/map/MapMarker';
 import { useStableCallback } from '../components/map/useStableCallback';
@@ -717,20 +716,6 @@ export const Map2Page: React.FC = () => {
     setExploreRoute(null);
     setExploreStatus('');
     if (categoryKey) void loadExplorePlaces(categoryKey);
-  };
-
-  const toggleExplore = () => {
-    clearLandmark();
-    if (exploreOpen) {
-      closeExplore();
-      return;
-    }
-    setExploreOpen(true);
-    setPujaOpen(false);
-    setSelectedPoint(null);
-    setSelectedPin(null);
-    setRouteOpen(false);
-    closePinForm();
   };
 
   const handleRouteToPlace = async (place: ExplorePlace) => {
@@ -1422,16 +1407,6 @@ export const Map2Page: React.FC = () => {
         <div className="map2-toolbar" aria-label="Map controls">
           <button
             type="button"
-            className={`map2-tool${exploreOpen ? ' is-active' : ''}`}
-            onClick={toggleExplore}
-            aria-label="Explore nearby"
-            title="Explore nearby"
-            aria-pressed={exploreOpen}
-          >
-            <LayoutGrid size={19} />
-          </button>
-          <button
-            type="button"
             className={`map2-tool${pinFormOpen ? ' is-active' : ''}`}
             onClick={() => {
               closeExplore();
@@ -1471,16 +1446,14 @@ export const Map2Page: React.FC = () => {
           >
             <Footprints size={19} />
           </button>
-          <button
-            type="button"
-            className="map2-tool"
-            onClick={() => void handleLocate()}
-            disabled={locating}
-            aria-label="Find my location"
-            title="Find my location"
-          >
-            <LocateFixed size={19} />
-          </button>
+          {pujaOpen || exploreOpen ? null : (
+            <LandmarkToggleButton
+              open={landmarkPanelOpen}
+              enabled={landmarksOn}
+              total={layerTotal}
+              onClick={() => setLandmarkPanelOpen((current) => !current)}
+            />
+          )}
           <button
             type="button"
             className="map2-tool"
@@ -1901,10 +1874,20 @@ export const Map2Page: React.FC = () => {
         />
       ) : null}
 
+      <button
+        type="button"
+        className={`map2-locate-fab${pujaOpen || selectedPoint || selectedPin || selectedPlace || selectedLandmark || routeOpen || pinFormOpen ? ' is-covered' : ''}`}
+        onClick={() => void handleLocate()}
+        disabled={locating}
+        aria-label="Find my location"
+        title="Find my location"
+      >
+        <LocateFixed size={21} />
+      </button>
+
       {pujaOpen || exploreOpen ? null : (
         <LandmarkLayerControl
           open={landmarkPanelOpen}
-          onOpenChange={setLandmarkPanelOpen}
           enabled={landmarksOn}
           onEnabledChange={setLandmarksOn}
           zone={landmarkZone}
@@ -1914,7 +1897,6 @@ export const Map2Page: React.FC = () => {
           onReset={() => { setLandmarksOn(true); setLandmarkZone('All'); setHiddenCategories(new Set()); }}
           zoneCounts={layerZoneCounts}
           categoryCounts={layerCategoryCounts}
-          total={layerTotal}
           covered={Boolean(selectedPoint || selectedPin || selectedPlace || selectedLandmark || routeOpen || pinFormOpen)}
           placesEnabled={placesOn}
           onPlacesEnabledChange={setPlacesOn}

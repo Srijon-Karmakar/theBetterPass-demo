@@ -308,7 +308,7 @@ const ListingCard: React.FC<{
   const isLiveTour = isVirtualTourRecord(post);
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/listings/${listingTypePath}/${post.id}` : '';
   const bookingCtaLabel = isBooked ? 'Book again' : type === 'activities' ? 'Book activity' : type === 'tours' ? 'View itinerary' : 'Book';
-  const typeLabel = type === 'activities' ? 'Activity' : type === 'tours' ? 'Tour Package' : 'Guide';
+  const typeLabel = type === 'activities' ? 'Activity' : type === 'tours' ? 'Tour' : 'Guide';
 
   useEffect(() => {
     if (!user || !post.id || !canFavorite) {

@@ -38,7 +38,7 @@ const getListingPresentation = (type: ListingType) => {
     if (type === 'tour') {
         return {
             className: 'listing-card--tour',
-            label: 'Tour Package',
+            label: 'Tour',
             pricePrefix: 'Package from',
             cta: 'View itinerary',
             icon: <Map size={13} />,

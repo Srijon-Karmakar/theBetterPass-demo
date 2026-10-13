@@ -3228,3 +3228,44 @@
   line-height: 1.2;
   text-align: center;
 }
+
+/* Famous places: the filter panel drops down under the toolbar pill; locate is a round button at the bottom left. */
+.map2-landmarks {
+  top: calc(env(safe-area-inset-top) + 76px);
+  right: 12px;
+  bottom: auto;
+  left: auto;
+}
+
+.map2-tool.is-off {
+  opacity: 0.55;
+}
+
+.map2-locate-fab {
+  position: absolute;
+  z-index: 900;
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
+  left: 12px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #111111;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(20, 20, 20, 0.26);
+}
+
+.map2-locate-fab:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+@media (max-width: 767px) {
+  .map2-locate-fab.is-covered {
+    display: none;
+  }
+}

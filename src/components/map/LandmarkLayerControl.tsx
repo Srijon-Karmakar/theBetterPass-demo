@@ -11,7 +11,6 @@ import {
 
 interface LandmarkLayerControlProps {
     open: boolean;
-    onOpenChange: (open: boolean) => void;
     enabled: boolean;
     onEnabledChange: (enabled: boolean) => void;
     zone: LandmarkZone | 'All';
@@ -21,7 +20,6 @@ interface LandmarkLayerControlProps {
     onReset: () => void;
     zoneCounts: Record<string, number>;
     categoryCounts: Record<string, number>;
-    total: number;
     /** True while a detail sheet or panel is open; on phones the control steps aside so it never covers the sheet. */
     covered: boolean;
     /** Extra buttons shown next to the toggle (the map download). */
@@ -33,7 +31,6 @@ interface LandmarkLayerControlProps {
 
 export const LandmarkLayerControl: React.FC<LandmarkLayerControlProps> = ({
     open,
-    onOpenChange,
     enabled,
     onEnabledChange,
     zone,
@@ -43,7 +40,6 @@ export const LandmarkLayerControl: React.FC<LandmarkLayerControlProps> = ({
     onReset,
     zoneCounts,
     categoryCounts,
-    total,
     covered,
     placesEnabled,
     onPlacesEnabledChange,
@@ -132,18 +128,24 @@ export const LandmarkLayerControl: React.FC<LandmarkLayerControlProps> = ({
             </div>
         ) : null}
 
-        <div className="map2-landmarks-row">
-            <button
-                type="button"
-                className={`map2-landmarks-toggle is-round${open ? ' is-open' : ''}${enabled ? '' : ' is-off'}`}
-                onClick={() => onOpenChange(!open)}
-                aria-expanded={open}
-                aria-label={`Famous places${enabled ? `, ${total} shown` : ', off'}`}
-                title="Famous places"
-            >
-                <ThumbtackList size={24} color="#ff741d" aria-hidden="true" />
-                {enabled ? <small>{total}</small> : null}
-            </button>
-        </div>
     </section>
+);
+
+/** The famous-places button that lives in the toolbar pill; the filter panel it opens is rendered above. */
+export const LandmarkToggleButton: React.FC<{ open: boolean; enabled: boolean; total: number; onClick: () => void }> = ({
+    open,
+    enabled,
+    total,
+    onClick,
+}) => (
+    <button
+        type="button"
+        className={`map2-tool${open ? ' is-active' : ''}${enabled ? '' : ' is-off'}`}
+        onClick={onClick}
+        aria-expanded={open}
+        aria-label={`Famous places${enabled ? `, ${total} shown` : ', off'}`}
+        title="Famous places"
+    >
+        <ThumbtackList size={21} color="#111111" aria-hidden="true" />
+    </button>
 );
