@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tbp.app',
+  appId: 'com.thebetterpass.app',
   appName: 'the better pass',
   webDir: 'dist'
 };

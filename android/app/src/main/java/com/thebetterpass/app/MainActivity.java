@@ -1,4 +1,4 @@
-package com.tbp.app;
+package com.thebetterpass.app;
 
 import com.getcapacitor.BridgeActivity;
 import com.ionicframework.capacitor.Checkout;

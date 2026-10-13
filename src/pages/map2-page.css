@@ -2358,7 +2358,7 @@
   }
 }
 
-/* Restaurants: green switch, detail card */
+/* Restaurants: red switch, detail card. Hospitals: green switch. */
 .map2-page .map2-puja-panel .map2-puja-switch.is-green input:checked + .map2-puja-switch-track {
   background: #22c55e;
 }
@@ -2374,7 +2374,7 @@
   padding: 10px 12px;
   border-radius: 16px;
   background: var(--pj-card-strong);
-  box-shadow: inset 0 0 0 2px #22c55e;
+  box-shadow: inset 0 0 0 2px #ef4444;
   color: var(--pj-text);
 }
 
@@ -2397,7 +2397,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #ef4444;
   color: #171717;
 }
 

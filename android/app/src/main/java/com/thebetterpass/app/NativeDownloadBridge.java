@@ -1,4 +1,4 @@
-package com.tbp.app;
+package com.thebetterpass.app;
 
 import android.app.Activity;
 import android.content.ContentResolver;

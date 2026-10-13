@@ -399,7 +399,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                     </span>
                 </label>
 
-                <label className="map2-puja-switch is-green">
+                <label className="map2-puja-switch is-red">
                     <input
                         type="checkbox"
                         role="switch"
@@ -433,7 +433,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                     </span>
                 </label>
 
-                <label className="map2-puja-switch is-red">
+                <label className="map2-puja-switch is-green">
                     <input
                         type="checkbox"
                         role="switch"

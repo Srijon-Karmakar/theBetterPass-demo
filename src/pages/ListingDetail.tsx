@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Backpack, BadgePercent, Ban, Calendar, CalendarDays, CheckCircle2, Clock, Compass, Facebook, FileText, Heart, Instagram, Loader2, Map, MapPin, MessageCircle, Share2, ShieldCheck, Star, TrendingUp, Users, Zap } from 'lucide-react';
+import { ExpandableMarkdown } from '../components/ExpandableMarkdown';
 import { useAuth } from '../hooks/useAuth';
 import { trackEvent } from '../lib/analytics';
 import { buildLoginPath } from '../lib/authRedirect';
@@ -214,6 +215,9 @@ export const ListingDetail: React.FC = () => {
     const [myReview, setMyReview] = useState<ListingReviewRecord | null>(null);
     const [selectedRating, setSelectedRating] = useState(0);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    // The mobile booking bar hides itself while the booking form is on screen.
+    const [bookingPanelEl, setBookingPanelEl] = useState<HTMLElement | null>(null);
+    const [bookingPanelInView, setBookingPanelInView] = useState(false);
     const [checkIn, setCheckIn] = useState('');
     const [requestedGuests, setGuests] = useState(1);
     const [platformFeeRate, setPlatformFeeRate] = useState(PLATFORM_FEE_RATE);
@@ -221,6 +225,13 @@ export const ListingDetail: React.FC = () => {
     const [couponClaim, setCouponClaim] = useState(() => getStoredCouponClaim());
 
     const listingType = toInternalListingType(type);
+
+    useEffect(() => {
+        if (!bookingPanelEl || typeof IntersectionObserver === 'undefined') return undefined;
+        const observer = new IntersectionObserver(([entry]) => setBookingPanelInView(entry.isIntersecting), { threshold: 0.15 });
+        observer.observe(bookingPanelEl);
+        return () => observer.disconnect();
+    }, [bookingPanelEl]);
 
     useEffect(() => {
         if (!id) return;
@@ -1014,7 +1025,24 @@ export const ListingDetail: React.FC = () => {
                                 </span>
                             </div>
                             <h1 className="listing-detail-title">{title}</h1>
-                            <p className="listing-detail-description">{description}</p>
+                            {ownerUserId && (
+                                <div className="listing-detail-actions">
+                                    <Link to={`/users/${ownerUserId}`} className="btn btn-secondary listing-detail-pill-btn">
+                                        View Host
+                                    </Link>
+                                    <button
+                                        type="button"
+                                        onClick={handleFavoriteToggle}
+                                        className={`btn btn-secondary listing-detail-pill-btn${isFavorite ? ' listing-detail-fav-active' : ''}`}
+                                        disabled={favoriteLoading || !canFavorite}
+                                        title={canFavorite ? undefined : 'Only tourist accounts can save favorites'}
+                                    >
+                                        {favoriteLoading ? <Loader2 className="animate-spin" size={16} /> : <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />}
+                                        {isFavorite ? 'Saved' : 'Save'}
+                                    </button>
+                                </div>
+                            )}
+                            <ExpandableMarkdown text={description} className="listing-detail-description" />
                             {!isVirtualTour && (
                                 <section className={`listing-type-panel ${detailPresentation.panelClass}`} aria-label={detailPresentation.panelTitle}>
                                     <div className="listing-type-panel-head">
@@ -1084,27 +1112,14 @@ export const ListingDetail: React.FC = () => {
                                 platformFeeRate={platformFeeRate}
                                 className="listing-detail-fee-breakdown"
                             />
-                            {ownerUserId && (
-                                <div className="listing-detail-actions">
-                                    <Link to={`/users/${ownerUserId}`} className="btn btn-secondary listing-detail-pill-btn">
-                                        View Host
-                                    </Link>
-                                    <button
-                                        type="button"
-                                        onClick={handleFavoriteToggle}
-                                        className={`btn btn-secondary listing-detail-pill-btn${isFavorite ? ' listing-detail-fav-active' : ''}`}
-                                        disabled={favoriteLoading || !canFavorite}
-                                        title={canFavorite ? undefined : 'Only tourist accounts can save favorites'}
-                                    >
-                                        {favoriteLoading ? <Loader2 className="animate-spin" size={16} /> : <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} />}
-                                        {isFavorite ? 'Saved' : 'Save'}
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     </section>
 
-                    <aside className={`listing-book-card${bookingSuccess || hasExistingBooking || confirmingBooking || bookingPendingSync || bookingAwaitingProvider ? ' listing-book-card--booked' : ''}`}>
+                    <aside
+                        id="listing-booking"
+                        ref={setBookingPanelEl}
+                        className={`listing-book-card${bookingSuccess || hasExistingBooking || confirmingBooking || bookingPendingSync || bookingAwaitingProvider ? ' listing-book-card--booked' : ''}`}
+                    >
                         {bookingSuccess || hasExistingBooking || confirmingBooking || bookingPendingSync || bookingAwaitingProvider ? (
                             <div className="listing-book-success">
                                 <h3>
@@ -1309,6 +1324,23 @@ export const ListingDetail: React.FC = () => {
                         )}
                     </aside>
                 </div>
+
+                {!(bookingSuccess || hasExistingBooking || confirmingBooking || bookingPendingSync || bookingAwaitingProvider) && (
+                    <div className={`listing-sticky-bar${bookingPanelInView ? ' is-hidden' : ''}`} aria-hidden={bookingPanelInView}>
+                        <span className="listing-sticky-price">
+                            <small>{hasDiscount || couponPreview ? 'You pay' : 'Total'}</small>
+                            <strong>Rs {(hasDiscount || couponPreview ? bookingDisplayTotal : pricing.total_price).toLocaleString()}</strong>
+                        </span>
+                        <button
+                            type="button"
+                            className="btn btn-primary listing-detail-pill-btn"
+                            tabIndex={bookingPanelInView ? -1 : 0}
+                            onClick={() => bookingPanelEl?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        >
+                            Book now
+                        </button>
+                    </div>
+                )}
 
                 <section className="listing-review-section">
                     <div className="listing-review-summary">

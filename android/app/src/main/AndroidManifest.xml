@@ -29,7 +29,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="com.tbp.app"
+                    android:scheme="com.thebetterpass.app"
                     android:host="auth"
                     android:pathPrefix="/callback" />
             </intent-filter>

@@ -3,7 +3,6 @@ import {
     Castle,
     Church,
     Flame,
-    Hospital,
     Landmark,
     Library,
     MapPin,
@@ -29,7 +28,6 @@ import { __iconNode as shoppingBagNode } from 'lucide-react/dist/esm/icons/shopp
 import { __iconNode as mountainNode } from 'lucide-react/dist/esm/icons/mountain.js';
 import { __iconNode as mapPinNode } from 'lucide-react/dist/esm/icons/map-pin.js';
 import { __iconNode as utensilsCrossedNode } from 'lucide-react/dist/esm/icons/utensils-crossed.js';
-import { __iconNode as hospitalNode } from 'lucide-react/dist/esm/icons/hospital.js';
 import { supabase } from './supabase';
 
 export type PinCategory =
@@ -82,7 +80,6 @@ const GLYPH_NODES: Record<string, IconNode> = {
     Flame: flameNode, Tent: tentNode, Landmark: landmarkNode, Castle: castleNode, School: schoolNode,
     Library: libraryNode, Church: churchNode, Moon: moonNode, Trees: treesNode, ShoppingBag: shoppingBagNode,
     Mountain: mountainNode, MapPin: mapPinNode, UtensilsCrossed: utensilsCrossedNode,
-    Hospital: hospitalNode,
 };
 
 const glyphCache = new Map<string, string>();
@@ -170,8 +167,8 @@ export const buildPinIcon = (category: PinCategory, options: TackOptions = {}): 
     return buildTackIcon(`pin:${category}`, color, Icon, options);
 };
 
-/** Restaurants, metro and railway stations are flat road-style signs (fork and knife, "M", train), not tack pins. */
-const buildSignIcon = (sign: 'restaurant' | 'metro' | 'train', options: { active?: boolean; label?: string }): DivIcon => {
+/** Restaurants, metro and railway stations and hospitals are flat road-style signs (fork and knife, "M", train, "+"), not tack pins. */
+const buildSignIcon = (sign: 'restaurant' | 'metro' | 'train' | 'hospital', options: { active?: boolean; label?: string }): DivIcon => {
     const cacheKey = `sign:${sign}:${options.active ? 1 : 0}:${options.label || ''}`;
     const cached = iconCache.get(cacheKey);
     if (cached) return cached;
@@ -200,9 +197,9 @@ export const buildTransitIcon = (options: { mode: 'metro' | 'train'; active?: bo
     buildSignIcon(options.mode, options)
 );
 
-/** Small red pin for hospitals. */
+/** Red "+" road sign for hospitals. */
 export const buildHospitalIcon = (options: { active?: boolean; label?: string } = {}): DivIcon => (
-    buildTackIcon('hospital', HOSPITAL_COLOR, Hospital, { small: true, active: options.active, label: options.label })
+    buildSignIcon('hospital', options)
 );
 
 /** Circular Durga-face badge used for Durga Puja pandal stops, in place of the generic tack pin. */
