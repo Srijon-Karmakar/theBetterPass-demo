@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Download, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import type { Map as LeafletMap } from 'leaflet';
 import { downloadMapAsPdf, downloadMapAsPng } from '../../lib/mapExport';
 
 interface MapDownloadButtonProps {
     getMap: () => LeafletMap | null;
+    /** Hide the button while a bottom sheet covers the corner (same rule as the locate button). */
+    covered?: boolean;
 }
 
 /** "Download map": saves what the map shows right now as a PNG or PDF, with a restaurant legend added to the file.
- *  It has no button of its own: the hamburger menu opens it. */
-export const MapDownloadButton: React.FC<MapDownloadButtonProps> = ({ getMap }) => {
+ *  The round button sits beside the locate button in the bottom-left corner. */
+export const MapDownloadButton: React.FC<MapDownloadButtonProps> = ({ getMap, covered = false }) => {
     const [open, setOpen] = useState(false);
     const [busy, setBusy] = useState<'png' | 'pdf' | null>(null);
     const [message, setMessage] = useState('');
 
-    // The "Download map" item in the hamburger menu asks the map to open this chooser.
+    // Anything can ask the map to open this chooser with the tbp:open-map-download event.
     useEffect(() => {
         const onOpen = () => { setMessage(''); setOpen(true); };
         window.addEventListener('tbp:open-map-download', onOpen);
@@ -24,7 +26,7 @@ export const MapDownloadButton: React.FC<MapDownloadButtonProps> = ({ getMap }) 
     useEffect(() => {
         if (!open) return undefined;
         const close = (event: Event) => {
-            if (event.target instanceof Element && event.target.closest('.map2-download')) return;
+            if (event.target instanceof Element && event.target.closest('.map2-download, .map2-download-fab')) return;
             setOpen(false);
         };
         const onKey = (event: KeyboardEvent) => {
@@ -58,6 +60,17 @@ export const MapDownloadButton: React.FC<MapDownloadButtonProps> = ({ getMap }) 
     };
 
     return (
+        <>
+        <button
+            type="button"
+            className={`map2-download-fab${covered ? ' is-covered' : ''}`}
+            onClick={() => { setMessage(''); setOpen((current) => !current); }}
+            aria-label="Download map"
+            aria-expanded={open}
+            title="Download map"
+        >
+            <Download size={20} />
+        </button>
         <div className="map2-download">
             {open ? (
                 <div className="map2-download-menu" role="menu" aria-label="Download map">
@@ -74,5 +87,6 @@ export const MapDownloadButton: React.FC<MapDownloadButtonProps> = ({ getMap }) 
                 </div>
             ) : null}
         </div>
+        </>
     );
 };

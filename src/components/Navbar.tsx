@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Download, Menu, Moon, Sun, X } from 'lucide-react';
+import { Menu, Moon, Sun, X } from 'lucide-react';
 import { PujaGuideLauncher } from './map/PujaGuideLauncher';
 import { useAppTutorial } from '../context/app-tutorial-context-value';
 import { useAuth } from '../hooks/useAuth';
@@ -560,19 +560,6 @@ export const Navbar: React.FC = () => {
                             <span>FAQ</span>
                             <img src="/icons/arrow.webp" alt="" className="nbr-drop-arrow" aria-hidden="true" />
                         </Link>
-                        {location.pathname === '/map' && (
-                            <button
-                                type="button"
-                                className="nbr-drop-item nbr-drop-item--btn nbr-drop-item--theme"
-                                onClick={() => {
-                                    setShowMenu(false);
-                                    window.dispatchEvent(new CustomEvent('tbp:open-map-download'));
-                                }}
-                            >
-                                <Download size={14} />
-                                <span>Download Map</span>
-                            </button>
-                        )}
                         <button
                             type="button"
                             className="nbr-drop-item nbr-drop-item--btn nbr-drop-item--theme"

@@ -1904,7 +1904,10 @@ export const Map2Page: React.FC = () => {
         />
       )}
 
-      <MapDownloadButton getMap={() => mapRef.current} />
+      <MapDownloadButton
+        getMap={() => mapRef.current}
+        covered={Boolean(pujaOpen || selectedPoint || selectedPin || selectedPlace || selectedLandmark || routeOpen || pinFormOpen)}
+      />
 
       {selectedPoint && !routeOpen && !pinFormOpen ? (
         <aside className="map2-detail-sheet" aria-label={`${selectedPoint.name} details`}>

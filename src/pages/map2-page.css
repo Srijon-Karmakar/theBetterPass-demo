@@ -3269,3 +3269,33 @@
     display: none;
   }
 }
+
+/* Download map: round button right beside the locate button (bottom-left) */
+.map2-download-fab {
+  position: absolute;
+  z-index: 900;
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
+  left: 68px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #111111;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(20, 20, 20, 0.26);
+}
+
+:root[data-theme='dark'] .map2-download-fab {
+  background: #f8fafc;
+  border-color: #f8fafc;
+}
+
+@media (max-width: 767px) {
+  .map2-download-fab.is-covered {
+    display: none;
+  }
+}
