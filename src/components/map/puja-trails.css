@@ -1,6 +1,6 @@
 .puja-trails {
     display: grid;
-    gap: 8px;
+    gap: 6px;
 }
 
 .puja-trails__head {
@@ -10,15 +10,15 @@
 }
 
 .puja-trails__head strong {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .puja-trails__free {
-    padding: 2px 9px;
-    border-radius: 999px;
+    padding: 2px 8px;
+    border-radius: 6px;
     background: #16a34a;
     color: #ffffff;
-    font-size: 0.68rem;
+    font-size: 0.64rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -26,14 +26,14 @@
 
 .puja-trails__intro {
     margin: 0;
-    color: rgba(17, 17, 17, 0.62);
-    font-size: 0.8rem;
+    color: rgba(17, 17, 17, 0.6);
+    font-size: 0.76rem;
     line-height: 1.4;
 }
 
 .puja-trails__list {
     display: grid;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -41,22 +41,23 @@
 
 .puja-trail {
     overflow: hidden;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.7);
-    box-shadow: inset 3px 0 0 var(--zone);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(17, 17, 17, 0.08);
 }
 
 .puja-trail.is-open {
     background: #ffffff;
+    box-shadow: inset 0 0 0 1.5px var(--zone);
 }
 
 .puja-trail__head {
     display: grid;
-    grid-template-columns: 38px minmax(0, 1fr) 20px;
-    align-items: start;
-    column-gap: 12px;
+    grid-template-columns: 32px minmax(0, 1fr) 18px;
+    align-items: center;
+    column-gap: 10px;
     width: 100%;
-    padding: 12px 12px 12px 16px;
+    padding: 9px 12px;
     border: 0;
     background: transparent;
     color: inherit;
@@ -68,38 +69,49 @@
 .puja-trail__badge {
     display: grid;
     place-items: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--zone) 24%, transparent);
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--zone) 22%, transparent);
     color: var(--zone);
 }
 
 .puja-trail__titles {
     display: grid;
-    gap: 2px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1px;
     min-width: 0;
     justify-items: start;
 }
 
 .puja-trail__titles strong {
-    font-size: 0.92rem;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.86rem;
     line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .puja-trail__titles small {
-    color: rgba(17, 17, 17, 0.6);
-    font-size: 0.76rem;
+    max-width: 100%;
+    overflow: hidden;
+    color: rgba(17, 17, 17, 0.58);
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .puja-trail__meta {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 4px 12px;
-    margin-top: 4px;
-    color: rgba(17, 17, 17, 0.68);
-    font-size: 0.72rem;
+    gap: 0;
+    margin-top: 2px;
+    color: rgba(17, 17, 17, 0.7);
+    font-size: 0.7rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .puja-trail__meta span {
@@ -108,8 +120,13 @@
     gap: 4px;
 }
 
+.puja-trail__meta span + span::before {
+    content: '·';
+    margin: 0 6px;
+    opacity: 0.5;
+}
+
 .puja-trail__chevron {
-    margin-top: 10px;
     transition: transform 0.2s ease;
 }
 
@@ -119,44 +136,44 @@
 
 .puja-trail__body {
     display: grid;
-    gap: 12px;
-    padding: 0 16px 16px 16px;
+    gap: 10px;
+    padding: 0 12px 12px;
 }
 
 .puja-trail__body > p {
     margin: 0;
-    font-size: 0.84rem;
+    font-size: 0.8rem;
     line-height: 1.5;
 }
 
 .puja-trail__facts {
     display: grid;
-    gap: 10px;
+    gap: 6px;
     margin: 0;
 }
 
 .puja-trail__facts > div {
     display: grid;
-    gap: 3px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: rgba(17, 17, 17, 0.05);
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(17, 17, 17, 0.045);
 }
 
 .puja-trail__facts dt {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    color: var(--zone);
-    font-size: 0.72rem;
+    gap: 5px;
+    color: rgba(17, 17, 17, 0.62);
+    font-size: 0.66rem;
     font-weight: 800;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 
 .puja-trail__facts dd {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: 0.77rem;
     line-height: 1.45;
 }
 
@@ -165,12 +182,12 @@
     align-items: center;
     gap: 6px;
     margin: 2px 0 0;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
 }
 
 .puja-trail__stops {
     display: grid;
-    gap: 10px;
+    gap: 0;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -178,25 +195,30 @@
 
 .puja-trail__stops li {
     display: grid;
-    grid-template-columns: 26px minmax(0, 1fr);
+    grid-template-columns: 22px minmax(0, 1fr);
     column-gap: 10px;
-    align-items: start;
+    padding: 8px 0;
+    border-top: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.puja-trail__stops li:first-child {
+    border-top: 0;
 }
 
 .puja-trail__stops b {
     display: grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: var(--zone);
     color: #111111;
-    font-size: 0.76rem;
+    font-size: 0.7rem;
 }
 
 .puja-trail__stops button {
     display: grid;
-    gap: 2px;
+    gap: 1px;
     padding: 0;
     border: 0;
     background: transparent;
@@ -207,36 +229,37 @@
 }
 
 .puja-trail__stops strong {
-    font-size: 0.86rem;
+    font-size: 0.82rem;
 }
 
 .puja-trail__stops small {
-    color: rgba(17, 17, 17, 0.58);
-    font-size: 0.74rem;
+    color: rgba(17, 17, 17, 0.55);
+    font-size: 0.7rem;
 }
 
 .puja-trail__stops span {
-    font-size: 0.78rem;
+    margin-top: 2px;
+    font-size: 0.74rem;
     line-height: 1.4;
 }
 
 .puja-trail__stops em {
-    color: #b45309;
-    font-size: 0.76rem;
+    color: #92400e;
+    font-size: 0.72rem;
     font-style: normal;
     font-weight: 600;
     line-height: 1.4;
 }
 
 .puja-trail__note {
-    color: rgba(17, 17, 17, 0.55);
-    font-size: 0.72rem !important;
+    color: rgba(17, 17, 17, 0.52);
+    font-size: 0.68rem !important;
 }
 
 .puja-trail__actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
 }
 
 .puja-trail__btn {
@@ -244,14 +267,14 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-height: 44px;
+    min-height: 38px;
     padding: 0 10px;
     border: 0;
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(17, 17, 17, 0.08);
     color: inherit;
     font: inherit;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 800;
     cursor: pointer;
 }
@@ -268,15 +291,16 @@
 
 .puja-trails__message {
     margin: 0;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
 }
 
 :root[data-theme='dark'] .puja-trails__intro,
 :root[data-theme='dark'] .puja-trail__titles small,
 :root[data-theme='dark'] .puja-trail__stops small,
-:root[data-theme='dark'] .puja-trail__note {
-    color: rgba(248, 250, 252, 0.62);
+:root[data-theme='dark'] .puja-trail__note,
+:root[data-theme='dark'] .puja-trail__facts dt {
+    color: rgba(248, 250, 252, 0.6);
 }
 
 :root[data-theme='dark'] .puja-trail__meta {
@@ -285,14 +309,20 @@
 
 :root[data-theme='dark'] .puja-trail {
     background: rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 :root[data-theme='dark'] .puja-trail.is-open {
     background: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 1.5px var(--zone);
 }
 
 :root[data-theme='dark'] .puja-trail__facts > div {
     background: rgba(255, 255, 255, 0.07);
+}
+
+:root[data-theme='dark'] .puja-trail__stops li {
+    border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 :root[data-theme='dark'] .puja-trail__stops em {
@@ -306,9 +336,4 @@
 :root[data-theme='dark'] .puja-trail__btn.is-primary {
     background: #f8fafc;
     color: #111111;
-}
-
-/* Free / Guides switch at the top of the Guides tab */
-.puja-guide-modes {
-    margin-bottom: 4px;
 }

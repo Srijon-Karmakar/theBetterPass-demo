@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CalendarCheck, Check, ChevronDown, Clock, Loader2, MapPinned, Pause, Play, Plus, Route, Ticket, Train } from 'lucide-react';
+import { Anchor } from 'reicon-react';
 import { type PujaPandal } from '../../lib/pujaGuide';
 import { formatTrailDuration, PUJA_TRAILS, resolveTrail, type ResolvedTrail } from '../../lib/pujaTrails';
 import './puja-trails.css';
@@ -40,23 +41,14 @@ export const PujaTrails: React.FC<PujaTrailsProps> = ({ plan, onPlanChange, onSh
         setMessage(`Added ${missing.length} stop${missing.length === 1 ? '' : 's'} to your plan.`);
     };
 
-    // Opening a trail draws its route straight away; closing it (or leaving the tab) takes it off the map again.
-    const openRef = useRef<string | null>(null);
-    const clearRef = useRef(onClearRoute);
-    clearRef.current = onClearRoute;
-    useEffect(() => () => {
-        if (openRef.current) clearRef.current();
-    }, []);
-
+    // Opening a trail draws its route straight away; closing it takes it off the map again.
     const toggleTrail = async (trail: ResolvedTrail) => {
         if (openId === trail.id) {
             setOpenId(null);
-            openRef.current = null;
             onClearRoute();
             return;
         }
         setOpenId(trail.id);
-        openRef.current = trail.id;
         setBusyId(trail.id);
         setMessage('');
         try {
@@ -88,14 +80,14 @@ export const PujaTrails: React.FC<PujaTrailsProps> = ({ plan, onPlanChange, onSh
                                 onClick={() => void toggleTrail(trail)}
                                 aria-expanded={open}
                             >
-                                <span className="puja-trail__badge" aria-hidden="true"><Route size={18} /></span>
+                                <span className="puja-trail__badge" aria-hidden="true"><Anchor size={20} color="currentColor" /></span>
                                 <span className="puja-trail__titles">
                                     <strong>{trail.title}</strong>
                                     <small>{trail.tagline}</small>
                                     <span className="puja-trail__meta">
                                         <span><MapPinned size={12} aria-hidden="true" />{trail.pandals.length} stops</span>
-                                        <span><Route size={12} aria-hidden="true" />about {trail.distanceKm.toFixed(1)} km</span>
-                                        <span><Clock size={12} aria-hidden="true" />about {formatTrailDuration(trail.minutes)}</span>
+                                        <span><Route size={12} aria-hidden="true" />{trail.distanceKm.toFixed(1)} km</span>
+                                        <span><Clock size={12} aria-hidden="true" />{formatTrailDuration(trail.minutes)}</span>
                                     </span>
                                 </span>
                                 <ChevronDown size={18} className="puja-trail__chevron" aria-hidden="true" />

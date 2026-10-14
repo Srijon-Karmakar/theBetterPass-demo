@@ -529,6 +529,15 @@ export const Map2Page: React.FC = () => {
   const [trailIds, setTrailIds] = useState<string[] | null>(null);
   const [trailPlaying, setTrailPlaying] = useState(false);
   const finishTrailPlayback = useStableCallback(() => setTrailPlaying(false));
+  // Closing the Puja guide (the cross) ends any open trail: its route and numbered stops go away.
+  useEffect(() => {
+    if (pujaOpen) return;
+    setTrailIds((current) => {
+      if (current) setPujaRoute(null);
+      return null;
+    });
+    setTrailPlaying(false);
+  }, [pujaOpen]);
   const [pujaRoute, setPujaRoute] = useState<PlannedRoute | null>(null);
   const [showPlanOnly, setShowPlanOnly] = useState(false);
   const [showRestaurants, setShowRestaurants] = useState(true);

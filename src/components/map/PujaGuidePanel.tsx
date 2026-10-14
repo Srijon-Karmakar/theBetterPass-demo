@@ -131,6 +131,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     onSelectPandal,
     route,
     onRouteChange,
+    trailIds,
     onTrailChange,
     trailPlaying,
     onTrailPlayingChange,
@@ -282,6 +283,15 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
         onTrailChange(null);
     };
 
+    const trailActive = Boolean(trailIds);
+    useEffect(() => {
+        if (trailActive && (tab !== 'guides' || guideMode !== 'free')) {
+            onRouteChange(null);
+            onTrailChange(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [guideMode, tab, trailActive]);
+
     const handleSendRequest = async () => {
         if (!userId || !selectedGuide) return;
         if (!visitDate || visitDate < todayIso()) {
@@ -365,10 +375,10 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     }
     const popupEl = pinPopup ? <PujaPinPopup {...pinPopup} /> : null;
 
-    if (collapsed) {
-        return (
-            <>
-            {popupEl}
+    return (
+        <>
+        {popupEl}
+        {collapsed ? (
             <button
                 type="button"
                 className="map2-puja-reopen"
@@ -378,14 +388,12 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                 <span>Puja guide{plan.length ? ` · ${plan.length} in plan` : ''}</span>
                 <ChevronUp size={16} className="map2-puja-reopen-chevron" aria-hidden="true" />
             </button>
-            </>
-        );
-    }
-
-    return (
-        <>
-        {popupEl}
-        <aside className={`map2-route-panel map2-puja-panel is-${sheet}`} aria-label="Durga Puja guide">
+        ) : null}
+        <aside
+            className={`map2-route-panel map2-puja-panel is-${sheet}`}
+            aria-label="Durga Puja guide"
+            style={collapsed ? { display: 'none' } : undefined}
+        >
             <button
                 type="button"
                 className="map2-sheet-handle"
@@ -492,7 +500,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                 </label>
                 </div>
 
-                <div className="map2-mode-row map2-puja-tabs" role="tablist" aria-label="Puja guide sections">
+                <div className="map2-mode-row map2-puja-tabs" role="tablist" aria-label="Puja guide sections" data-active={tab}>
                     {([
                         ['pandals', 'Pandals'],
                         ['plan', `My plan${plan.length ? ` (${plan.length})` : ''}`],
@@ -668,8 +676,8 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
 
                 {tab === 'guides' && (
                     <>
-                        <div className="map2-mode-row puja-guide-modes" role="tablist" aria-label="Guide type">
-                            {([['free', 'Free'], ['guides', 'Guides']] as Array<['free' | 'guides', string]>).map(([key, label]) => (
+                        <div className="map2-mode-row puja-guide-modes" role="tablist" aria-label="Guide type" data-active={guideMode}>
+                            {([['free', 'Free guides'], ['guides', 'Local guides']] as Array<['free' | 'guides', string]>).map(([key, label]) => (
                                 <button
                                     key={key}
                                     type="button"
@@ -724,11 +732,10 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                                                 <strong>{guide.display_name}</strong>
                                                 {booked ? (
                                                     <>
-                                                        <span className="map2-puja-meta"><MapPin size={12} aria-hidden="true" />{guide.areas}</span>
-                                                        <span className="map2-puja-meta"><Languages size={12} aria-hidden="true" />{guide.languages}</span>
+                                                        <span className="map2-puja-meta">{guide.areas} · {guide.languages}</span>
                                                         <span className="map2-puja-meta is-dates">
                                                             <CalendarCheck size={12} aria-hidden="true" />
-                                                            Booked {(guide as DemoPujaGuide).bookedFor}
+                                                            {(guide as DemoPujaGuide).bookedFor}
                                                         </span>
                                                     </>
                                                 ) : (
