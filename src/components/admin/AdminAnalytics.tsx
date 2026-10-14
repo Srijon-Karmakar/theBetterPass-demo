@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Database, Download, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react';
 import {
-    ANALYTICS_RANGES,
+    ADMIN_ANALYTICS_RANGES,
     AnalyticsNotReadyError,
     buildAnalyticsCsv,
     buildHourlyCsv,
@@ -104,7 +104,8 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
 
     const { data, loading, error, notReady, updatedAt } = state;
     const isToday = range === 'today';
-    const rangeDays = ANALYTICS_RANGES.find((item) => item.key === range)?.days ?? 7;
+    const isAllTime = range === 'all';
+    const rangeDays = ADMIN_ANALYTICS_RANGES.find((item) => item.key === range)?.days ?? 7;
     const previousLabel = isToday ? 'yesterday at this time' : `the previous ${rangeDays} days`;
     const activeKpi = KPIS.find((item) => item.key === metric) || KPIS[0];
 
@@ -145,7 +146,7 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                     </span>
 
                     <div className="an-segmented" role="group" aria-label="Date range">
-                        {ANALYTICS_RANGES.map((item) => (
+                        {ADMIN_ANALYTICS_RANGES.map((item) => (
                             <button
                                 key={item.key}
                                 type="button"
@@ -219,7 +220,7 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                                             <span className="an-kpi-label">{kpi.label}</span>
                                             <span className="an-kpi-main">
                                                 <strong title={formatFull(totals[kpi.key] ?? 0)}>{formatCompact(totals[kpi.key] ?? 0)}</strong>
-                                                <Delta current={totals[kpi.key] ?? 0} previous={data.previous[kpi.key] ?? 0} label={previousLabel} />
+                                                {isAllTime ? null : <Delta current={totals[kpi.key] ?? 0} previous={data.previous[kpi.key] ?? 0} label={previousLabel} />}
                                             </span>
                                             <span className="an-kpi-desc">{kpi.desc}</span>
                                         </button>
@@ -245,7 +246,7 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
                                     <div className="an-card-head">
                                         <div>
                                             <h3>{activeKpi.label} over time</h3>
-                                            <p>{formatFull(totals[activeKpi.key] ?? 0)} in the last {rangeDays} days</p>
+                                            <p>{formatFull(totals[activeKpi.key] ?? 0)} {isAllTime ? 'all time' : `in the last ${rangeDays} days`}</p>
                                         </div>
                                         <div className="an-chips" role="group" aria-label="Chart metric">
                                             {KPIS.map((kpi) => (

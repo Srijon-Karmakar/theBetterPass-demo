@@ -10,6 +10,7 @@ import {
 } from './analyticsShared';
 
 export {
+    ADMIN_ANALYTICS_RANGES,
     ANALYTICS_RANGES,
     AnalyticsNotReadyError,
     formatCompact,
@@ -144,7 +145,7 @@ const callAdminSummary = async (from: Date, to: Date): Promise<Partial<Analytics
 };
 
 export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promise<AnalyticsSummary> => {
-    const { from, to, days } = getAnalyticsRangeDates(key);
+    const { from, to, days: rangeDays } = getAnalyticsRangeDates(key);
     const comparison = getPreviousRangeDates(key);
     // The database compares with the equally long window right before this one. For "Today" that would be the last
     // few hours of yesterday, so ask for yesterday up to the same time of day and use its totals instead.
@@ -153,11 +154,23 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
         comparison ? callAdminSummary(comparison.from, comparison.to) : Promise.resolve(null),
     ]);
 
+    // "All time" starts on the first day that has data, so the chart is not mostly empty space.
+    let fillFrom = from;
+    let days = rangeDays;
+    if (key === 'all') {
+        const today = new Date(to);
+        today.setHours(0, 0, 0, 0);
+        const firstDay = (raw.daily || []).map((row) => row.day).sort()[0];
+        const start = firstDay ? new Date(`${firstDay}T00:00:00`) : today;
+        fillFrom = start;
+        days = Math.max(1, Math.round((today.getTime() - start.getTime()) / 86400000) + 1);
+    }
+
     return {
         range: raw.range || { from: from.toISOString(), to: to.toISOString(), tz: getTimeZone() },
         totals: { ...emptyTotals(), ...(raw.totals || {}) },
         previous: { ...emptyTotals(), ...((comparisonRaw ? comparisonRaw.totals : raw.previous) || {}) },
-        daily: fillMissingDays(raw.daily || [], from, days),
+        daily: fillMissingDays(raw.daily || [], fillFrom, days),
         top_pages: raw.top_pages || [],
         exit_pages: raw.exit_pages || [],
         exit_sessions: raw.exit_sessions || 0,
@@ -170,7 +183,7 @@ export const fetchAdminAnalyticsSummary = async (key: AnalyticsRangeKey): Promis
         funnel: raw.funnel || { visited: 0, viewed_listing: 0, authenticated: 0, started_booking: 0 },
         active_now: raw.active_now || 0,
         newsletter: raw.newsletter
-            ? { ...raw.newsletter, daily: fillNewsletterDays(raw.newsletter.daily || [], from, days) }
+            ? { ...raw.newsletter, daily: fillNewsletterDays(raw.newsletter.daily || [], fillFrom, days) }
             : undefined,
         crm_funnel: raw.crm_funnel,
         is_marketing: raw.is_marketing,

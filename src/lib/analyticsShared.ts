@@ -1,4 +1,4 @@
-export type AnalyticsRangeKey = 'today' | '7d' | '30d' | '90d';
+export type AnalyticsRangeKey = 'today' | '7d' | '30d' | '90d' | 'all';
 
 export const ANALYTICS_RANGES: Array<{ key: AnalyticsRangeKey; label: string; days: number }> = [
     { key: 'today', label: 'Today', days: 1 },
@@ -6,6 +6,15 @@ export const ANALYTICS_RANGES: Array<{ key: AnalyticsRangeKey; label: string; da
     { key: '30d', label: '30 days', days: 30 },
     { key: '90d', label: '90 days', days: 90 },
 ];
+
+/** The admin dashboard also offers "All time"; the provider and tourist dashboards keep the four shorter ranges. */
+export const ADMIN_ANALYTICS_RANGES: Array<{ key: AnalyticsRangeKey; label: string; days: number }> = [
+    ...ANALYTICS_RANGES,
+    { key: 'all', label: 'All time', days: 0 },
+];
+
+/** "All time" asks the database for everything since this date, long before the site existed. */
+const ALL_TIME_START = new Date(2020, 0, 1);
 
 export class AnalyticsNotReadyError extends Error {
     constructor() {
@@ -28,6 +37,13 @@ export const getTimeZone = (): string => {
 };
 
 export const getAnalyticsRangeDates = (key: AnalyticsRangeKey): { from: Date; to: Date; days: number } => {
+    if (key === 'all') {
+        const to = new Date();
+        const today = new Date(to);
+        today.setHours(0, 0, 0, 0);
+        const days = Math.round((today.getTime() - ALL_TIME_START.getTime()) / 86400000) + 1;
+        return { from: new Date(ALL_TIME_START), to, days };
+    }
     const days = ANALYTICS_RANGES.find((range) => range.key === key)?.days ?? 7;
     const to = new Date();
     const from = new Date(to);
