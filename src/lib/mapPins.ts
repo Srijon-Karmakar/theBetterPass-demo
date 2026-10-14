@@ -105,7 +105,7 @@ const TIP = { x: 12, y: 22.75 };
 
 const iconCache = new Map<string, DivIcon>();
 
-export type TackOptions = { active?: boolean; draft?: boolean; route?: boolean; planNumber?: number; small?: boolean; label?: string };
+export type TackOptions = { active?: boolean; draft?: boolean; route?: boolean; planNumber?: number; small?: boolean; label?: string; showLabel?: boolean };
 
 /** Planned stops (and their route) are drawn in a soft, glowing yellow so they stand out from the other pins. */
 export const PLAN_COLOR = '#fde047';
@@ -204,7 +204,8 @@ export const buildHospitalIcon = (options: { active?: boolean; label?: string } 
 
 /** Circular Durga-face badge used for Durga Puja pandal stops, in place of the generic tack pin. */
 export const buildDurgaPandalIcon = (options: TackOptions = {}): DivIcon => {
-    const cacheKey = `durga:${options.active ? 1 : 0}:${options.planNumber || 0}`;
+    const labelText = options.showLabel ? options.label || '' : '';
+    const cacheKey = `durga:${options.active ? 1 : 0}:${options.planNumber || 0}:${labelText}`;
     const cached = iconCache.get(cacheKey);
     if (cached) return cached;
 
@@ -215,7 +216,7 @@ export const buildDurgaPandalIcon = (options: TackOptions = {}): DivIcon => {
     const html = `
 <span class="map2-durga-pin${options.active ? ' is-active' : ''}${options.planNumber ? ' is-planned' : ''}" style="width:${size}px;height:${size}px">
   <img src="/icons/puja.png" alt="" width="${size}" height="${size}" />
-  ${badge}
+  ${badge}${labelText ? `<span class="map2-durga-label">${escapeHtml(labelText)}</span>` : ''}
 </span>`;
 
     const icon = divIcon({

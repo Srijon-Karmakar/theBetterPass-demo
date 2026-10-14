@@ -3545,3 +3545,65 @@
     transition: none;
   }
 }
+
+/* Pandal names under the numbered stops while a free trail is open or playing */
+.map2-durga-label {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  display: -webkit-box;
+  width: max-content;
+  max-width: 116px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(20, 20, 20, 0.25);
+  color: #111111;
+  font-family: 'Onest', 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  pointer-events: none;
+}
+
+:root[data-theme='dark'] .map2-durga-label {
+  background: rgba(17, 17, 17, 0.85);
+  color: #ffffff;
+}
+
+/* Floating Play / Stop control, shown while a free trail is open */
+.map2-trail-controls {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 82px);
+  left: 50%;
+  z-index: 950;
+  transform: translateX(-50%);
+}
+
+.map2-trail-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #ff741d;
+  box-shadow: 0 10px 26px rgba(255, 116, 29, 0.45);
+  color: #111111;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  animation: trailPlayIn 0.35s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+@keyframes trailPlayIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

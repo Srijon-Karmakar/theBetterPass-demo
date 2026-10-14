@@ -1180,6 +1180,7 @@ export const Map2Page: React.FC = () => {
         maxZoom={18}
         scrollWheelZoom
         zoomControl={false}
+        attributionControl={false}
         className="map2-leaflet"
       >
         <BasemapLayer />
@@ -1270,6 +1271,7 @@ export const Map2Page: React.FC = () => {
                   active: selectedPandalId === pandal.id,
                   planNumber: planIndex >= 0 ? planIndex + 1 : undefined,
                   label: pandal.name,
+                  showLabel: Boolean(trailIds),
                 })}
                 zIndexOffset={planIndex >= 0 ? 500 : 0}
                 onSelect={onPandalSelect}
@@ -1925,6 +1927,19 @@ export const Map2Page: React.FC = () => {
           placesCount={places.length}
         />
       )}
+
+      {pujaOpen && trailIds && pujaRoute?.route_points.length ? (
+        <div className="map2-trail-controls" role="group" aria-label="Trail playback">
+          <button
+            type="button"
+            className="map2-trail-play"
+            onClick={() => setTrailPlaying((current) => !current)}
+          >
+            {trailPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
+            <span>{trailPlaying ? 'Stop' : 'Play route'}</span>
+          </button>
+        </div>
+      ) : null}
 
       <MapDownloadButton
         getMap={() => mapRef.current}

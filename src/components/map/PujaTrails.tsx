@@ -95,6 +95,19 @@ export const PujaTrails: React.FC<PujaTrailsProps> = ({ plan, onPlanChange, onSh
 
                             {open ? (
                                 <div className="puja-trail__body">
+                                    <div className="puja-trail__actions">
+                                        <button type="button" className="puja-trail__btn is-primary" onClick={onPlayToggle} disabled={busyId !== null}>
+                                            {busyId === trail.id
+                                                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                                                : playing ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
+                                            <span>{busyId === trail.id ? 'Drawing route' : playing ? 'Stop' : 'Play route'}</span>
+                                        </button>
+                                        <button type="button" className="puja-trail__btn" onClick={() => addAll(trail)}>
+                                            {inPlan ? <Check size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
+                                            <span>{inPlan ? 'In my plan' : 'Add all to my plan'}</span>
+                                        </button>
+                                    </div>
+
                                     <p>{trail.overview}</p>
 
                                     <dl className="puja-trail__facts">
@@ -124,19 +137,6 @@ export const PujaTrails: React.FC<PujaTrailsProps> = ({ plan, onPlanChange, onSh
                                     </ol>
 
                                     <p className="puja-trail__note">Distance and time are estimates for walking with about 20 minutes at each pandal. Use a cab or bike between far stops.</p>
-
-                                    <div className="puja-trail__actions">
-                                        <button type="button" className="puja-trail__btn is-primary" onClick={onPlayToggle} disabled={busyId !== null}>
-                                            {busyId === trail.id
-                                                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                                                : playing ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
-                                            <span>{busyId === trail.id ? 'Drawing route' : playing ? 'Stop' : 'Play route'}</span>
-                                        </button>
-                                        <button type="button" className="puja-trail__btn" onClick={() => addAll(trail)}>
-                                            {inPlan ? <Check size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
-                                            <span>{inPlan ? 'In my plan' : 'Add all to my plan'}</span>
-                                        </button>
-                                    </div>
                                 </div>
                             ) : null}
                         </li>
