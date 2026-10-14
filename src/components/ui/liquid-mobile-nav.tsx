@@ -22,11 +22,22 @@ type LiquidMobileNavProps = {
 /** How long the filtered goo layer stays visible after the active item changes. */
 const MORPH_MS = 560;
 
-function NavIcon({ item, size }: { item: LiquidNavItem; size: number }) {
+function NavIcon({ item, size, active = false }: { item: LiquidNavItem; size: number; active?: boolean }) {
   const Icon = item.icon as React.ComponentType<{ size?: number }> | undefined;
   return (
     <span className="lmn-icon" style={{ width: size, height: size }}>
-      {item.iconSrc ? (
+      {item.iconSrc && active ? (
+        <span
+          className="lmn-icon-mask"
+          style={{
+            width: size,
+            height: size,
+            WebkitMaskImage: `url(${item.iconSrc})`,
+            maskImage: `url(${item.iconSrc})`,
+            transform: item.iconSrc.endsWith('rupees.svg') ? 'scale(1.24)' : undefined,
+          }}
+        />
+      ) : item.iconSrc ? (
         <img src={item.iconSrc} alt="" width={size} height={size} loading="eager" decoding="async" />
       ) : Icon ? (
         <Icon size={Math.round(size * 0.9)} />
@@ -106,7 +117,7 @@ export function LiquidMobileNav({ items, ariaLabel, className }: LiquidMobileNav
             aria-current="page"
             data-tutorial-id={activeItem.dataTutorialId}
           >
-            <NavIcon item={activeItem} size={22} />
+            <NavIcon item={activeItem} size={22} active />
             <NavBadge badge={activeItem.badge} />
           </button>
         )}
@@ -148,7 +159,7 @@ export function LiquidMobileNav({ items, ariaLabel, className }: LiquidMobileNav
               aria-current="page"
               data-tutorial-id={activeItem.dataTutorialId}
             >
-              <NavIcon item={activeItem} size={22} />
+              <NavIcon item={activeItem} size={22} active />
               <NavBadge badge={activeItem.badge} />
             </button>
           )}

@@ -41,10 +41,13 @@
   --lmn-gap: 8px;
   --lmn-fill: #FF741D;
   --lmn-ink: #111111;
+  --lmn-accent: #FF741D;
+  --lmn-active-fill: #111111;
   --lmn-shadow: none;
 }
 
 :root[data-theme='dark'] .lmn {
+  --lmn-active-fill: #e6e6e8;
   --lmn-fill: #FF741D;
   --lmn-ink: #101010;
   --lmn-shadow: none;
@@ -144,7 +147,7 @@
   height: var(--lmn-size);
   border: none;
   border-radius: 999px;
-  background: var(--lmn-fill);
+  background: var(--lmn-active-fill);
   box-shadow: var(--lmn-shadow);
   display: inline-flex;
   align-items: center;
@@ -228,7 +231,7 @@
   height: var(--lmn-size);
   flex: 0 0 auto;
   border-radius: 999px;
-  background: var(--lmn-fill);
+  background: var(--lmn-active-fill);
   animation: lmn-goo-active-split 0.56s cubic-bezier(0.2, 0.92, 0.22, 1) both;
 }
 
@@ -240,7 +243,7 @@
   width: calc(var(--lmn-gap) + 17px);
   height: calc(var(--lmn-size) * 0.63);
   border-radius: 999px;
-  background: var(--lmn-fill);
+  background: var(--lmn-active-fill);
   transform: translateY(-50%) scaleX(0);
   transform-origin: left center;
   animation: lmn-goo-neck 0.56s cubic-bezier(0.2, 0.92, 0.22, 1) both;
@@ -394,4 +397,24 @@
   .lmn-badge {
     animation: none !important;
   }
+}
+
+/* ── active tab: dark chip (light-grey in dark mode) with an orange icon ── */
+
+.lmn-rest-active,
+.lmn-btn.is-active {
+  --lmn-ink: var(--lmn-accent);
+  --lmn-fill: var(--lmn-active-fill);
+  color: var(--lmn-accent);
+}
+
+.lmn-icon-mask {
+  display: block;
+  background-color: var(--lmn-accent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }

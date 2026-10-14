@@ -335,7 +335,7 @@ export const Navbar: React.FC = () => {
                         <div className={`nbr-liquid-rest${desktopMorphing ? ' is-hidden' : ''}`}>
                             {activeDesktopItem && (
                                 <Link to={activeDesktopItem.to} className="nbr-liquid-active" aria-label={activeDesktopItem.label} aria-current="page" title={activeDesktopItem.label}>
-                                    <img src={activeDesktopItem.iconSrc} alt="" className="nbr-liquid-icon" aria-hidden="true" />
+                                    <span className="nbr-liquid-icon nbr-liquid-icon--mask" aria-hidden="true" style={{ WebkitMaskImage: `url(${activeDesktopItem.iconSrc})`, maskImage: `url(${activeDesktopItem.iconSrc})` }} />
                                 </Link>
                             )}
                             <div className="nbr-liquid-pill">
@@ -359,7 +359,7 @@ export const Navbar: React.FC = () => {
                             <div className="nbr-liquid-icon-layer">
                                 {activeDesktopItem && (
                                     <Link to={activeDesktopItem.to} className="nbr-liquid-active" aria-label={activeDesktopItem.label} aria-current="page" title={activeDesktopItem.label}>
-                                        <img src={activeDesktopItem.iconSrc} alt="" className="nbr-liquid-icon" aria-hidden="true" />
+                                        <span className="nbr-liquid-icon nbr-liquid-icon--mask" aria-hidden="true" style={{ WebkitMaskImage: `url(${activeDesktopItem.iconSrc})`, maskImage: `url(${activeDesktopItem.iconSrc})` }} />
                                     </Link>
                                 )}
                                 <div className="nbr-liquid-pill nbr-liquid-pill--icons">
@@ -436,6 +436,15 @@ export const Navbar: React.FC = () => {
                 {!user && (
                     <div className="nbr-right-actions">
                         {location.pathname === '/' && <PujaGuideLauncher variant="desktop" />}
+                        <button
+                            type="button"
+                            className="nbr-theme-button"
+                            onClick={toggleTheme}
+                            aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                            title={isDark ? 'Light theme' : 'Dark theme'}
+                        >
+                            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
                         <Link to="/signup" className="nbr-join nbr-join--desktop">Join</Link>
                     </div>
                 )}
@@ -683,6 +692,7 @@ export const Navbar: React.FC = () => {
                     --nbr-liquid-item: 42px;
                     --nbr-liquid-gap: 10px;
                     --nbr-liquid-fill: #FF741D;
+                    --nbr-liquid-active-fill: ${isDark ? '#e6e6e8' : '#111111'};
                     --nbr-liquid-ink: #101010;
                     contain: layout style;
                     display: grid;
@@ -757,7 +767,7 @@ export const Navbar: React.FC = () => {
 
                 .nbr-liquid-active {
                     animation: nbr-liquid-active-separate 0.42s cubic-bezier(0.2, 0.9, 0.2, 1) both;
-                    background: var(--nbr-liquid-fill);
+                    background: var(--nbr-liquid-active-fill);
                     flex: 0 0 auto;
                     height: var(--nbr-liquid-size);
                     pointer-events: auto;
@@ -806,9 +816,20 @@ export const Navbar: React.FC = () => {
                     width: 27px;
                 }
 
+                .nbr-liquid-icon--mask {
+                    background-color: #FF741D;
+                    filter: none;
+                    -webkit-mask-position: center;
+                    mask-position: center;
+                    -webkit-mask-repeat: no-repeat;
+                    mask-repeat: no-repeat;
+                    -webkit-mask-size: contain;
+                    mask-size: contain;
+                }
+
                 .nbr-liquid-blob-active {
                     animation: nbr-liquid-goo-active 0.56s cubic-bezier(0.2, 0.92, 0.22, 1) both;
-                    background: var(--nbr-liquid-fill);
+                    background: var(--nbr-liquid-active-fill);
                     border-radius: 999px;
                     flex: 0 0 auto;
                     height: var(--nbr-liquid-size);
@@ -818,7 +839,7 @@ export const Navbar: React.FC = () => {
 
                 .nbr-liquid-blob-active::after {
                     animation: nbr-liquid-goo-neck 0.56s cubic-bezier(0.2, 0.92, 0.22, 1) both;
-                    background: var(--nbr-liquid-fill);
+                    background: var(--nbr-liquid-active-fill);
                     border-radius: 999px;
                     content: '';
                     height: 34px;
