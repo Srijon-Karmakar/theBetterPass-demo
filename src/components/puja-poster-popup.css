@@ -1,0 +1,319 @@
+.puja-poster-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2400;
+    display: grid;
+    place-items: center;
+    background: rgba(20, 6, 8, 0.66);
+    backdrop-filter: blur(4px);
+    animation: pujaBackdropIn 0.35s ease both;
+}
+
+.puja-poster-backdrop.is-closing {
+    animation: pujaBackdropOut 0.26s ease both;
+}
+
+.puja-poster-backdrop.is-closing .puja-poster {
+    animation: pujaPosterOut 0.26s ease both;
+}
+
+.puja-poster {
+    position: relative;
+    width: 80vw;
+    height: 80vh;
+    height: 80dvh;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    padding: clamp(20px, 4vw, 56px);
+    border-radius: 28px;
+    border: 1px solid rgba(255, 213, 107, 0.55);
+    background:
+        radial-gradient(120% 90% at 50% 0%, #8a1c2b 0%, #4a0d1c 55%, #2a0710 100%);
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55), inset 0 0 0 6px rgba(255, 213, 107, 0.08);
+    color: #fff7e6;
+    text-align: center;
+    animation: pujaPosterIn 0.7s cubic-bezier(0.18, 0.9, 0.25, 1.1) both;
+}
+
+@media (max-width: 720px) {
+    .puja-poster {
+        width: 92vw;
+        border-radius: 22px;
+    }
+}
+
+.puja-poster__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 5;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 213, 107, 0.5);
+    border-radius: 999px;
+    background: rgba(42, 7, 16, 0.55);
+    color: #ffe9a8;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.puja-poster__close:hover {
+    background: rgba(255, 213, 107, 0.22);
+    transform: rotate(90deg);
+}
+
+.puja-poster__close:focus-visible,
+.puja-poster__cta:focus-visible {
+    outline: 3px solid #ffd56b;
+    outline-offset: 3px;
+}
+
+/* ---- Art layer ---- */
+.puja-poster__art {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+}
+
+.puja-poster__mandala {
+    width: min(115%, 120vh);
+    aspect-ratio: 1;
+    opacity: 0.42;
+    animation: pujaMandalaIn 1.2s ease 0.15s both;
+}
+
+.puja-poster__halo {
+    animation: pujaPulse 4.5s ease-in-out infinite;
+    transform-origin: center;
+}
+
+.puja-poster__spin-slow,
+.puja-poster__spin-fast {
+    transform-origin: 0 0;
+}
+
+.puja-poster__spin-slow {
+    animation: pujaSpin 70s linear infinite;
+}
+
+.puja-poster__spin-fast {
+    animation: pujaSpin 40s linear infinite reverse;
+}
+
+.puja-poster__petal {
+    --x: calc(var(--i) * 7.4%);
+    position: absolute;
+    top: -6%;
+    left: var(--x);
+    width: 14px;
+    height: 20px;
+    border-radius: 80% 0 80% 0;
+    background: linear-gradient(135deg, #ffb21f, #ff7a1a);
+    opacity: 0;
+    animation: pujaPetalFall calc(7s + (var(--i) * 0.45s)) linear calc(var(--i) * -0.9s) infinite;
+}
+
+.puja-poster__petal:nth-child(odd) {
+    background: linear-gradient(135deg, #ffd56b, #ffb21f);
+    width: 11px;
+    height: 16px;
+}
+
+/* ---- Diyas ---- */
+.puja-poster__diya {
+    position: absolute;
+    bottom: clamp(14px, 3vw, 30px);
+    width: clamp(44px, 7vw, 76px);
+    height: auto;
+    filter: drop-shadow(0 0 18px rgba(255, 178, 31, 0.7));
+    animation: pujaRise 0.8s ease 0.6s both;
+}
+
+.puja-poster__diya--left { left: clamp(14px, 4vw, 48px); }
+.puja-poster__diya--right { right: clamp(14px, 4vw, 48px); }
+
+.puja-poster__flame-outer,
+.puja-poster__flame-inner {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: pujaFlicker 1.4s ease-in-out infinite;
+}
+
+.puja-poster__flame-inner {
+    animation-duration: 0.9s;
+}
+
+/* ---- Copy ---- */
+.puja-poster__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(10px, 2vh, 20px);
+    max-width: 640px;
+}
+
+.puja-poster__content > * {
+    animation: pujaRise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.puja-poster__content > :nth-child(1) { animation-delay: 0.35s; }
+.puja-poster__content > :nth-child(2) { animation-delay: 0.5s; }
+.puja-poster__content > :nth-child(3) { animation-delay: 0.65s; }
+.puja-poster__content > :nth-child(4) { animation-delay: 0.8s; }
+
+.puja-poster__eyebrow {
+    padding: 6px 16px;
+    border: 1px solid rgba(255, 213, 107, 0.6);
+    border-radius: 999px;
+    background: rgba(255, 213, 107, 0.12);
+    color: #ffd56b;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.puja-poster h2 {
+    margin: 0;
+    display: grid;
+    gap: 0;
+    font-size: clamp(2.4rem, 7vw, 5.2rem);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.puja-poster__title-line {
+    display: block;
+}
+
+.puja-poster__title-line--accent {
+    background: linear-gradient(100deg, #ffe9a8 20%, #ffb21f 45%, #fff7d6 55%, #ffb21f 70%, #ffe9a8 90%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: pujaShimmer 4s linear infinite;
+}
+
+.puja-poster p {
+    margin: 0;
+    max-width: 52ch;
+    color: rgba(255, 247, 230, 0.86);
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    line-height: 1.55;
+}
+
+.puja-poster__cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: clamp(4px, 1vh, 12px);
+    padding: 15px 30px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ffd56b, #ff9d1f);
+    box-shadow: 0 12px 34px rgba(255, 157, 31, 0.45);
+    color: #3a0a12;
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.puja-poster__cta::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid #ffd56b;
+    animation: pujaRing 2.2s ease-out infinite;
+}
+
+.puja-poster__cta svg {
+    transition: transform 0.2s ease;
+}
+
+.puja-poster__cta:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 42px rgba(255, 157, 31, 0.6);
+}
+
+.puja-poster__cta:hover svg {
+    transform: translateX(4px);
+}
+
+/* ---- Keyframes ---- */
+@keyframes pujaBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pujaBackdropOut { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes pujaPosterIn {
+    from { opacity: 0; transform: translateY(40px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pujaPosterOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: translateY(24px) scale(0.95); }
+}
+
+@keyframes pujaMandalaIn {
+    from { opacity: 0; transform: scale(0.7) rotate(-20deg); }
+    to { opacity: 0.42; transform: scale(1) rotate(0); }
+}
+
+@keyframes pujaSpin { to { transform: rotate(360deg); } }
+
+@keyframes pujaPulse {
+    0%, 100% { opacity: 0.7; transform: scale(0.96); }
+    50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes pujaPetalFall {
+    0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0deg); }
+    10% { opacity: 0.9; }
+    90% { opacity: 0.8; }
+    100% { opacity: 0; transform: translate3d(60px, 110vh, 0) rotate(540deg); }
+}
+
+@keyframes pujaRise {
+    from { opacity: 0; transform: translateY(22px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pujaFlicker {
+    0%, 100% { transform: scale(1, 1) rotate(-1.5deg); }
+    35% { transform: scale(0.92, 1.1) rotate(2deg); }
+    70% { transform: scale(1.05, 0.94) rotate(-2deg); }
+}
+
+@keyframes pujaShimmer {
+    from { background-position: 120% 0; }
+    to { background-position: -100% 0; }
+}
+
+@keyframes pujaRing {
+    0% { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.22); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .puja-poster,
+    .puja-poster *,
+    .puja-poster-backdrop {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+
+    .puja-poster__petal { display: none; }
+}

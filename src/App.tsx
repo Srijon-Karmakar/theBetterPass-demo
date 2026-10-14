@@ -11,6 +11,7 @@ import { SupportChatbot } from './components/SupportChatbot';
 import { AppSEO } from './components/SEO';
 import { AppSplashScreen } from './components/AppSplashScreen';
 import { GuestOfferPopup } from './components/GuestOfferPopup';
+import { PujaPosterPopup } from './components/PujaPosterPopup';
 import { AppTutorialProvider } from './context/AppTutorialContext';
 import { OFFICIAL_SOCIAL_LINKS } from './lib/appContent';
 import { buildLoginPath } from './lib/authRedirect';
@@ -308,6 +309,7 @@ function App() {
             </Routes>
           </Suspense>
 
+          <PujaPosterPopup />
           <GuestOfferPopup />
           <AppFooter homePath={homePath} footerLogoSrc={footerLogoSrc} user={user} />
           {SHOW_SUPPORT_CHATBOT ? <SupportChatbot /> : null}

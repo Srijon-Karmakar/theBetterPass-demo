@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { FIRST_BOOKING_COUPON_PERCENT } from '../lib/coupons';
+import { usePujaPosterOpen } from '../lib/pujaPosterGate';
 import { DiscountBadge } from './DiscountBadge';
 import './guest-offer-popup.css';
 
@@ -23,14 +24,15 @@ const HIDDEN_PATHS = new Set([
 export const GuestOfferPopup: React.FC = () => {
     const { user, loading, profileLoading } = useAuth();
     const location = useLocation();
+    const pujaPosterOpen = usePujaPosterOpen();
     const [visible, setVisible] = useState(false);
     const [dismissed, setDismissed] = useState(false);
 
     const shouldRun = useMemo(() => {
-        if (loading || profileLoading || user || dismissed) return false;
+        if (loading || profileLoading || user || dismissed || pujaPosterOpen) return false;
         if (location.pathname.startsWith('/dashboard/') || location.pathname.startsWith('/admin/')) return false;
         return !HIDDEN_PATHS.has(location.pathname);
-    }, [dismissed, loading, location.pathname, profileLoading, user]);
+    }, [dismissed, loading, location.pathname, profileLoading, pujaPosterOpen, user]);
 
     useEffect(() => {
         setVisible(false);

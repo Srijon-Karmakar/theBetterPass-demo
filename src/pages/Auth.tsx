@@ -699,10 +699,12 @@ export const Auth: React.FC = () => {
                 });
             }
 
+            // Count every created account, including provider roles and signups awaiting email confirmation.
+            trackAuthEvent('signup', signupResult.user?.id);
+
             if (activeRole === 'tourist') {
                 const { data: sessionData } = await supabase.auth.getSession();
                 if (sessionData.session?.user) {
-                    trackAuthEvent('signup', sessionData.session.user.id);
                     navigate(getSafeNextPath(location.search, TOURIST_DEFAULT_PATH));
                     return;
                 }
