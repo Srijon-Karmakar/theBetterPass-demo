@@ -3299,3 +3299,10 @@
     display: none;
   }
 }
+
+/* Dark map: pin labels are white text with a dark halo instead of dark text with a white one */
+:root[data-theme='dark'] .map2-tack-label,
+:root[data-theme='dark'] .map2-tack.is-small .map2-tack-label {
+  color: #ffffff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(0, 0, 0, 0.7);
+}
