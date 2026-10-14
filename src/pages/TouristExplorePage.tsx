@@ -1,6 +1,6 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { Amphora, ArrowUpRight, Bookmark, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Compass, Home, Landmark, LayoutDashboard, Loader2, Map, Scissors, Search, UserCircle2, UtensilsCrossed, X, Zap } from 'lucide-react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Amphora, Bookmark, CalendarDays, ClipboardList, Compass, Home, Landmark, LayoutDashboard, Loader2, Map, Scissors, Search, UserCircle2, UtensilsCrossed, X, Zap } from 'lucide-react';
 import { LiquidMobileNav, type LiquidNavItem } from '../components/ui/liquid-mobile-nav';
 import { MOBILE_NAV_ICON_SRC } from '../components/ui/mobile-nav-icon-map';
 import { trackEvent } from '../lib/analytics';
@@ -12,7 +12,6 @@ import {
   getBookings,
   getListingReviewSummaryMap,
   getPublicListingsByType,
-  hasActiveBoost,
   isListingFavorited,
   removeListingFavorite,
   type ListingReviewSummary,
@@ -26,7 +25,7 @@ import {
   type ActivityCategoryKey,
 } from '../lib/activityCategories';
 import { calculatePricingFromProviderUnit, resolveListingDisplayPricing } from '../lib/pricing';
-import { DiscountBadge, getListingDiscountPercentForCard } from '../components/DiscountBadge';
+import { getListingDiscountPercentForCard } from '../components/DiscountBadge';
 import { isProviderRole, normalizeRoleValue, type ListingType } from '../lib/platform';
 import { VIRTUAL_TOURS_ENABLED, isVirtualTourRecord } from '../lib/virtualTours';
 import { onBookingSync } from '../lib/bookingSync';
@@ -85,13 +84,6 @@ const limitWords = (value: string, maxWords: number): string => {
   const words = value.trim().split(/\s+/).filter(Boolean);
   if (words.length <= maxWords) return value.trim();
   return `${words.slice(0, maxWords).join(' ')}...`;
-};
-
-const getPostSubtitle = (post: PostRecord): string => {
-  if (typeof post.description === 'string' && post.description.trim().length > 0) {
-    return limitWords(post.description, 12);
-  }
-  return 'Curated experience with guided details and booking support.';
 };
 
 const getPostLocation = (post: PostRecord): string => {
@@ -179,7 +171,7 @@ const ExploreListingCard: React.FC<{
   reviewSummary: ListingReviewSummary | undefined;
   cardIndex: number;
   isBooked: boolean;
-}> = ({ post, size, cardIndex, isBooked }) => {
+}> = ({ post, size, cardIndex }) => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const canFavorite = profile?.role === 'tourist';
@@ -197,25 +189,16 @@ const ExploreListingCard: React.FC<{
   });
   const activeImage = images[activeImageIndex] || getPostImage(post);
   const previousImage = images[previousImageIndex] || activeImage;
-  const hasMultipleImages = images.length > 1;
   const href = getListingHref(post);
   const listingTypeValue = getListingTypeValue(post);
   const title = getPostTitle(post);
   const displayTitle = limitWords(title, 6);
-  const subtitle = getPostSubtitle(post);
-  const boosted = hasActiveBoost(post);
-  const isLiveTour = isVirtualTourRecord(post);
   const presentation = getExplorePresentation(post);
   const price = formatPrice(post.price);
   const discountPercent = getListingDiscountPercentForCard(post);
   const displayPricing = discountPercent > 0 && price !== 'Custom'
     ? resolveListingDisplayPricing({ price: post.price, feeBreakdown: post.fee_breakdown ?? null })
     : null;
-  const displayedPrice = price === 'Custom'
-    ? 'Price on request'
-    : `${presentation.pricePrefix} ${displayPricing
-        ? `Rs. ${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(displayPricing.touristTotal)}`
-        : price}`;
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -242,12 +225,6 @@ const ExploreListingCard: React.FC<{
       event.preventDefault();
       openListing();
     }
-  };
-
-  const handleImageStep = (event: React.MouseEvent<HTMLButtonElement>, direction: -1 | 1) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setActiveImageIndex((current) => (current + direction + images.length) % images.length);
   };
 
   const handleFavoriteToggle = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -307,51 +284,9 @@ const ExploreListingCard: React.FC<{
           style={{ backgroundImage: `url(${activeImage})` }}
         />
         <div className="txp-card-overlay" />
-        {hasMultipleImages && (
-          <>
-            <button
-              type="button"
-              className="txp-gallery-btn txp-gallery-btn--prev"
-              aria-label="Previous listing image"
-              onClick={(event) => handleImageStep(event, -1)}
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              type="button"
-              className="txp-gallery-btn txp-gallery-btn--next"
-              aria-label="Next listing image"
-              onClick={(event) => handleImageStep(event, 1)}
-            >
-              <ChevronRight size={14} />
-            </button>
-            <div className="txp-gallery-dots" aria-hidden="true">
-              {images.slice(0, 6).map((url, imageIndex) => (
-                <span key={`${url}-${imageIndex}`} className={imageIndex === activeImageIndex ? 'is-active' : ''} />
-              ))}
-            </div>
-          </>
-        )}
         <div className="txp-card-content">
           <div className="txp-card-top">
-            <div className="txp-card-badges">
-              <span className="txp-card-chip txp-card-type-chip">
-                {presentation.icon}
-                {presentation.label}
-              </span>
-              {isBooked && <span className="txp-card-booked">Booked</span>}
-              {isLiveTour && <span className="txp-card-booked txp-card-booked--live">Live</span>}
-              {discountPercent > 0 && (
-                <span className="txp-card-discount-badge">
-                  <DiscountBadge discountPercent={discountPercent} />
-                </span>
-              )}
-              {boosted && (
-                <span className="txp-card-boosted" aria-label="Boosted listing" title="Boosted">
-                  <ArrowUpRight size={15} />
-                </span>
-              )}
-            </div>
+            <span aria-hidden="true" />
             <button
               type="button"
               className={`txp-card-save${isFavorite ? ' is-active' : ''}`}
@@ -369,31 +304,12 @@ const ExploreListingCard: React.FC<{
           </div>
           <div className="txp-card-copy">
             <h2>{displayTitle}</h2>
-            <p>{subtitle}</p>
-            <div className="txp-card-meta" aria-label={`${presentation.label} highlights`}>
-              {presentation.meta.map((item) => (
-                <span key={item.label}>
-                  {item.icon}
-                  {item.label}
-                </span>
-              ))}
-            </div>
             <div className="txp-card-actions">
               {displayPricing ? (
-                <span className="txp-card-price-stack">
-                  <span className="discount-price-before">
-                    Rs. {new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(displayPricing.touristTotalBeforeDiscount)}
-                  </span>
-                  <strong>
-                    {presentation.pricePrefix} Rs. {new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(displayPricing.touristTotal)}
-                  </strong>
-                </span>
+                <strong>Rs. {new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(displayPricing.touristTotal)}</strong>
               ) : (
-                <strong>{displayedPrice}</strong>
+                <strong>{price === 'Custom' ? 'Price on request' : price}</strong>
               )}
-              <Link to={href} className="txp-card-book" onClick={(event) => event.stopPropagation()}>
-                {isBooked ? 'Book again' : presentation.cta}
-              </Link>
             </div>
           </div>
         </div>

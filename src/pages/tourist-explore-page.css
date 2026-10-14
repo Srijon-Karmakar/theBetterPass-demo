@@ -980,3 +980,8 @@
     font-size: 0.72rem;
   }
 }
+
+/* Explore cards show only the name and the price */
+.txp-card-copy .txp-card-actions {
+  margin-top: 8px;
+}
