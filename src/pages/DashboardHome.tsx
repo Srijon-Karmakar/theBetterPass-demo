@@ -141,7 +141,7 @@ const getSectionHelper = (section: SectionTab): string => {
 };
 
 const getSectionKicker = (section: SectionTab): string => {
-  if (section === 'tours') return 'Curated journeys';
+  if (section === 'tours') return 'Popular packages';
   if (section === 'activities') return 'Do more today';
   return 'Meet the locals';
 };
@@ -843,9 +843,7 @@ const Section: React.FC<{
   };
   reviewSummaryByPostId: Record<string, ListingReviewSummary>;
   indexOffset: number;
-  activeTab: SectionTab | null;
-  onToggleFilter: (tab: SectionTab) => void;
-}> = ({ section, posts, bookedLookup, reviewSummaryByPostId, indexOffset, activeTab, onToggleFilter }) => {
+}> = ({ section, posts, bookedLookup, reviewSummaryByPostId, indexOffset }) => {
   return (
     <section className={`dh-listing-section ${getToneClass(section)}`}>
       <Reveal delay={indexOffset * 100}>
@@ -854,15 +852,6 @@ const Section: React.FC<{
             <p className="dh-section-kicker">{getSectionKicker(section)}</p>
             <h2 className="dh-listing-section-title">{getSectionHeading(section)}</h2>
             <p className="dh-listing-section-sub">{getSectionHelper(section)}</p>
-          </div>
-
-          <div className="dh-section-actions">
-            <span className="dh-section-count">
-              {posts.length} {posts.length === 1 ? 'listing' : 'listings'}
-            </span>
-            <button type="button" className="dh-section-link" onClick={() => onToggleFilter(section)}>
-              {activeTab === section ? 'Show all' : `Only ${getSectionTitle(section)}`}
-            </button>
           </div>
         </div>
       </Reveal>
@@ -886,7 +875,7 @@ const Section: React.FC<{
 export const DashboardHome: React.FC = () => {
   const { user, profile, isProvider, isAdmin, roleLabel } = useAuth();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchExpanded, setSearchExpanded] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -1138,14 +1127,6 @@ export const DashboardHome: React.FC = () => {
 
   let sectionIndexOffset = 0;
 
-  const handleTab = (tab: SectionTab) => {
-    if (activeTab === tab) {
-      setSearchParams({});
-      return;
-    }
-    setSearchParams({ tab });
-  };
-
   const handleMobileNav = (key: TouristMobileNavKey) => {
     if (key === 'home') {
       navigate('/');
@@ -1249,23 +1230,19 @@ export const DashboardHome: React.FC = () => {
           </Reveal>
         )}
 
-        <Reveal delay={110}>
-          <section className="dh-ad-section">
-            <div className="dh-section-top">
-              <div className="dh-section-heading">
-                {/* <p className="dh-section-kicker">Advertisements</p> */}
-                <h2 className="dh-listing-section-title">Sponsored</h2>
-                {/* <p className="dh-listing-section-sub">Paid placements ordered by campaign weight and listing relevance.</p> */}
+        {rankedAds.length > 0 ? (
+          <Reveal delay={110}>
+            <section className="dh-ad-section">
+              <div className="dh-section-top">
+                <div className="dh-section-heading">
+                  <h2 className="dh-listing-section-title">Sponsored</h2>
+                </div>
               </div>
-            </div>
 
-            {rankedAds.length > 0 ? (
               <AdCarousel ads={rankedAds} />
-            ) : (
-              <p className="dh-empty-text">No sponsored ads are live right now.</p>
-            )}
-          </section>
-        </Reveal>
+            </section>
+          </Reveal>
+        ) : null}
 
         {loading ? (
           <Reveal delay={160}>
@@ -1282,8 +1259,6 @@ export const DashboardHome: React.FC = () => {
                 bookedLookup={bookedLookup}
                 reviewSummaryByPostId={reviewSummaryByPostId}
                 indexOffset={sectionIndexOffset++}
-                activeTab={activeTab}
-                onToggleFilter={handleTab}
               />
             )}
 
@@ -1317,8 +1292,6 @@ export const DashboardHome: React.FC = () => {
                 bookedLookup={bookedLookup}
                 reviewSummaryByPostId={reviewSummaryByPostId}
                 indexOffset={sectionIndexOffset++}
-                activeTab={activeTab}
-                onToggleFilter={handleTab}
               />
             )}
 
@@ -1329,8 +1302,6 @@ export const DashboardHome: React.FC = () => {
                 bookedLookup={bookedLookup}
                 reviewSummaryByPostId={reviewSummaryByPostId}
                 indexOffset={sectionIndexOffset++}
-                activeTab={activeTab}
-                onToggleFilter={handleTab}
               />
             )}
           </div>
