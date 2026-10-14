@@ -4,20 +4,15 @@ import {
     ArrowDown,
     ArrowUp,
     CalendarDays,
-    Check,
     ChevronDown,
     ChevronUp,
     ChevronsRight,
-    Hospital,
     Languages,
     MapPin,
     MessageSquare,
     Navigation,
-    Plus,
     Search,
     Trash2,
-    TrainFront,
-    UtensilsCrossed,
     Users,
     X,
 } from 'lucide-react';
@@ -51,6 +46,8 @@ import {
     type PujaPandal,
 } from '../../lib/pujaGuide';
 import { googleMapsDirectionsUrl } from '../../lib/walkTrail';
+import { PujaPinPopup, type PujaPinPopupProps } from './PujaPinPopup';
+import './puja-pin-popup.css';
 
 type PujaTab = 'pandals' | 'plan' | 'guides';
 
@@ -117,34 +114,6 @@ interface PujaGuidePanelProps {
     onClose: () => void;
 }
 
-type AmenityTone = 'restaurant' | 'metro' | 'train' | 'hospital';
-
-interface AmenityCardProps {
-    tone: AmenityTone;
-    icon: React.ReactNode;
-    title: string;
-    lines: string[];
-    href: string;
-    closeLabel: string;
-    onClose: () => void;
-}
-
-/** Detail card for a selected restaurant, station or hospital; the border colour matches its map pin. */
-const AmenityCard: React.FC<AmenityCardProps> = ({ tone, icon, title, lines, href, closeLabel, onClose }) => (
-    <div className={`map2-puja-restaurant is-${tone}`} role="status">
-        <span className="map2-puja-restaurant-dot" aria-hidden="true">{icon}</span>
-        <span>
-            <strong>{title}</strong>
-            {lines.map((line) => <small key={line}>{line}</small>)}
-            <a className="map2-puja-directions is-compact" href={href} target="_blank" rel="noopener noreferrer">
-                <Navigation size={14} aria-hidden="true" />
-                <span>Directions in Google Maps</span>
-            </a>
-        </span>
-        <button type="button" onClick={onClose} aria-label={closeLabel}><X size={15} /></button>
-    </div>
-);
-
 export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     userId,
     plan,
@@ -209,27 +178,10 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     );
     const planPandals = useMemo(() => plan.map(getPandal).filter((item): item is PujaPandal => Boolean(item)), [plan]);
     const selectedGuide = guides.find((item) => item.user_id === selectedGuideId) || null;
+    const selectedPandal = selectedPandalId ? getPandal(selectedPandalId) ?? null : null;
     const selectedRestaurant = selectedRestaurantId ? getRestaurant(selectedRestaurantId) : null;
     const selectedTransit = selectedTransitId ? getTransit(selectedTransitId) : null;
     const selectedHospital = selectedHospitalId ? getHospital(selectedHospitalId) : null;
-
-    // Selecting a pandal on the map jumps back to the pandal list so its card is visible.
-    useEffect(() => {
-        if (!selectedPandalId) return;
-        setCollapsed(false);
-        setTab('pandals');
-        // Opening a pandal keeps the map in view: the sheet drops to its middle size and scrolls the row into view.
-        setSheet('half');
-        const timer = window.setTimeout(() => {
-            document.getElementById(`puja-pandal-${selectedPandalId}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }, 60);
-        return () => window.clearTimeout(timer);
-    }, [selectedPandalId]);
-
-    // Tapping a restaurant, station or hospital pin brings its card up, even if the guide was collapsed.
-    useEffect(() => {
-        if (selectedRestaurantId || selectedTransitId || selectedHospitalId) setCollapsed(false);
-    }, [selectedRestaurantId, selectedTransitId, selectedHospitalId]);
 
     useEffect(() => {
         if (tab !== 'guides' || guides.length || guidesLoading) return;
@@ -329,8 +281,55 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
         }
     };
 
+    // Tapping any guide pin opens a circular popup in the middle of the map; the list sheet stays as it is.
+    let pinPopup: PujaPinPopupProps | null = null;
+    if (selectedPandal) {
+        pinPopup = {
+            tone: 'pandal',
+            title: selectedPandal.name,
+            subtitle: selectedPandal.area,
+            tag: { label: `${selectedPandal.zone} Kolkata`, color: ZONE_COLORS[selectedPandal.zone] },
+            directionsHref: googleMapsDirectionsUrl(selectedPandal, travelMode),
+            plan: { inPlan: plan.includes(selectedPandal.id), onToggle: () => togglePlan(selectedPandal.id) },
+            onClose: () => onSelectPandal(null),
+        };
+    } else if (showRestaurants && selectedRestaurant) {
+        pinPopup = {
+            tone: 'restaurant',
+            title: selectedRestaurant.name,
+            subtitle: selectedRestaurant.cuisine,
+            lines: [`${selectedRestaurant.area} · near ${selectedRestaurant.near}`],
+            directionsHref: googleMapsDirectionsUrl(selectedRestaurant, travelMode),
+            onClose: () => onSelectRestaurant(null),
+        };
+    } else if (showTransit && selectedTransit) {
+        pinPopup = {
+            tone: selectedTransit.mode,
+            title: `${selectedTransit.name} ${selectedTransit.mode === 'metro' ? 'metro' : 'station'}`,
+            subtitle: selectedTransit.mode === 'metro' ? `${selectedTransit.line} Line` : selectedTransit.line,
+            lines: [`${selectedTransit.area} · near ${selectedTransit.near}`],
+            directionsHref: googleMapsDirectionsUrl(selectedTransit, travelMode),
+            onClose: () => onSelectTransit(null),
+        };
+    } else if (showHospitals && selectedHospital) {
+        pinPopup = {
+            tone: 'hospital',
+            title: selectedHospital.name,
+            subtitle: `${selectedHospital.type} hospital · ${selectedHospital.area}`,
+            lines: [
+                `${selectedHospital.area} · near ${selectedHospital.near}`,
+                'Emergency: dial 112 (ambulance 102 or 108). Call ahead to confirm services.',
+            ],
+            directionsHref: googleMapsDirectionsUrl(selectedHospital, travelMode),
+            onClose: () => onSelectHospital(null),
+        };
+    }
+    const popupEl = pinPopup ? <PujaPinPopup {...pinPopup} /> : null;
+
     if (collapsed) {
         return (
+            <>
+            {popupEl}
             <button
                 type="button"
                 className="map2-puja-reopen"
@@ -340,10 +339,13 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                 <span>Puja guide{plan.length ? ` · ${plan.length} in plan` : ''}</span>
                 <ChevronUp size={16} className="map2-puja-reopen-chevron" aria-hidden="true" />
             </button>
+            </>
         );
     }
 
     return (
+        <>
+        {popupEl}
         <aside className={`map2-route-panel map2-puja-panel is-${sheet}`} aria-label="Durga Puja guide">
             <button
                 type="button"
@@ -451,49 +453,6 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                 </label>
                 </div>
 
-                {showRestaurants && selectedRestaurant ? (
-                    <AmenityCard
-                        tone="restaurant"
-                        icon={<UtensilsCrossed size={14} />}
-                        title={selectedRestaurant.name}
-                        lines={[selectedRestaurant.cuisine, `${selectedRestaurant.area} · near ${selectedRestaurant.near}`]}
-                        href={googleMapsDirectionsUrl(selectedRestaurant, travelMode)}
-                        closeLabel="Close restaurant details"
-                        onClose={() => onSelectRestaurant(null)}
-                    />
-                ) : null}
-
-                {showTransit && selectedTransit ? (
-                    <AmenityCard
-                        tone={selectedTransit.mode}
-                        icon={<TrainFront size={14} />}
-                        title={`${selectedTransit.name} ${selectedTransit.mode === 'metro' ? 'metro' : 'station'}`}
-                        lines={[
-                            selectedTransit.mode === 'metro' ? `${selectedTransit.line} Line` : selectedTransit.line,
-                            `${selectedTransit.area} · near ${selectedTransit.near}`,
-                        ]}
-                        href={googleMapsDirectionsUrl(selectedTransit, travelMode)}
-                        closeLabel="Close station details"
-                        onClose={() => onSelectTransit(null)}
-                    />
-                ) : null}
-
-                {showHospitals && selectedHospital ? (
-                    <AmenityCard
-                        tone="hospital"
-                        icon={<Hospital size={14} />}
-                        title={selectedHospital.name}
-                        lines={[
-                            `${selectedHospital.type} hospital`,
-                            `${selectedHospital.area} · near ${selectedHospital.near}`,
-                            'Emergency: dial 112 (ambulance 102 or 108). Call ahead to confirm services.',
-                        ]}
-                        href={googleMapsDirectionsUrl(selectedHospital, travelMode)}
-                        closeLabel="Close hospital details"
-                        onClose={() => onSelectHospital(null)}
-                    />
-                ) : null}
-
                 <div className="map2-mode-row map2-puja-tabs" role="tablist" aria-label="Puja guide sections">
                     {([
                         ['pandals', 'Pandals'],
@@ -581,28 +540,6 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                                                 aria-label={`${pandal.zone} Kolkata`}
                                             />
                                         </button>
-                                        {selected && (
-                                            <div className="map2-puja-detail">
-                                                <p>{pandal.highlight}</p>
-                                                <a
-                                                    className="map2-puja-directions"
-                                                    href={googleMapsDirectionsUrl(pandal, travelMode)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <Navigation size={16} aria-hidden="true" />
-                                                    <span>Directions in Google Maps</span>
-                                                </a>
-                                                <button
-                                                    type="button"
-                                                    className={`map2-puja-plan-btn${inPlan ? ' is-in' : ''}`}
-                                                    onClick={() => togglePlan(pandal.id)}
-                                                >
-                                                    {inPlan ? <Check size={16} /> : <Plus size={16} />}
-                                                    <span>{inPlan ? 'In my plan · remove' : 'Add to my plan'}</span>
-                                                </button>
-                                            </div>
-                                        )}
                                     </li>
                                 );
                             })}
@@ -822,5 +759,6 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                 )}
             </div>
         </aside>
+        </>
     );
 };

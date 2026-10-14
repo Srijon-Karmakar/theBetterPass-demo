@@ -1,0 +1,330 @@
+.puja-pin-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2200;
+    display: grid;
+    place-items: center;
+    background: rgba(20, 8, 10, 0.34);
+    animation: pinBackdropIn 0.25s ease both;
+}
+
+.puja-pin {
+    --pin-size: min(78vw, 330px);
+    display: grid;
+    justify-items: center;
+    animation: pinPop 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+.puja-pin__disc {
+    position: relative;
+    width: var(--pin-size);
+    height: var(--pin-size);
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid var(--pp-main);
+    background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--pp-soft) 78%, #ffffff 22%) 0%, var(--pp-soft) 62%, #1a0509 100%);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--pp-main) 18%, transparent), 0 26px 70px rgba(0, 0, 0, 0.5);
+    color: #fff7e6;
+    text-align: center;
+}
+
+.puja-pin__art {
+    position: absolute;
+    inset: -4%;
+    width: 108%;
+    height: 108%;
+    pointer-events: none;
+}
+
+.puja-pin__halo { animation: pinPulse 3.6s ease-in-out infinite; }
+.puja-pin__spin-slow { transform-origin: 0 0; animation: pinSpin 48s linear infinite; }
+.puja-pin__spin-fast { transform-origin: 0 0; animation: pinSpin 30s linear infinite reverse; }
+
+.puja-pin__close {
+    position: absolute;
+    top: 8%;
+    right: 8%;
+    z-index: 3;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--pp-main) 70%, transparent);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff7e6;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.puja-pin__close:hover {
+    background: color-mix(in srgb, var(--pp-main) 40%, transparent);
+    transform: rotate(90deg);
+}
+
+.puja-pin__body {
+    position: relative;
+    z-index: 2;
+    width: 70%;
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+}
+
+.puja-pin__body > * { animation: pinRise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.puja-pin__body > :nth-child(1) { animation-delay: 0.2s; }
+.puja-pin__body > :nth-child(2) { animation-delay: 0.3s; }
+.puja-pin__body > :nth-child(3) { animation-delay: 0.38s; }
+.puja-pin__body > :nth-child(4) { animation-delay: 0.46s; }
+
+.puja-pin__icon {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--pp-main) 22%, transparent);
+    border: 1px solid color-mix(in srgb, var(--pp-main) 65%, transparent);
+    color: var(--pp-main);
+}
+
+.puja-pin__icon img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.puja-pin__body h2 {
+    margin: 4px 0 0;
+    font-size: clamp(1.05rem, 4.6vw, 1.3rem);
+    line-height: 1.15;
+    font-weight: 800;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.puja-pin__body p {
+    margin: 0;
+    color: rgba(255, 247, 230, 0.78);
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
+.puja-pin__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
+    border: 0;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+.puja-pin__tag i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+.puja-pin__actions {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    gap: 10px;
+    margin-top: -22px;
+    animation: pinRise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s both;
+}
+
+.puja-pin__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+    transition: transform 0.18s ease;
+}
+
+.puja-pin__btn:hover { transform: translateY(-2px); }
+
+.puja-pin__btn--dark {
+    background: #111111;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.puja-pin__btn--accent {
+    background: linear-gradient(135deg, #ffd56b, #ff9d1f);
+    color: #3a0a12;
+}
+
+.puja-pin__btn--accent.is-in {
+    background: #4ade80;
+    color: #052e16;
+}
+
+.puja-pin__close:focus-visible,
+.puja-pin__btn:focus-visible {
+    outline: 3px solid #ffd56b;
+    outline-offset: 2px;
+}
+
+@keyframes pinBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes pinPop {
+    from { opacity: 0; transform: scale(0.45) rotate(-14deg); }
+    to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes pinSpin { to { transform: rotate(360deg); } }
+
+@keyframes pinPulse {
+    0%, 100% { opacity: 0.65; transform: scale(0.96); }
+    50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes pinRise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .puja-pin,
+    .puja-pin *,
+    .puja-pin-backdrop {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* ── Plain card: restaurants, stations and hospitals (no animation) ── */
+.puja-pin-backdrop.is-plain {
+    animation: none;
+    padding: 16px;
+}
+
+.puja-card {
+    position: relative;
+    width: min(92vw, 380px);
+    padding: 18px 18px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(17, 17, 17, 0.08);
+    background: #ffffff;
+    color: #111111;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.puja-card__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(17, 17, 17, 0.08);
+    color: inherit;
+    cursor: pointer;
+}
+
+.puja-card__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-right: 34px;
+}
+
+.puja-card__icon {
+    flex: none;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--pp-main) 22%, transparent);
+    color: var(--pp-main);
+}
+
+.puja-card__head h2 {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+.puja-card__head p {
+    margin: 2px 0 0;
+    font-size: 0.86rem;
+    color: rgba(17, 17, 17, 0.62);
+}
+
+.puja-card__lines {
+    margin: 14px 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    color: rgba(17, 17, 17, 0.8);
+}
+
+.puja-card__lines li {
+    padding-left: 14px;
+    position: relative;
+}
+
+.puja-card__lines li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--pp-main);
+}
+
+.puja-card__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    border-radius: 12px;
+    background: #111111;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+:root[data-theme='dark'] .puja-card {
+    background: #1c1c1f;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+:root[data-theme='dark'] .puja-card__close { background: rgba(255, 255, 255, 0.12); }
+:root[data-theme='dark'] .puja-card__head p { color: rgba(248, 250, 252, 0.68); }
+:root[data-theme='dark'] .puja-card__lines { color: rgba(248, 250, 252, 0.84); }
+:root[data-theme='dark'] .puja-card__btn { background: #f8fafc; color: #111111; }
