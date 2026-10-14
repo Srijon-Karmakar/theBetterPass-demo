@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import {
     ArrowDown,
     ArrowUp,
+    CalendarCheck,
     CalendarDays,
     ChevronDown,
     ChevronUp,
     ChevronsRight,
     Languages,
+    Lock,
     MapPin,
     MessageSquare,
     Navigation,
@@ -26,6 +28,7 @@ import {
 } from '../../lib/routePlanner';
 import {
     createPujaGuideRequest,
+    DEMO_PUJA_GUIDES,
     fetchApprovedPujaGuides,
     fetchPujaRequests,
     formatRupees,
@@ -42,11 +45,13 @@ import {
     updatePujaRequestStatus,
     type PandalZone,
     type PujaGuide,
+    type DemoPujaGuide,
     type PujaGuideRequest,
     type PujaPandal,
 } from '../../lib/pujaGuide';
 import { googleMapsDirectionsUrl } from '../../lib/walkTrail';
 import { PujaPinPopup, type PujaPinPopupProps } from './PujaPinPopup';
+import { PujaTrails } from './PujaTrails';
 import './puja-pin-popup.css';
 
 type PujaTab = 'pandals' | 'plan' | 'guides';
@@ -96,6 +101,10 @@ interface PujaGuidePanelProps {
     onSelectPandal: (id: string | null) => void;
     route: PlannedRoute | null;
     onRouteChange: (route: PlannedRoute | null) => void;
+    trailIds: string[] | null;
+    onTrailChange: (ids: string[] | null) => void;
+    trailPlaying: boolean;
+    onTrailPlayingChange: (playing: boolean) => void;
     userLocation: { lat: number; lng: number } | null;
     showPlanOnly: boolean;
     onShowPlanOnlyChange: (value: boolean) => void;
@@ -122,6 +131,9 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     onSelectPandal,
     route,
     onRouteChange,
+    onTrailChange,
+    trailPlaying,
+    onTrailPlayingChange,
     userLocation,
     showPlanOnly,
     onShowPlanOnlyChange,
@@ -152,8 +164,12 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     const [routeStatus, setRouteStatus] = useState('');
 
     const [guides, setGuides] = useState<PujaGuide[]>([]);
+    // Guides tab: free trail guides, or the bookable guides.
+    const [guideMode, setGuideMode] = useState<'free' | 'guides'>('free');
     const [guidesLoading, setGuidesLoading] = useState(false);
-    const [guidesError, setGuidesError] = useState('');
+    // Fetch once: without this flag an empty result or an error re-ran the effect forever and the tab flickered.
+    const [guidesFetched, setGuidesFetched] = useState(false);
+    const [, setGuidesError] = useState('');
     const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null);
     const [requestOpen, setRequestOpen] = useState(false);
     const [visitDate, setVisitDate] = useState(todayIso());
@@ -177,6 +193,8 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
         [plan, planOnly, zone, search],
     );
     const planPandals = useMemo(() => plan.map(getPandal).filter((item): item is PujaPandal => Boolean(item)), [plan]);
+    // Real approved guides first, then the sample guides (shown as fully booked).
+    const allGuides = useMemo(() => [...guides, ...DEMO_PUJA_GUIDES], [guides]);
     const selectedGuide = guides.find((item) => item.user_id === selectedGuideId) || null;
     const selectedPandal = selectedPandalId ? getPandal(selectedPandalId) ?? null : null;
     const selectedRestaurant = selectedRestaurantId ? getRestaurant(selectedRestaurantId) : null;
@@ -184,13 +202,14 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     const selectedHospital = selectedHospitalId ? getHospital(selectedHospitalId) : null;
 
     useEffect(() => {
-        if (tab !== 'guides' || guides.length || guidesLoading) return;
+        if (tab !== 'guides' || guideMode !== 'guides' || guidesFetched) return;
+        setGuidesFetched(true);
         setGuidesLoading(true);
         fetchApprovedPujaGuides()
             .then((rows) => { setGuides(rows); setGuidesError(''); })
             .catch((error: Error) => setGuidesError(error.message))
             .finally(() => setGuidesLoading(false));
-    }, [guides.length, guidesLoading, tab]);
+    }, [guideMode, guidesFetched, tab]);
 
     useEffect(() => {
         if (tab !== 'guides' || !userId) return;
@@ -241,6 +260,26 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
         } finally {
             setRouteLoading(false);
         }
+    };
+
+    // Draws one of the free trail routes (walking) and drops the sheet so the route is visible.
+    const showTrailRoute = async (pandals: PujaPandal[], title: string) => {
+        const places = pandals.map(toRoutePlace);
+        const built = await buildSmartRoute({
+            city: 'Kolkata',
+            start: places[0],
+            destination: places[places.length - 1],
+            stops: places.slice(1, -1),
+            travelMode: 'walking',
+        });
+        onRouteChange({ ...built, title });
+        onTrailChange(pandals.map((pandal) => pandal.id));
+        setSheet('half');
+    };
+
+    const clearTrailRoute = () => {
+        onRouteChange(null);
+        onTrailChange(null);
     };
 
     const handleSendRequest = async () => {
@@ -629,20 +668,45 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
 
                 {tab === 'guides' && (
                     <>
+                        <div className="map2-mode-row puja-guide-modes" role="tablist" aria-label="Guide type">
+                            {([['free', 'Free'], ['guides', 'Guides']] as Array<['free' | 'guides', string]>).map(([key, label]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={guideMode === key}
+                                    className={guideMode === key ? 'is-active' : ''}
+                                    onClick={() => setGuideMode(key)}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {guideMode === 'free' ? (
+                            <PujaTrails
+                                plan={plan}
+                                onPlanChange={onPlanChange}
+                                onShowRoute={showTrailRoute}
+                                onClearRoute={clearTrailRoute}
+                                playing={trailPlaying}
+                                onPlayToggle={() => onTrailPlayingChange(!trailPlaying)}
+                                onSelectPandal={onSelectPandal}
+                            />
+                        ) : (
+                        <>
                         {guidesLoading ? <p className="map2-status">Loading guides...</p> : null}
-                        {guidesError ? <p className="map2-status">{guidesError}</p> : null}
-                        {!guidesLoading && !guidesError && !guides.length ? (
-                            <p className="map2-status">No Puja guides are available yet. Check back closer to Puja.</p>
-                        ) : null}
 
                         <ul className="map2-puja-list">
-                            {guides.map((guide) => {
-                                const selected = guide.user_id === selectedGuideId;
+                            {allGuides.map((guide) => {
+                                const booked = 'booked' in guide;
+                                const selected = !booked && guide.user_id === selectedGuideId;
                                 return (
-                                    <li key={guide.user_id} className={selected ? 'is-selected' : ''}>
+                                    <li key={guide.user_id} className={`${selected ? 'is-selected' : ''}${booked ? ' is-booked' : ''}`}>
                                         <button
                                             type="button"
                                             className="map2-puja-row"
+                                            disabled={booked}
                                             onClick={() => {
                                                 setSelectedGuideId(selected ? null : guide.user_id);
                                                 setRequestOpen(false);
@@ -650,14 +714,30 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                                                 setGroupSize((current) => Math.min(current, guide.max_group_size));
                                             }}
                                         >
-                                            {guide.avatar_url
-                                                ? <img src={guide.avatar_url} alt="" className="map2-puja-avatar" />
-                                                : <span className="map2-puja-avatar" aria-hidden="true">{guide.display_name.charAt(0)}</span>}
-                                            <span>
-                                                <strong>{guide.display_name}</strong>
-                                                <small>{guide.languages || 'Languages not listed'}</small>
+                                            <span className="map2-puja-avatar-wrap">
+                                                {guide.avatar_url
+                                                    ? <img src={guide.avatar_url} alt="" className="map2-puja-avatar" />
+                                                    : <span className="map2-puja-avatar" aria-hidden="true">{guide.display_name.charAt(0)}</span>}
+                                                {booked ? <span className="map2-puja-avatar-lock" aria-hidden="true"><Lock size={10} /></span> : null}
                                             </span>
-                                            <em className="map2-puja-price">{guide.price_per_day > 0 ? `${formatRupees(guide.price_per_day)}/day` : 'Ask price'}</em>
+                                            <span className={booked ? 'map2-puja-guide-text is-booked' : 'map2-puja-guide-text'}>
+                                                <strong>{guide.display_name}</strong>
+                                                {booked ? (
+                                                    <>
+                                                        <span className="map2-puja-meta"><MapPin size={12} aria-hidden="true" />{guide.areas}</span>
+                                                        <span className="map2-puja-meta"><Languages size={12} aria-hidden="true" />{guide.languages}</span>
+                                                        <span className="map2-puja-meta is-dates">
+                                                            <CalendarCheck size={12} aria-hidden="true" />
+                                                            Booked {(guide as DemoPujaGuide).bookedFor}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <small>{guide.languages || 'Languages not listed'}</small>
+                                                )}
+                                            </span>
+                                            {booked
+                                                ? <em className="map2-puja-booked"><Lock size={11} aria-hidden="true" />Booked</em>
+                                                : <em className="map2-puja-price">{guide.price_per_day > 0 ? `${formatRupees(guide.price_per_day)}/day` : 'Ask price'}</em>}
                                         </button>
 
                                         {selected && (
@@ -755,6 +835,8 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                                 ))}
                             </section>
                         ) : null}
+                        </>
+                        )}
                     </>
                 )}
             </div>

@@ -23,6 +23,7 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { buildLoginPath } from '../lib/authRedirect';
 import { PujaGuidePanel } from '../components/map/PujaGuidePanel';
+import { PujaTrailPlayback } from '../components/map/PujaTrailPlayback';
 import {
   getHospital,
   getPandal,
@@ -524,6 +525,10 @@ export const Map2Page: React.FC = () => {
   const [pujaOpen, setPujaOpen] = useState(false);
   const [pandalPlan, setPandalPlan] = useState<string[]>([]);
   const [selectedPandalId, setSelectedPandalId] = useState<string | null>(null);
+  // A free trail guide that is open: its stops (in order) replace the pandal pins, and its route can be played.
+  const [trailIds, setTrailIds] = useState<string[] | null>(null);
+  const [trailPlaying, setTrailPlaying] = useState(false);
+  const finishTrailPlayback = useStableCallback(() => setTrailPlaying(false));
   const [pujaRoute, setPujaRoute] = useState<PlannedRoute | null>(null);
   const [showPlanOnly, setShowPlanOnly] = useState(false);
   const [showRestaurants, setShowRestaurants] = useState(true);
@@ -1238,10 +1243,14 @@ export const Map2Page: React.FC = () => {
           </>
         ) : null}
 
+        {pujaOpen && trailIds && pujaRoute?.route_points.length ? (
+          <PujaTrailPlayback points={pujaRoute.route_points} playing={trailPlaying} onFinish={finishTrailPlayback} />
+        ) : null}
+
         {pujaOpen ? PUJA_PANDALS
-          .filter((pandal) => !(showPlanOnly && pandalPlan.length) || pandalPlan.includes(pandal.id))
+          .filter((pandal) => (trailIds ? trailIds.includes(pandal.id) : !(showPlanOnly && pandalPlan.length) || pandalPlan.includes(pandal.id)))
           .map((pandal) => {
-            const planIndex = pandalPlan.indexOf(pandal.id);
+            const planIndex = trailIds ? trailIds.indexOf(pandal.id) : pandalPlan.indexOf(pandal.id);
             return (
               <MapMarker
                 key={pandal.id}
@@ -1539,6 +1548,10 @@ export const Map2Page: React.FC = () => {
           onSelectPandal={setSelectedPandalId}
           route={pujaRoute}
           onRouteChange={setPujaRoute}
+          trailIds={trailIds}
+          onTrailChange={(ids) => { setTrailIds(ids); setTrailPlaying(false); }}
+          trailPlaying={trailPlaying}
+          onTrailPlayingChange={setTrailPlaying}
           userLocation={userLocation}
           showPlanOnly={showPlanOnly}
           onShowPlanOnlyChange={setShowPlanOnly}

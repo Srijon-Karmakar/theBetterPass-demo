@@ -1,0 +1,314 @@
+.puja-trails {
+    display: grid;
+    gap: 8px;
+}
+
+.puja-trails__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.puja-trails__head strong {
+    font-size: 0.95rem;
+}
+
+.puja-trails__free {
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.puja-trails__intro {
+    margin: 0;
+    color: rgba(17, 17, 17, 0.62);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.puja-trails__list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.puja-trail {
+    overflow: hidden;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: inset 3px 0 0 var(--zone);
+}
+
+.puja-trail.is-open {
+    background: #ffffff;
+}
+
+.puja-trail__head {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 20px;
+    align-items: start;
+    column-gap: 12px;
+    width: 100%;
+    padding: 12px 12px 12px 16px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.puja-trail__badge {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--zone) 24%, transparent);
+    color: var(--zone);
+}
+
+.puja-trail__titles {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    justify-items: start;
+}
+
+.puja-trail__titles strong {
+    font-size: 0.92rem;
+    line-height: 1.25;
+}
+
+.puja-trail__titles small {
+    color: rgba(17, 17, 17, 0.6);
+    font-size: 0.76rem;
+}
+
+.puja-trail__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: 4px;
+    color: rgba(17, 17, 17, 0.68);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.puja-trail__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.puja-trail__chevron {
+    margin-top: 10px;
+    transition: transform 0.2s ease;
+}
+
+.puja-trail.is-open .puja-trail__chevron {
+    transform: rotate(180deg);
+}
+
+.puja-trail__body {
+    display: grid;
+    gap: 12px;
+    padding: 0 16px 16px 16px;
+}
+
+.puja-trail__body > p {
+    margin: 0;
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+.puja-trail__facts {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.puja-trail__facts > div {
+    display: grid;
+    gap: 3px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(17, 17, 17, 0.05);
+}
+
+.puja-trail__facts dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--zone);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.puja-trail__facts dd {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+.puja-trail__body h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0 0;
+    font-size: 0.82rem;
+}
+
+.puja-trail__stops {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.puja-trail__stops li {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    column-gap: 10px;
+    align-items: start;
+}
+
+.puja-trail__stops b {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--zone);
+    color: #111111;
+    font-size: 0.76rem;
+}
+
+.puja-trail__stops button {
+    display: grid;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.puja-trail__stops strong {
+    font-size: 0.86rem;
+}
+
+.puja-trail__stops small {
+    color: rgba(17, 17, 17, 0.58);
+    font-size: 0.74rem;
+}
+
+.puja-trail__stops span {
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+.puja-trail__stops em {
+    color: #b45309;
+    font-size: 0.76rem;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.puja-trail__note {
+    color: rgba(17, 17, 17, 0.55);
+    font-size: 0.72rem !important;
+}
+
+.puja-trail__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.puja-trail__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(17, 17, 17, 0.08);
+    color: inherit;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.puja-trail__btn.is-primary {
+    background: #111111;
+    color: #ffffff;
+}
+
+.puja-trail__btn:disabled {
+    opacity: 0.7;
+    cursor: progress;
+}
+
+.puja-trails__message {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+:root[data-theme='dark'] .puja-trails__intro,
+:root[data-theme='dark'] .puja-trail__titles small,
+:root[data-theme='dark'] .puja-trail__stops small,
+:root[data-theme='dark'] .puja-trail__note {
+    color: rgba(248, 250, 252, 0.62);
+}
+
+:root[data-theme='dark'] .puja-trail__meta {
+    color: rgba(248, 250, 252, 0.74);
+}
+
+:root[data-theme='dark'] .puja-trail {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme='dark'] .puja-trail.is-open {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .puja-trail__facts > div {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+:root[data-theme='dark'] .puja-trail__stops em {
+    color: #fcd34d;
+}
+
+:root[data-theme='dark'] .puja-trail__btn {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .puja-trail__btn.is-primary {
+    background: #f8fafc;
+    color: #111111;
+}
+
+/* Free / Guides switch at the top of the Guides tab */
+.puja-guide-modes {
+    margin-bottom: 4px;
+}

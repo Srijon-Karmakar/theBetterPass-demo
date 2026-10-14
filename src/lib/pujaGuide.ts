@@ -374,6 +374,74 @@ export interface PujaGuide {
     avatar_url?: string | null;
 }
 
+/** Sample guides shown (as fully booked) in the Puja guide list. They are not in the database, so they can't be contacted. */
+export interface DemoPujaGuide extends PujaGuide {
+    booked: true;
+    /** Shown on the booked card, e.g. "17 to 19 Oct". */
+    bookedFor: string;
+}
+
+const DEMO_BOOKED_DATES: Record<string, string> = {
+    srijon: '17 to 21 Oct',
+    arindam: '17 to 19 Oct',
+    sreyashi: '18 to 20 Oct',
+    rajib: '17 to 18 Oct',
+    moumita: '19 to 21 Oct',
+    soumya: '18 to 19 Oct',
+    tanushree: '20 to 21 Oct',
+    debashis: '17 to 20 Oct',
+    ishita: '19 to 20 Oct',
+};
+
+/** Small illustrated avatar (no photos of real people), returned as an SVG data URL. */
+const buildAvatar = (background: string, skin: string, hair: string, hairStyle: 'short' | 'long' | 'bun'): string => {
+    const hairShape = hairStyle === 'long'
+        ? `<path d="M22 34c0-14 9-22 18-22s18 8 18 22v22c0 3-3 3-4 0V38H26v18c-1 3-4 3-4 0z" fill="${hair}"/>`
+        : hairStyle === 'bun'
+            ? `<circle cx="40" cy="9" r="7" fill="${hair}"/><path d="M24 34c0-12 7-18 16-18s16 6 16 18c-4-7-10-10-16-10s-12 3-16 10z" fill="${hair}"/>`
+            : `<path d="M24 34c0-13 7-20 16-20s16 7 16 20c-4-6-9-9-16-9s-12 3-16 9z" fill="${hair}"/>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${background}"/><stop offset="1" stop-color="#1f2937" stop-opacity=".55"/></linearGradient></defs><rect width="80" height="80" fill="url(#g)"/><path d="M12 80c2-16 14-22 28-22s26 6 28 22z" fill="#f8fafc" opacity=".92"/><rect x="35" y="46" width="10" height="12" rx="4" fill="${skin}"/>${hairStyle === 'long' ? hairShape : ''}<ellipse cx="40" cy="35" rx="13" ry="15" fill="${skin}"/>${hairStyle === 'long' ? '' : hairShape}<circle cx="35" cy="36" r="1.4" fill="#1f2937"/><circle cx="45" cy="36" r="1.4" fill="#1f2937"/><path d="M36 43q4 3 8 0" stroke="#7c2d12" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
+const demoGuide = (
+    id: string,
+    display_name: string,
+    languages: string,
+    areas: string,
+    price_per_day: number,
+    max_group_size: number,
+    bio: string,
+    avatar: string,
+): DemoPujaGuide => ({
+    user_id: `demo-${id}`,
+    display_name,
+    bio,
+    languages,
+    areas,
+    price_per_day,
+    max_group_size,
+    is_active: true,
+    status: 'approved',
+    created_at: '2026-09-01T00:00:00Z',
+    updated_at: '2026-09-01T00:00:00Z',
+    avatar_url: avatar,
+    booked: true,
+    bookedFor: DEMO_BOOKED_DATES[id] ?? 'Puja week',
+});
+
+export const DEMO_PUJA_GUIDES: DemoPujaGuide[] = [
+    demoGuide('srijon', 'Srijon Karmakar', 'Bengali, English, Hindi', 'North and Central Kolkata', 2700, 6, 'Local storyteller who turns pandal hopping into a walking tour of old Kolkata.', buildAvatar('#2563eb', '#d9a07a', '#111827', 'short')),
+    demoGuide('arindam', 'Arindam Sen', 'Bengali, English, Hindi', 'North Kolkata', 2500, 6, 'Born in Shobhabazar; walks guests through the old north Kolkata pandals.', buildAvatar('#f97316', '#e0ac82', '#1f2937', 'short')),
+    demoGuide('sreyashi', 'Sreyashi Dutta', 'Bengali, English', 'Central Kolkata', 2800, 5, 'Art-history graduate who explains the themes and craft behind each pandal.', buildAvatar('#ec4899', '#d99a74', '#111827', 'long')),
+    demoGuide('rajib', 'Rajib Ghosh', 'Bengali, Hindi, English', 'East Kolkata and Salt Lake', 2200, 8, 'Salt Lake local who plans crowd-smart routes for families.', buildAvatar('#0ea5e9', '#c68642', '#374151', 'short')),
+    demoGuide('moumita', 'Moumita Chatterjee', 'Bengali, English, French', 'South Kolkata', 3200, 4, 'Food-and-pandal walks around Ballygunge and Jodhpur Park.', buildAvatar('#a855f7', '#e8b895', '#292524', 'bun')),
+    demoGuide('soumya', 'Soumya Roy', 'Bengali, English', 'North and Central Kolkata', 2400, 6, 'Photographer who knows the best angles and quieter hours.', buildAvatar('#10b981', '#d9a07a', '#1c1917', 'short')),
+    demoGuide('tanushree', 'Tanushree Bose', 'Bengali, Hindi, English', 'South Kolkata', 2900, 5, 'Specialises in first-time visitors and elders who prefer a slower pace.', buildAvatar('#f59e0b', '#e0ac82', '#44403c', 'long')),
+    demoGuide('debashis', 'Debashis Mukherjee', 'Bengali, English, German', 'Central and North Kolkata', 3500, 4, 'Retired teacher and storyteller of the history behind Kolkata\'s pujas.', buildAvatar('#14b8a6', '#c68642', '#9ca3af', 'short')),
+    demoGuide('ishita', 'Ishita Paul', 'Bengali, English, Hindi', 'East and South Kolkata', 2600, 6, 'Plans late-night pandal hopping with safe transport back.', buildAvatar('#6366f1', '#e8b895', '#111827', 'bun')),
+];
+
 export type PujaGuideInput = Pick<PujaGuide, 'display_name' | 'bio' | 'languages' | 'areas' | 'price_per_day' | 'max_group_size' | 'is_active'>;
 
 const GUIDE_COLUMNS = 'user_id, display_name, bio, languages, areas, price_per_day, max_group_size, is_active, status, created_at, updated_at';
