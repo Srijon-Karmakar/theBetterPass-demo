@@ -26,7 +26,7 @@ const TONE_COLORS: Record<PujaPinTone, { main: string; soft: string }> = {
     pandal: { main: '#ffb21f', soft: '#8a1c2b' },
     restaurant: { main: '#fb7185', soft: '#7f1d1d' },
     metro: { main: '#60a5fa', soft: '#1e3a8a' },
-    train: { main: '#a78bfa', soft: '#4c1d95' },
+    train: { main: '#1ba1bf', soft: '#0b4a5a' },
     hospital: { main: '#4ade80', soft: '#14532d' },
 };
 
