@@ -52,6 +52,7 @@ import {
     type PujaPandal,
 } from '../../lib/pujaGuide';
 import { googleMapsDirectionsUrl } from '../../lib/walkTrail';
+import type { TrailMapExport } from '../../lib/mapExport';
 import { PujaPinPopup, type PujaPinPopupProps } from './PujaPinPopup';
 import { PujaTrails } from './PujaTrails';
 import './puja-pin-popup.css';
@@ -107,6 +108,8 @@ interface PujaGuidePanelProps {
     onTrailChange: (ids: string[] | null) => void;
     trailPlaying: boolean;
     onTrailPlayingChange: (playing: boolean) => void;
+    /** Fits the open trail on the map and captures it as a PDF plus a compact image. */
+    onExportTrailMap: (title: string) => Promise<TrailMapExport>;
     userLocation: { lat: number; lng: number } | null;
     showPlanOnly: boolean;
     onShowPlanOnlyChange: (value: boolean) => void;
@@ -137,6 +140,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
     onTrailChange,
     trailPlaying,
     onTrailPlayingChange,
+    onExportTrailMap,
     userLocation,
     showPlanOnly,
     onShowPlanOnlyChange,
@@ -701,6 +705,8 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                                 onClearRoute={clearTrailRoute}
                                 playing={trailPlaying}
                                 onPlayToggle={() => onTrailPlayingChange(!trailPlaying)}
+                                userId={userId}
+                                onExportMap={onExportTrailMap}
                                 onSelectPandal={onSelectPandal}
                             />
                         ) : (

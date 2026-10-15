@@ -337,3 +337,70 @@
     background: #f8fafc;
     color: #111111;
 }
+
+.puja-trail__btn.is-wide {
+    grid-column: 1 / -1;
+    text-decoration: none;
+}
+
+.puja-trails__saved {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.puja-trails__saved h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 0.82rem;
+}
+
+.puja-trails__saved ul {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.puja-trails__saved button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(17, 17, 17, 0.08);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.puja-trails__saved span {
+    display: grid;
+    gap: 1px;
+}
+
+.puja-trails__saved strong {
+    font-size: 0.82rem;
+}
+
+.puja-trails__saved small {
+    color: rgba(17, 17, 17, 0.58);
+    font-size: 0.7rem;
+}
+
+:root[data-theme='dark'] .puja-trails__saved button {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .puja-trails__saved small {
+    color: rgba(255, 255, 255, 0.6);
+}

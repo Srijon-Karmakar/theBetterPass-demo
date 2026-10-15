@@ -1,3 +1,6 @@
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { Polyline, type LatLng, type Map as LeafletMap } from 'leaflet';
 import { RESTAURANTS, type Restaurant } from './kolkataRestaurants';
 import type { LandmarkZone } from './kolkataLandmarks';
@@ -271,7 +274,13 @@ const drawLegend = (ctx: CanvasRenderingContext2D, width: number, top: number, i
     return blockH;
 };
 
-export const renderMapExport = async (map: LeafletMap): Promise<HTMLCanvasElement> => {
+export interface MapExportOptions {
+    /** Heading in the file's header bar. Defaults to "Kolkata map". */
+    title?: string;
+    subtitle?: string;
+}
+
+export const renderMapExport = async (map: LeafletMap, options: MapExportOptions = {}): Promise<HTMLCanvasElement> => {
     const size = map.getSize();
     const width = Math.max(320, Math.round(size.x));
     const measure = document.createElement('canvas').getContext('2d');
@@ -296,10 +305,10 @@ export const renderMapExport = async (map: LeafletMap): Promise<HTMLCanvasElemen
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.font = `800 ${20 * SCALE}px ${TEXT_FONT}`;
-    ctx.fillText('Kolkata map', 20 * SCALE, 30 * SCALE);
+    ctx.fillText(fitText(ctx, options.title ?? 'Kolkata map', (width - 40) * SCALE), 20 * SCALE, 30 * SCALE);
     ctx.fillStyle = '#d1d5db';
     ctx.font = `500 ${12 * SCALE}px ${TEXT_FONT}`;
-    ctx.fillText('The Better Pass', 20 * SCALE, 50 * SCALE);
+    ctx.fillText(options.subtitle ?? 'The Better Pass', 20 * SCALE, 50 * SCALE);
     ctx.textAlign = 'right';
     ctx.fillText(new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }), (width - 20) * SCALE, 50 * SCALE);
 
@@ -327,7 +336,24 @@ export const renderMapExport = async (map: LeafletMap): Promise<HTMLCanvasElemen
 
 const fileName = (extension: 'png' | 'pdf') => `kolkata-map-${new Date().toISOString().slice(0, 10)}.${extension}`;
 
-const saveBlob = (blob: Blob, name: string) => {
+const blobToBase64 = (blob: Blob) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(new MapExportError('The file could not be saved.'));
+    reader.readAsDataURL(blob);
+});
+
+/** Browser download on the web; in the Android app the file goes through the share sheet so it can be saved to Files. */
+export const saveBlob = async (blob: Blob, name: string) => {
+    if (Capacitor.isNativePlatform()) {
+        const { uri } = await Filesystem.writeFile({ path: name, data: await blobToBase64(blob), directory: Directory.Cache });
+        try {
+            await Share.share({ title: name, files: [uri], dialogTitle: 'Save map' });
+        } catch {
+            // Closing the share sheet without choosing anything is not an error.
+        }
+        return;
+    }
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -338,21 +364,19 @@ const saveBlob = (blob: Blob, name: string) => {
     window.setTimeout(() => URL.revokeObjectURL(url), 2000);
 };
 
-export const downloadMapAsPng = async (map: LeafletMap) => {
-    const canvas = await renderMapExport(map);
+const canvasToBlob = async (canvas: HTMLCanvasElement, type: 'image/png' | 'image/jpeg', quality?: number) => {
     const blob = await new Promise<Blob | null>((resolve) => {
         try {
-            canvas.toBlob(resolve, 'image/png');
+            canvas.toBlob(resolve, type, quality);
         } catch {
             resolve(null);
         }
     });
     if (!blob) throw new MapExportError('The image could not be saved. Please try again.');
-    saveBlob(blob, fileName('png'));
+    return blob;
 };
 
-export const downloadMapAsPdf = async (map: LeafletMap) => {
-    const canvas = await renderMapExport(map);
+const canvasToPdfBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
     let dataUrl: string;
     try {
         dataUrl = canvas.toDataURL('image/jpeg', 0.92);
@@ -370,5 +394,53 @@ export const downloadMapAsPdf = async (map: LeafletMap) => {
         hotfixes: ['px_scaling'],
     });
     pdf.addImage(dataUrl, 'JPEG', 0, 0, width, height);
-    pdf.save(fileName('pdf'));
+    return pdf.output('blob');
+};
+
+export const downloadMapAsPng = async (map: LeafletMap) => {
+    const canvas = await renderMapExport(map);
+    await saveBlob(await canvasToBlob(canvas, 'image/png'), fileName('png'));
+};
+
+export const downloadMapAsPdf = async (map: LeafletMap) => {
+    const canvas = await renderMapExport(map);
+    await saveBlob(await canvasToPdfBlob(canvas), fileName('pdf'));
+};
+
+type BasemapState = { loaded: () => boolean; isMoving: () => boolean };
+
+/** Resolves once the vector basemap has drawn the current view, so a capture right after a pan or zoom is not blank. */
+export const waitForBasemap = async (map: LeafletMap, timeoutMs = 8000) => {
+    const basemaps: BasemapState[] = [];
+    map.eachLayer((layer) => {
+        const getter = (layer as { getMaplibreMap?: () => BasemapState }).getMaplibreMap;
+        if (getter) basemaps.push(getter.call(layer));
+    });
+    const pause = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+    const started = Date.now();
+    await pause(300);
+    while (basemaps.length && Date.now() - started < timeoutMs) {
+        if (basemaps.every((basemap) => basemap.loaded() && !basemap.isMoving())) break;
+        await pause(150);
+    }
+    await pause(150);
+};
+
+export interface TrailMapExport {
+    /** Saved to the phone / downloaded. */
+    pdf: Blob;
+    pdfName: string;
+    /** Kept inside the app for offline viewing. */
+    image: Blob;
+}
+
+/** Captures the map as it is now (already fitted to a trail) as a PDF plus a compact image for the offline library. */
+export const exportTrailMap = async (map: LeafletMap, title: string): Promise<TrailMapExport> => {
+    const canvas = await renderMapExport(map, { title, subtitle: 'The Better Pass · Durga Puja trail' });
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trail';
+    return {
+        pdf: await canvasToPdfBlob(canvas),
+        pdfName: `${slug}-${new Date().toISOString().slice(0, 10)}.pdf`,
+        image: await canvasToBlob(canvas, 'image/jpeg', 0.85),
+    };
 };

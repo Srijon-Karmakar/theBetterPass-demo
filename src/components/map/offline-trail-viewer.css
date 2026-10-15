@@ -1,0 +1,166 @@
+.offline-trail {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    color: #111111;
+}
+
+.offline-trail__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.1);
+}
+
+.offline-trail__bar strong {
+    overflow: hidden;
+    font-size: 0.95rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.offline-trail__bar button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(17, 17, 17, 0.08);
+    color: inherit;
+    cursor: pointer;
+}
+
+.offline-trail__scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.offline-trail__map {
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: auto;
+    border: 0;
+    background: #f3f4f6;
+    cursor: zoom-in;
+}
+
+.offline-trail__map img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.offline-trail__map.is-zoomed {
+    cursor: zoom-out;
+}
+
+.offline-trail__map.is-zoomed img {
+    width: 240%;
+    max-width: none;
+}
+
+.offline-trail__stops {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 14px;
+    list-style: none;
+}
+
+.offline-trail__stops li {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
+.offline-trail__stops b {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e11d48;
+    color: #ffffff;
+    font-size: 0.75rem;
+}
+
+.offline-trail__stops div {
+    display: grid;
+    gap: 1px;
+}
+
+.offline-trail__stops small,
+.offline-trail__stops span {
+    color: rgba(17, 17, 17, 0.62);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.offline-trail__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(17, 17, 17, 0.1);
+}
+
+.offline-trail__actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: #111111;
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.offline-trail__actions button.is-danger {
+    background: rgba(220, 38, 38, 0.12);
+    color: #b91c1c;
+}
+
+.offline-trail .offline-trail__message {
+    margin: 0;
+    padding: 0 14px 10px;
+    color: #dc2626;
+    font-size: 0.78rem;
+}
+
+:root[data-theme='dark'] .offline-trail {
+    background: #14161a;
+    color: #f3f4f6;
+}
+
+:root[data-theme='dark'] .offline-trail__bar,
+:root[data-theme='dark'] .offline-trail__actions {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .offline-trail__bar button {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .offline-trail__stops small,
+:root[data-theme='dark'] .offline-trail__stops span {
+    color: rgba(255, 255, 255, 0.62);
+}
+
+:root[data-theme='dark'] .offline-trail__actions button:not(.is-danger) {
+    background: #f8fafc;
+    color: #111111;
+}

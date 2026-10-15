@@ -1,11 +1,19 @@
-import React, { useMemo, useState } from 'react';
-import { CalendarCheck, Check, ChevronDown, Clock, Loader2, MapPinned, Pause, Play, Plus, Route, Ticket, Train } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { CalendarCheck, Check, ChevronDown, ChevronRight, Clock, Download, Loader2, MapPinned, Pause, Play, Plus, Route, Ticket, Train } from 'lucide-react';
 import { Anchor } from 'reicon-react';
+import { buildLoginPath } from '../../lib/authRedirect';
+import { saveBlob, type TrailMapExport } from '../../lib/mapExport';
+import { deleteOfflineTrail, listOfflineTrails, saveOfflineTrail, type OfflineTrail } from '../../lib/offlineTrails';
 import { type PujaPandal } from '../../lib/pujaGuide';
 import { formatTrailDuration, PUJA_TRAILS, resolveTrail, type ResolvedTrail } from '../../lib/pujaTrails';
+import { OfflineTrailViewer } from './OfflineTrailViewer';
 import './puja-trails.css';
 
 interface PujaTrailsProps {
+    userId: string | null;
+    /** Fits the open trail on the map and captures it as a PDF plus a compact image. */
+    onExportMap: (title: string) => Promise<TrailMapExport>;
     plan: string[];
     onPlanChange: (ids: string[]) => void;
     /** Builds the walking route through these pandals and shows it on the map, with the stops numbered. */
@@ -25,11 +33,56 @@ const ZONE_ACCENT: Record<ResolvedTrail['zone'], string> = {
 };
 
 /** Free, ready-made pandal routes: a short read plus buttons to draw the route or add every stop to the plan. */
-export const PujaTrails: React.FC<PujaTrailsProps> = ({ plan, onPlanChange, onShowRoute, onClearRoute, playing, onPlayToggle, onSelectPandal }) => {
+export const PujaTrails: React.FC<PujaTrailsProps> = ({ userId, onExportMap, plan, onPlanChange, onShowRoute, onClearRoute, playing, onPlayToggle, onSelectPandal }) => {
     const trails = useMemo(() => PUJA_TRAILS.map(resolveTrail), []);
     const [openId, setOpenId] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
     const [message, setMessage] = useState('');
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [saved, setSaved] = useState<OfflineTrail[]>([]);
+    const [viewing, setViewing] = useState<OfflineTrail | null>(null);
+
+    const refreshSaved = useCallback(async () => {
+        setSaved(userId ? await listOfflineTrails(userId) : []);
+    }, [userId]);
+
+    useEffect(() => {
+        void refreshSaved();
+    }, [refreshSaved]);
+
+    // Saves the trail's PDF to the phone or browser downloads, and keeps a copy in the app for offline viewing.
+    const downloadTrail = async (trail: ResolvedTrail) => {
+        if (!userId) return;
+        setDownloadingId(trail.id);
+        setMessage('');
+        try {
+            const exported = await onExportMap(trail.title);
+            let keptOffline = true;
+            try {
+                await saveOfflineTrail(userId, trail.id, trail.title, exported.image);
+            } catch {
+                keptOffline = false;
+            }
+            await saveBlob(exported.pdf, exported.pdfName);
+            await refreshSaved();
+            setMessage(keptOffline
+                ? 'Saved. You can open it any time under Downloaded trails, even offline.'
+                : 'PDF saved, but this device could not keep an offline copy.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'Could not download the map. Please try again.');
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+    const removeSaved = async (item: OfflineTrail) => {
+        try {
+            await deleteOfflineTrail(item.userId, item.trailId);
+        } finally {
+            setViewing(null);
+            await refreshSaved();
+        }
+    };
 
     const addAll = (trail: ResolvedTrail) => {
         const missing = trail.pandals.map((item) => item.pandal.id).filter((id) => !plan.includes(id));
@@ -106,6 +159,24 @@ export const PujaTrails: React.FC<PujaTrailsProps> = ({ plan, onPlanChange, onSh
                                             {inPlan ? <Check size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
                                             <span>{inPlan ? 'In my plan' : 'Add all to my plan'}</span>
                                         </button>
+                                        {userId ? (
+                                            <button
+                                                type="button"
+                                                className="puja-trail__btn is-wide"
+                                                onClick={() => void downloadTrail(trail)}
+                                                disabled={busyId !== null || playing || downloadingId !== null}
+                                            >
+                                                {downloadingId === trail.id
+                                                    ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                                                    : <Download size={16} aria-hidden="true" />}
+                                                <span>{downloadingId === trail.id ? 'Preparing map' : 'Download map for offline'}</span>
+                                            </button>
+                                        ) : (
+                                            <Link to={buildLoginPath()} className="puja-trail__btn is-wide">
+                                                <Download size={16} aria-hidden="true" />
+                                                <span>Sign in to download this map</span>
+                                            </Link>
+                                        )}
                                     </div>
 
                                     <p>{trail.overview}</p>
@@ -145,6 +216,27 @@ export const PujaTrails: React.FC<PujaTrailsProps> = ({ plan, onPlanChange, onSh
             </ul>
 
             {message ? <p className="puja-trails__message" role="status">{message}</p> : null}
+
+            {saved.length ? (
+                <div className="puja-trails__saved">
+                    <h3><Download size={14} aria-hidden="true" />Downloaded trails</h3>
+                    <ul>
+                        {saved.map((item) => (
+                            <li key={item.key}>
+                                <button type="button" onClick={() => setViewing(item)}>
+                                    <span>
+                                        <strong>{item.title}</strong>
+                                        <small>Saved {new Date(item.savedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · works offline</small>
+                                    </span>
+                                    <ChevronRight size={16} aria-hidden="true" />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ) : null}
+
+            {viewing ? <OfflineTrailViewer item={viewing} onDelete={(item) => void removeSaved(item)} onClose={() => setViewing(null)} /> : null}
         </section>
     );
 };

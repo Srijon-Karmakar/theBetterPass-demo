@@ -55,6 +55,7 @@ import {
 } from '../lib/providerPlaces';
 import { LandmarkSheet } from '../components/map/LandmarkSheet';
 import { MapDownloadButton } from '../components/map/MapDownloadButton';
+import { exportTrailMap, waitForBasemap, type TrailMapExport } from '../lib/mapExport';
 import {
   getLandmarkCategory,
   KOLKATA_LANDMARKS,
@@ -541,6 +542,20 @@ export const Map2Page: React.FC = () => {
     setTrailPlaying(false);
   }, [pujaOpen]);
   const [pujaRoute, setPujaRoute] = useState<PlannedRoute | null>(null);
+  // Fits the open trail's whole route in view, captures it as a PDF plus image, then puts the map back where it was.
+  const exportOpenTrailMap = async (title: string): Promise<TrailMapExport> => {
+    const map = mapRef.current;
+    if (!map || !pujaRoute?.route_points.length) throw new Error('Open the trail first so its route is on the map.');
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    map.fitBounds(latLngBounds(pujaRoute.route_points), { padding: [48, 48], animate: false });
+    try {
+      await waitForBasemap(map);
+      return await exportTrailMap(map, title);
+    } finally {
+      map.setView(center, zoom, { animate: false });
+    }
+  };
   const [showPlanOnly, setShowPlanOnly] = useState(false);
   const [showRestaurants, setShowRestaurants] = useState(true);
   const [showTransit, setShowTransit] = useState(false);
@@ -1565,6 +1580,7 @@ export const Map2Page: React.FC = () => {
           onTrailChange={(ids) => { setTrailIds(ids); setTrailPlaying(false); }}
           trailPlaying={trailPlaying}
           onTrailPlayingChange={setTrailPlaying}
+          onExportTrailMap={exportOpenTrailMap}
           userLocation={userLocation}
           showPlanOnly={showPlanOnly}
           onShowPlanOnlyChange={setShowPlanOnly}
