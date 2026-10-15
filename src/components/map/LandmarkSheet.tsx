@@ -1,6 +1,8 @@
 import React from 'react';
 import { ExternalLink, MapPinPlus, Navigation, X } from 'lucide-react';
 import { getLandmarkCategory, type Landmark } from '../../lib/kolkataLandmarks';
+import { AdSlot } from '../ads/AdSlot';
+import { AD_SLOTS } from '../ads/adSlots';
 import { formatRouteDistance, formatRouteDuration, type PlannedRoute } from '../../lib/routePlanner';
 
 interface LandmarkSheetProps {
@@ -60,6 +62,7 @@ export const LandmarkSheet: React.FC<LandmarkSheetProps> = ({ landmark, route, r
                 <ExternalLink size={13} /> Open directions in Google Maps
             </a>
             {status ? <p className="map2-status">{status}</p> : null}
+            <AdSlot key={landmark.id} slot={AD_SLOTS.mapSheet} />
         </aside>
     );
 };

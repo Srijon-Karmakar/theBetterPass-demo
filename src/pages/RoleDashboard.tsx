@@ -778,7 +778,7 @@ export const RoleDashboard: React.FC = () => {
     const search = '';
     const [activeSection, setActiveSection] = useState<SidebarKey>('overview');
     const [isDesktopDashboard, setIsDesktopDashboard] = useState(
-        typeof window === 'undefined' ? true : window.innerWidth >= 700,
+        typeof window === 'undefined' ? true : window.innerWidth >= 1024,
     );
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
     const [logoutBusy, setLogoutBusy] = useState(false);
@@ -999,7 +999,7 @@ export const RoleDashboard: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        const media = window.matchMedia('(min-width: 700px)');
+        const media = window.matchMedia('(min-width: 1024px)');
         const sync = (event?: MediaQueryListEvent) => {
             setIsDesktopDashboard(event ? event.matches : media.matches);
         };

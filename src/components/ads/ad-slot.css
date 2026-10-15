@@ -1,0 +1,35 @@
+.ad-slot {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(20, 20, 20, 0.1);
+  overflow: hidden;
+}
+
+.ad-slot-label {
+  color: rgba(20, 20, 20, 0.5);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ad-slot .adsbygoogle {
+  min-height: 100px;
+  max-height: 280px;
+}
+
+/* Collapse the slot when AdSense has no ad to serve. */
+.ad-slot:has(.adsbygoogle[data-ad-status='unfilled']) {
+  display: none;
+}
+
+:root[data-theme='dark'] .ad-slot {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .ad-slot-label {
+  color: rgba(255, 255, 255, 0.55);
+}

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AdSlot } from '../ads/AdSlot';
+import { AD_SLOTS } from '../ads/adSlots';
 import {
     ArrowDown,
     ArrowUp,
@@ -846,6 +848,7 @@ export const PujaGuidePanel: React.FC<PujaGuidePanelProps> = ({
                         )}
                     </>
                 )}
+                <AdSlot key={tab} slot={AD_SLOTS.pujaPanel} />
             </div>
         </aside>
         </>

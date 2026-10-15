@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { buildLoginPath } from '../lib/authRedirect';
+import { AdSlot } from '../components/ads/AdSlot';
+import { AD_SLOTS } from '../components/ads/adSlots';
 import { PujaGuidePanel } from '../components/map/PujaGuidePanel';
 import { PujaTrailPlayback } from '../components/map/PujaTrailPlayback';
 import {
@@ -1840,6 +1842,7 @@ export const Map2Page: React.FC = () => {
                 </button>
               ) : null}
             </div>
+            <AdSlot key={selectedPin.id} slot={AD_SLOTS.mapSheet} />
           </aside>
         );
       })() : null}
@@ -1882,6 +1885,7 @@ export const Map2Page: React.FC = () => {
                 <span>Directions</span>
               </a>
             </div>
+            <AdSlot key={selectedPlace.id} slot={AD_SLOTS.mapSheet} />
           </aside>
         );
       })() : null}
@@ -1999,6 +2003,7 @@ export const Map2Page: React.FC = () => {
 
           {audioStatus ? <small className="map2-audio-status">{audioStatus}</small> : null}
           <small className="map2-best-time">Best time: {selectedPoint.bestTime}</small>
+          <AdSlot key={selectedPoint.id} slot={AD_SLOTS.mapSheet} />
         </aside>
       ) : null}
     </main>

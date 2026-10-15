@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Database, Download, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react';
 import {
     ADMIN_ANALYTICS_RANGES,
@@ -72,11 +72,19 @@ export const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ fetchSummary = f
     const [reloadKey, setReloadKey] = useState(0);
     const [state, setState] = useState<AnalyticsState>({ data: null, loading: true, error: null, notReady: false, updatedAt: null });
 
+    const loadedRangeRef = useRef<AnalyticsRangeKey | null>(null);
+
     useEffect(() => {
         let cancelled = false;
 
         const load = async () => {
-            setState((current) => ({ ...current, loading: true, error: null }));
+            // Switching ranges drops the old numbers straight away, so figures from another range never sit under the
+            // new tab while it loads. Background reloads of the same range keep the data on screen.
+            const rangeChanged = loadedRangeRef.current !== range;
+            loadedRangeRef.current = range;
+            setState((current) => (rangeChanged
+                ? { data: null, loading: true, error: null, notReady: false, updatedAt: null }
+                : { ...current, loading: true, error: null }));
             try {
                 const data = await fetchSummary(range);
                 if (!cancelled) setState({ data, loading: false, error: null, notReady: false, updatedAt: new Date() });
